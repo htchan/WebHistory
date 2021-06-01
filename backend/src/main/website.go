@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"time"
 	"net/http"
 	"io/ioutil"
+	"strings"
+	"regexp"
 	
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
@@ -14,12 +17,12 @@ var database *sql.DB
 type Website struct {
 	Url string
 	content string
-	UpdateTime time.Time
-	Updated bool
+	UpdateTime, AccessTime time.Time
 }
 
 func openDatabase(location string) {
-	database, err := sql.Open("sqlite3", location)
+	var err error
+	database, err = sql.Open("sqlite3", location)
 	if err != nil { panic(err) }
 	database.SetMaxIdleConns(5);
 	database.SetMaxOpenConns(50);
@@ -31,7 +34,7 @@ func closeDatabase() {
 
 func Urls() []string {
 	result := make([]string, 0)
-	rows, err := database.Query("select url from website")
+	rows, err := database.Query("select url from websites")
 	if err != nil { panic(err) }
 	var temp string
 	for rows.Next() {
@@ -43,18 +46,22 @@ func Urls() []string {
 
 func GetWeb(url string) Website {
 	rows, err := database.Query(
-		"select url, content, updateTime, update from website where url=?", url)
+		"select url, content, updateTime, accessTime from websites where url=?", url)
 	if err != nil { panic(err) }
 	var web Website
-	var t int
+	var updateTime, accessTime int
 	if rows.Next() {
-		rows.Scan(&web.Url, &web.content, &t, &web.Updated)
-		web.UpdateTime = time.Unix(int64(t), 0)
+		rows.Scan(&web.Url, &web.content, &updateTime, &accessTime)
+		web.UpdateTime = time.Unix(int64(updateTime), 0)
+		web.AccessTime = time.Unix(int64(accessTime), 0)
 	}
+	err = rows.Close()
+	if err != nil { panic(err) }
 	return web
 }
 
 func (web *Website) _checkTimeUpdate(timeStr string) bool {
+	if timeStr == "" { return false }
 	layout := "Mon, 2 Jan 2006 15:04:05 GMT"
 	t, err := time.Parse(layout, timeStr)
 	if err == nil && t.After(web.UpdateTime) {
@@ -63,44 +70,125 @@ func (web *Website) _checkTimeUpdate(timeStr string) bool {
 	return false
 }
 
-func (web *Website) _checkBodyUpdate(body string) bool {
-	if web.content != body {
-		web.content = body
+func getContent(client http.Client, url string) string {
+	resp, err := client.Get(url)
+	if err != nil { panic(err) }
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil { panic(err) }
+	return string(body)
+}
+
+func (web *Website) _checkBodyUpdate(client http.Client, url string) bool {
+	bodys := make([]string, 4)
+	bodys[0] = getContent(client, url)
+	if !compare(web.content, bodys[0]) {
+		for i := 1; i < 4; i++ {
+			bodys[i] = getContent(client, url)
+		}
+		bodys[0] = reduce(bodys[0], bodys[1])
+		bodys[2] = reduce(bodys[2], bodys[3])
+		web.content = reduce(bodys[0], bodys[2])
 		return true
 	}
 	return false
 }
 
-func (web *Website) update() {
-	if web.Updated == true { return }
+func compare(source, newComing string) bool {
+	checkStrs := strings.Split(source, string(rune(1)))
+	re := regexp.MustCompile("(<script.*?/script>|<style.*?/style>)")
+	newComing = string(re.ReplaceAll([]byte(strings.ReplaceAll(newComing, "\n", "nn")), []byte("<script/>")))
+	for _, check := range checkStrs {
+		if !strings.Contains(newComing, check) {
+			fmt.Println(newComing, "\n\n\n", check)
+			return false
+		}
+	}
+	return true
+}
+
+func substr(s string, start, end int) string {
+	if start > len(s) { return "" }
+	if end > len(s) {
+		if end - start > len(s) { return s }
+		return s[start:len(s)]
+	}
+	return s[start:end]
+}
+
+func reduce(b1, b2 string) string {
+	re := regexp.MustCompile("(<script.*?/script>|<style.*?/style>)")
+	b1 = string(re.ReplaceAll([]byte(strings.ReplaceAll(b1, "\n", "nn")), []byte("<script/>")))
+	b2 = string(re.ReplaceAll([]byte(strings.ReplaceAll(b2, "\n", "nn")), []byte("<script/>")))
+	sep := string(rune(1))
+	result := ""
+	groupLen := 30
+	MaxGroupDistance := 5
+	maxLen := len(b1)
+	if len(b2) > len(b1) { maxLen = len(b2) }
+	
+	i1, i2 := 0, 0
+
+	for i1 < maxLen {
+		if b1[i1] == b2[i2] {
+			result += string(b1[i1])
+		} else {
+			if string(result[len(result) - 1]) != sep { result += sep }
+			for j := 0; j < MaxGroupDistance; j++ {
+				if substr(b1, i1, i1+groupLen) == substr(b2, i2+j, i2+groupLen+j) {
+					i2 += j
+					result += string(b1[i1])
+					break
+				}
+			}
+		}
+		i1++
+		i2++
+		if i1 >= len(b1) || i2 >= len(b2) { break }
+	}
+	temp := strings.Split(result, sep)
+	for i, _ := range(temp) {
+		if len(temp[i]) < groupLen {
+			temp[i] = ""
+		} else {
+			temp[i] = temp[i][5:len(temp[i])-5]
+		}
+	}
+	return strings.Join(temp, sep)
+}
+
+func (web *Website) Update() {
 	client := http.Client{Timeout: 30*time.Second}
 	resp, err := client.Get(web.Url);
-	if err != nil { return }
-	bodyByte, err := ioutil.ReadAll(resp.Body)
-	if err != nil { return }
+	if err != nil { panic(err) }
 	if web._checkTimeUpdate(resp.Header.Get("last-modified")) ||
-		web._checkBodyUpdate(string(bodyByte)) {
+		web._checkBodyUpdate(client, web.Url) {
 		web.UpdateTime = time.Now()
-		web.Updated = true
 	}
 }
 
-func (web Website) Update() {
-	web.update()
-	if web.Updated == false { return }
+func (web Website) insert(tx *sql.Tx) {
+	_, err := tx.Exec("insert into websites (url, content, updateTime, accessTime) values (?, ?, ?, ?)",
+		web.Url, web.content, web.UpdateTime.Unix(), web.AccessTime.Unix())
+	if err != nil { panic(err) }
+}
+
+func (web Website) Save() {
 	tx, err := database.Begin()
 	if err != nil { panic(err) }
-	_, err = tx.Exec("update website set content=?, updateTime=?, update=? where url=?",
-		web.content, web.UpdateTime.Unix(), web.Update, web.Url)
+	result, err := tx.Exec("update websites set content=?, updateTime=?, accessTime=? where url=?",
+		web.content, web.UpdateTime.Unix(), web.AccessTime.Unix(), web.Url)
 	if err != nil { panic(err) }
+	rowsAffected, err := result.RowsAffected()
+	if err != nil { panic(err) }
+	if rowsAffected == 0 { web.insert(tx) }
 	err = tx.Commit()
 	if err != nil { panic(err) }
 }
 
-func (web Website) Map() map[string]interface{} {
+func (web Website) Response() map[string]interface{} {
 	return map[string]interface{} {
 		"url": web.Url,
-		"content": web.content,
 		"updateTime": web.UpdateTime,
+		"accessTime": web.AccessTime,
 	}
 }
