@@ -1,0 +1,11 @@
+pwd:=$(shell pwd)
+
+database_volume = $(pwd)/bin/database
+
+.PHONY: backend
+
+backend:
+	docker build -f ./backend/Dockerfile -t web_history_backend ./backend
+	docker run --name web_history_backend_container -d \
+		-v $(database_volume):/database
+		web_history_backend ./main
