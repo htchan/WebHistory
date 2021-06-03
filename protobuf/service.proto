@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "githu.com/htchan/protobuf";
+
+package main;
+
+service WebHistory {
+    rpc List (Empty) returns (stream WebsiteResponse) {}
+    rpc Add (UrlRequest) returns (MessageResponse) {}
+    rpc Refresh (UrlRequest) returns (MessageResponse) {}
+}
+
+message WebsiteResponse {
+    string url = 1;
+    int64 updateTime = 2;
+    int64 accessTime = 3;
+}
+
+message UrlRequest {
+    string url = 1;
+}
+
+message MessageResponse {
+    string message = 1;
+}
+
+message Empty {}
