@@ -20,8 +20,8 @@ func add(res http.ResponseWriter, req *http.Request) {
 	url := req.Form.Get("url")
 	web := Website{Url: url, AccessTime: time.Now()}
 	web.Update()
-	web.Save()
 	fmt.Println(web.Response())
+	web.Save()
 	fmt.Fprintln(res, "{ \"message\" : \"website <" + url + "> add success\" }")
 }
 
@@ -29,11 +29,9 @@ func list(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
 	result := make([]map[string]interface{}, 0)
-	fmt.Println(Urls())
 	for _, url := range Urls() {
 		result = append(result, GetWeb(url).Response())
 	}
-	fmt.Println()
 	responseByte, err := json.Marshal(map[string]interface{} { "websites": result })
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
@@ -55,8 +53,32 @@ func refresh(res http.ResponseWriter, req *http.Request) {
 	url := req.Form.Get("url")
 	web := GetWeb(url)
 	web.AccessTime = time.Now()
-	fmt.Println("web")
 	web.Save()
+}
+
+func delete(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json; charset=utf-8")
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Set("Access-Control-Allow-Methods", "DELETE")
+	fmt.Println(req.Method)
+	if req.Method == "OPTIONS" {
+		res.WriteHeader(http.StatusNoContent)
+		return
+	} else if req.Method != "DELETE" {
+		res.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprintln(res, "{ \"error\" : \"method not support\" }")
+		return
+	}
+	req.ParseForm()
+	url := req.Form.Get("url")
+	fmt.Println(url)
+	web := GetWeb(url)
+	if web.UpdateTime.Unix() == 0 && web.AccessTime.Unix() == 0 {
+		res.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(res, "{ \"error\" : \"website not found\" }")
+		return
+	}
+	web.Delete()
 }
 
 func regularUpdate() {
@@ -77,5 +99,6 @@ func main() {
 	http.HandleFunc("/api/web-history/add", add)
 	http.HandleFunc("/api/web-history/list", list)
 	http.HandleFunc("/api/web-history/refresh", refresh)
+	http.HandleFunc("/api/web-history/delete", delete)
 	log.Fatal(http.ListenAndServe(":9105", nil))
 }
