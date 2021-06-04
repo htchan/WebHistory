@@ -15,7 +15,7 @@ import (
 var database *sql.DB
 
 type Website struct {
-	Url string
+	Url, Title string
 	content string
 	UpdateTime, AccessTime time.Time
 }
@@ -46,12 +46,13 @@ func Urls() []string {
 
 func GetWeb(url string) Website {
 	rows, err := database.Query(
-		"select url, content, updateTime, accessTime from websites where url=?", url)
+		"select url, title, content, updateTime, accessTime from websites " +
+		"where url=? order by updateTime desc", url)
 	if err != nil { panic(err) }
 	var web Website
 	var updateTime, accessTime int
 	if rows.Next() {
-		rows.Scan(&web.Url, &web.content, &updateTime, &accessTime)
+		rows.Scan(&web.Url, &web.Title, &web.content, &updateTime, &accessTime)
 		web.UpdateTime = time.Unix(int64(updateTime), 0)
 		web.AccessTime = time.Unix(int64(accessTime), 0)
 	}
@@ -78,7 +79,15 @@ func getContent(client http.Client, url string) string {
 	return string(body)
 }
 
+func getTitle(body string) string {
+	re := regexp.MustCompile("<title>(.*?)</title>")
+	groups := re.FindStringSubmatch(body)
+	if (len(groups) > 1) { return groups[1] }
+	return ""
+}
+
 func (web *Website) _checkBodyUpdate(client http.Client, url string) bool {
+	bodyUpdate, titleUpdate := false, false
 	bodys := make([]string, 4)
 	bodys[0] = getContent(client, url)
 	if !compare(web.content, bodys[0]) {
@@ -88,12 +97,18 @@ func (web *Website) _checkBodyUpdate(client http.Client, url string) bool {
 		bodys[0] = reduce(bodys[0], bodys[1])
 		bodys[2] = reduce(bodys[2], bodys[3])
 		web.content = reduce(bodys[0], bodys[2])
-		return true
+		bodyUpdate = true
 	}
-	return false
+	title := getTitle(bodys[0])
+	if (title != web.Title) {
+		web.Title = title
+		titleUpdate = true
+	}
+	return bodyUpdate || titleUpdate
 }
 
 func compare(source, newComing string) bool {
+	if source == "" { return false }
 	checkStrs := strings.Split(source, string(rune(1)))
 	re := regexp.MustCompile("(<script.*?/script>|<style.*?/style>)")
 	newComing = string(re.ReplaceAll([]byte(strings.ReplaceAll(newComing, "\n", "nn")), []byte("<script/>")))
@@ -167,16 +182,16 @@ func (web *Website) Update() {
 }
 
 func (web Website) insert(tx *sql.Tx) {
-	_, err := tx.Exec("insert into websites (url, content, updateTime, accessTime) values (?, ?, ?, ?)",
-		web.Url, web.content, web.UpdateTime.Unix(), web.AccessTime.Unix())
+	_, err := tx.Exec("insert into websites (url, title, content, updateTime, accessTime) values (?, ?, ?, ?, ?)",
+		web.Url, web.Title, web.content, web.UpdateTime.Unix(), web.AccessTime.Unix())
 	if err != nil { panic(err) }
 }
 
 func (web Website) Save() {
 	tx, err := database.Begin()
 	if err != nil { panic(err) }
-	result, err := tx.Exec("update websites set content=?, updateTime=?, accessTime=? where url=?",
-		web.content, web.UpdateTime.Unix(), web.AccessTime.Unix(), web.Url)
+	result, err := tx.Exec("update websites set title=?, content=?, updateTime=?, accessTime=? where url=?",
+		web.Title, web.content, web.UpdateTime.Unix(), web.AccessTime.Unix(), web.Url)
 	if err != nil { panic(err) }
 	rowsAffected, err := result.RowsAffected()
 	if err != nil { panic(err) }
@@ -185,9 +200,20 @@ func (web Website) Save() {
 	if err != nil { panic(err) }
 }
 
+func (web Website) Delete() {
+	tx, err := database.Begin()
+	if err != nil { panic(err) }
+	_, err = tx.Exec("delete from websites where url=?", web.Url)
+	if err != nil { panic(err) }
+	err = tx.Commit()
+	if err != nil { panic(err) }
+
+}
+
 func (web Website) Response() map[string]interface{} {
 	return map[string]interface{} {
 		"url": web.Url,
+		"title": web.Title,
 		"updateTime": web.UpdateTime,
 		"accessTime": web.AccessTime,
 	}
