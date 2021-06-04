@@ -6,6 +6,8 @@ database_volume = $(pwd)/bin/database
 
 backend:
 	docker build -f ./backend/Dockerfile -t web_history_backend ./backend
+	docker image prune -f
 	docker run --name web_history_backend_container -d \
-		-v $(database_volume):/database
+		--network=router \
+		-v $(database_volume):/database \
 		web_history_backend ./main
