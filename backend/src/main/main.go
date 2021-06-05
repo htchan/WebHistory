@@ -20,10 +20,12 @@ func add(res http.ResponseWriter, req *http.Request) {
 	if err != nil {panic(err)}
 	url := req.Form.Get("url")
 	web := Website{Url: url, AccessTime: time.Now()}
-	web.Update()
-	fmt.Println(web.Response())
-	web.Save()
-	fmt.Fprintln(res, "{ \"message\" : \"website <" + url + "> add success\" }")
+	go func() {
+		web.Update()
+		fmt.Println(web.Response())
+		web.Save()
+	} ()
+	fmt.Fprintln(res, "{ \"message\" : \"website <" + url + "> add is put into queue\" }")
 }
 
 func list(res http.ResponseWriter, req *http.Request) {
