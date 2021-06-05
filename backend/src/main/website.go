@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 	"net/http"
 	"io/ioutil"
@@ -75,12 +74,16 @@ func getContent(client http.Client, url string) string {
 	resp, err := client.Get(url)
 	if err != nil { panic(err) }
 	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil { panic(err) }
-	return string(body)
+	if err != nil {panic(err)}
+	re := regexp.MustCompile("(<script.*?/script>|<style.*?/style>|<path.*?/path>)")
+	bodyStr := string(re.ReplaceAll([]byte(strings.ReplaceAll(string(body), "\n", "nn")), []byte("<script/>")))
+	return bodyStr
 }
 
-func getTitle(body string) string {
-	re := regexp.MustCompile("<title>(.*?)</title>")
+func getTitle(url string) string {
+	client := http.Client{Timeout: 30*time.Second}
+	body := getContent(client, url)
+	re := regexp.MustCompile("<title.*?>(.*?)</title>")
 	groups := re.FindStringSubmatch(body)
 	if (len(groups) > 1) { return groups[1] }
 	return ""
@@ -99,7 +102,7 @@ func (web *Website) _checkBodyUpdate(client http.Client, url string) bool {
 		web.content = reduce(bodys[0], bodys[2])
 		bodyUpdate = true
 	}
-	title := getTitle(bodys[0])
+	title := getTitle(url)
 	if (title != web.Title) {
 		web.Title = title
 		titleUpdate = true
@@ -110,11 +113,8 @@ func (web *Website) _checkBodyUpdate(client http.Client, url string) bool {
 func compare(source, newComing string) bool {
 	if source == "" { return false }
 	checkStrs := strings.Split(source, string(rune(1)))
-	re := regexp.MustCompile("(<script.*?/script>|<style.*?/style>)")
-	newComing = string(re.ReplaceAll([]byte(strings.ReplaceAll(newComing, "\n", "nn")), []byte("<script/>")))
 	for _, check := range checkStrs {
 		if !strings.Contains(newComing, check) {
-			fmt.Println(newComing, "\n\n\n", check)
 			return false
 		}
 	}
