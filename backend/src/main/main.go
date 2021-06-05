@@ -16,7 +16,8 @@ func add(res http.ResponseWriter, req *http.Request) {
 		fmt.Fprintln(res, "{ \"error\" : \"method not support\" }")
 		return
 	}
-	req.ParseForm()
+	err := req.ParseForm()
+	if err != nil {panic(err)}
 	url := req.Form.Get("url")
 	web := Website{Url: url, AccessTime: time.Now()}
 	web.Update()
@@ -59,26 +60,23 @@ func refresh(res http.ResponseWriter, req *http.Request) {
 func delete(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
-	res.Header().Set("Access-Control-Allow-Methods", "DELETE")
-	fmt.Println(req.Method)
-	if req.Method == "OPTIONS" {
-		res.WriteHeader(http.StatusNoContent)
-		return
-	} else if req.Method != "DELETE" {
+	if req.Method != "POST" {
 		res.WriteHeader(http.StatusMethodNotAllowed)
 		fmt.Fprintln(res, "{ \"error\" : \"method not support\" }")
 		return
 	}
-	req.ParseForm()
+	err := req.ParseForm()
+	if err != nil {panic(err)}
 	url := req.Form.Get("url")
 	fmt.Println(url)
 	web := GetWeb(url)
-	if web.UpdateTime.Unix() == 0 && web.AccessTime.Unix() == 0 {
+	if web.UpdateTime.Unix() == -62135596800 && web.AccessTime.Unix() == -62135596800 {
 		res.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(res, "{ \"error\" : \"website not found\" }")
 		return
 	}
 	web.Delete()
+	fmt.Fprintln(res, "{ \"error\" : \"website not found\" }")
 }
 
 func regularUpdate() {

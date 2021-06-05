@@ -174,7 +174,10 @@ func reduce(b1, b2 string) string {
 func (web *Website) Update() {
 	client := http.Client{Timeout: 30*time.Second}
 	resp, err := client.Get(web.Url);
-	if err != nil { panic(err) }
+	if err != nil { 
+		web.Title = "Unknown"
+		return
+	}
 	if web._checkTimeUpdate(resp.Header.Get("last-modified")) ||
 		web._checkBodyUpdate(client, web.Url) {
 		web.UpdateTime = time.Now()
