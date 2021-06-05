@@ -147,7 +147,7 @@ func reduce(b1, b2 string) string {
 		if b1[i1] == b2[i2] {
 			result += string(b1[i1])
 		} else {
-			if string(result[len(result) - 1]) != sep { result += sep }
+			if len(result) == 0 || string(result[len(result) - 1]) != sep { result += sep }
 			for j := 0; j < MaxGroupDistance; j++ {
 				if substr(b1, i1, i1+groupLen) == substr(b2, i2+j, i2+groupLen+j) {
 					i2 += j
