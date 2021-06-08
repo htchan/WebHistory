@@ -19,6 +19,10 @@ func add(res http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {panic(err)}
 	url := req.Form.Get("url")
+	if url == nil || url == "" || !strings.HasPrefix(url, "http") {
+		res.WriteHeader(http.StatusBadRequest)
+		fmt.Println(res, "{ \"error\" : \"invalid url format\" }")
+	}
 	web := Website{Url: url, AccessTime: time.Now()}
 	go func() {
 		web.Update()
