@@ -3,9 +3,7 @@ FROM golang:1.16.4-alpine3.13 as builder
 WORKDIR /go/src/github.com/htchan/WebHistory
 
 COPY ./src ./src
-
-RUN mv ./src/main/go.mod ./go.mod
-RUN sed -i 's/.\/src\//.\//g' ./go.mod
+COPY ./go.mod .
 
 RUN apk add gcc musl-dev libc-dev
 RUN go mod download

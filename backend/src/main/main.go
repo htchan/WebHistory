@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"log"
+	"strings"
 )
 
 func add(res http.ResponseWriter, req *http.Request) {
@@ -19,9 +20,9 @@ func add(res http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {panic(err)}
 	url := req.Form.Get("url")
-	if url == nil || url == "" || !strings.HasPrefix(url, "http") {
+	if url == "" || !strings.HasPrefix(url, "http") {
 		res.WriteHeader(http.StatusBadRequest)
-		fmt.Println(res, "{ \"error\" : \"invalid url format\" }")
+		fmt.Fprintln(res, "{ \"error\" : \"invalid url format\" }")
 	}
 	web := Website{Url: url, AccessTime: time.Now()}
 	go func() {
@@ -86,6 +87,7 @@ func delete(res http.ResponseWriter, req *http.Request) {
 }
 
 func regularUpdate() {
+	fmt.Println(time.Now(), "regular update")
 	for range time.Tick(time.Hour * 23) {
 		for _, url := range Urls() {
 			web := GetWeb(url)
@@ -97,7 +99,7 @@ func regularUpdate() {
 
 func main() {
 	fmt.Println("hello")
-	openDatabase("./database/websites.db")
+	openDatabase("/database/websites.db")
 	fmt.Println(database)
 	go regularUpdate()
 	http.HandleFunc("/api/web-history/add", add)
