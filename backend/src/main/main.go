@@ -87,8 +87,8 @@ func delete(res http.ResponseWriter, req *http.Request) {
 }
 
 func regularUpdate() {
-	fmt.Println(time.Now(), "regular update")
 	for range time.Tick(time.Hour * 23) {
+		fmt.Println(time.Now(), "regular update")
 		for _, url := range Urls() {
 			web := GetWeb(url)
 			web.Update()
