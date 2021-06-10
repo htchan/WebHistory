@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"regexp"
+	"fmt"
 	
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
@@ -100,6 +101,7 @@ func (web *Website) _checkBodyUpdate(client http.Client, url string) bool {
 		bodys[0] = reduce(bodys[0], bodys[1])
 		bodys[2] = reduce(bodys[2], bodys[3])
 		web.content = reduce(bodys[0], bodys[2])
+		fmt.Println(web.content[0:500] + "\n\n\nend\n\n\n")
 		bodyUpdate = true
 	}
 	title := getTitle(url)
@@ -131,11 +133,8 @@ func substr(s string, start, end int) string {
 }
 
 func reduce(b1, b2 string) string {
-	re := regexp.MustCompile("(<script.*?/script>|<style.*?/style>)")
-	b1 = string(re.ReplaceAll([]byte(strings.ReplaceAll(b1, "\n", "nn")), []byte("<script/>")))
-	b2 = string(re.ReplaceAll([]byte(strings.ReplaceAll(b2, "\n", "nn")), []byte("<script/>")))
 	sep := string(rune(1))
-	result := ""
+	result := make([]byte, 0)
 	groupLen := 30
 	MaxGroupDistance := 5
 	maxLen := len(b1)
@@ -145,13 +144,13 @@ func reduce(b1, b2 string) string {
 
 	for i1 < maxLen {
 		if b1[i1] == b2[i2] {
-			result += string(b1[i1])
+			result = append(result, b1[i1])
 		} else {
-			if len(result) == 0 || string(result[len(result) - 1]) != sep { result += sep }
+			if len(result) == 0 || result[len(result) - 1] != sep[0] {  result = append(result, sep[0]) }
 			for j := 0; j < MaxGroupDistance; j++ {
 				if substr(b1, i1, i1+groupLen) == substr(b2, i2+j, i2+groupLen+j) {
 					i2 += j
-					result += string(b1[i1])
+					result = append(result, b1[i1])
 					break
 				}
 			}
@@ -160,7 +159,8 @@ func reduce(b1, b2 string) string {
 		i2++
 		if i1 >= len(b1) || i2 >= len(b2) { break }
 	}
-	temp := strings.Split(result, sep)
+	resultStr := string(result)
+	temp := strings.Split(resultStr, sep)
 	for i, _ := range(temp) {
 		if len(temp[i]) < groupLen {
 			temp[i] = ""
@@ -180,7 +180,10 @@ func (web *Website) Update() {
 	}
 	if web._checkTimeUpdate(resp.Header.Get("last-modified")) ||
 		web._checkBodyUpdate(client, web.Url) {
+		fmt.Println(web.Title + "\tupdate")
 		web.UpdateTime = time.Now()
+	} else {
+		fmt.Println(web.Title + "\tnot update")
 	}
 }
 
