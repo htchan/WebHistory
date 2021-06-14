@@ -20,6 +20,8 @@ type Website struct {
 	UpdateTime, AccessTime time.Time
 }
 
+const SEP = "\n"
+
 func openDatabase(location string) {
 	var err error
 	database, err = sql.Open("sqlite3", location)
@@ -77,7 +79,11 @@ func getContent(client http.Client, url string) string {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {panic(err)}
 	re := regexp.MustCompile("(<script.*?/script>|<style.*?/style>|<path.*?/path>)")
-	bodyStr := string(re.ReplaceAll([]byte(strings.ReplaceAll(string(body), "\n", "nn")), []byte("<script/>")))
+	bodyStr := string(re.ReplaceAll(
+		[]byte(strings.ReplaceAll(strings.ReplaceAll(string(body), "\r", ""), "\n", "")),
+		[]byte("<script/>")))
+	re = regexp.MustCompile("\\d")
+	bodyStr = string(re.ReplaceAll([]byte(bodyStr), []byte("0")))
 	return bodyStr
 }
 
@@ -92,16 +98,9 @@ func getTitle(url string) string {
 
 func (web *Website) _checkBodyUpdate(client http.Client, url string) bool {
 	bodyUpdate, titleUpdate := false, false
-	bodys := make([]string, 4)
-	bodys[0] = getContent(client, url)
-	if !compare(web.content, bodys[0]) {
-		for i := 1; i < 4; i++ {
-			bodys[i] = getContent(client, url)
-		}
-		bodys[0] = reduce(bodys[0], bodys[1])
-		bodys[2] = reduce(bodys[2], bodys[3])
-		web.content = reduce(bodys[0], bodys[2])
-		fmt.Println(web.content[0:500] + "\n\n\nend\n\n\n")
+	body := reduce(getContent(client, url))
+	if !compare(web.content, body) {
+		web.content = body
 		bodyUpdate = true
 	}
 	title := getTitle(url)
@@ -112,63 +111,28 @@ func (web *Website) _checkBodyUpdate(client http.Client, url string) bool {
 	return bodyUpdate || titleUpdate
 }
 
-func compare(source, newComing string) bool {
-	if source == "" { return false }
-	checkStrs := strings.Split(source, string(rune(1)))
-	for _, check := range checkStrs {
-		if !strings.Contains(newComing, check) {
+func compare(s1, s2 string) bool {
+	list1, list2 := strings.Split(s1, SEP), strings.Split(s2, SEP)
+	if len(list1) == 0 || len(list2) == 0 || len(list1) != len(list2) { return false }
+	for i := range list1 {
+		if list1[i] != list2[i] {
 			return false
 		}
 	}
 	return true
 }
 
-func substr(s string, start, end int) string {
-	if start > len(s) { return "" }
-	if end > len(s) {
-		if end - start > len(s) { return s }
-		return s[start:len(s)]
-	}
-	return s[start:end]
-}
-
-func reduce(b1, b2 string) string {
-	sep := string(rune(1))
-	result := make([]byte, 0)
-	groupLen := 30
-	MaxGroupDistance := 5
-	maxLen := len(b1)
-	if len(b2) > len(b1) { maxLen = len(b2) }
-	
-	i1, i2 := 0, 0
-
-	for i1 < maxLen {
-		if b1[i1] == b2[i2] {
-			result = append(result, b1[i1])
-		} else {
-			if len(result) == 0 || result[len(result) - 1] != sep[0] {  result = append(result, sep[0]) }
-			for j := 0; j < MaxGroupDistance; j++ {
-				if substr(b1, i1, i1+groupLen) == substr(b2, i2+j, i2+groupLen+j) {
-					i2 += j
-					result = append(result, b1[i1])
-					break
-				}
-			}
-		}
-		i1++
-		i2++
-		if i1 >= len(b1) || i2 >= len(b2) { break }
-	}
-	resultStr := string(result)
-	temp := strings.Split(resultStr, sep)
-	for i, _ := range(temp) {
-		if len(temp[i]) < groupLen {
-			temp[i] = ""
-		} else {
-			temp[i] = temp[i][5:len(temp[i])-5]
+func reduce(s string) string {
+	re := regexp.MustCompile("<.*?>")
+	result := string(re.ReplaceAll([]byte(s), []byte(SEP)))
+	fullResultList := strings.Split(result, SEP)
+	resultList := make([]string, 0)
+	for _, result = range(fullResultList) {
+		if len(strings.Trim(result, " \r")) >= 5 {
+			resultList = append(resultList, result)
 		}
 	}
-	return strings.Join(temp, sep)
+	return strings.Join(resultList, SEP)
 }
 
 func (web *Website) Update() {

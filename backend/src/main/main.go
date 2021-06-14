@@ -87,21 +87,23 @@ func delete(res http.ResponseWriter, req *http.Request) {
 }
 
 func regularUpdate() {
-	for range time.Tick(time.Hour * 23) {
-		fmt.Println(time.Now(), "regular update")
-		for _, url := range Urls() {
-			web := GetWeb(url)
-			web.Update()
-			web.Save()
-		}
+	fmt.Println(time.Now(), "regular update")
+	for _, url := range Urls() {
+		web := GetWeb(url)
+		web.Update()
+		web.Save()
 	}
+	fmt.Println(time.Now(), "regular update finish")
 }
 
 func main() {
 	fmt.Println("hello")
-	openDatabase("/database/websites.db")
+	openDatabase("./database/websites.db")
 	fmt.Println(database)
-	go regularUpdate()
+	go func() {
+		regularUpdate()
+		for range time.Tick(time.Hour * 23) { regularUpdate() }
+	}()
 	http.HandleFunc("/api/web-history/add", add)
 	http.HandleFunc("/api/web-history/list", list)
 	http.HandleFunc("/api/web-history/refresh", refresh)
