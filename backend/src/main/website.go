@@ -125,14 +125,8 @@ func compare(s1, s2 string) bool {
 func reduce(s string) string {
 	re := regexp.MustCompile("<.*?>")
 	result := string(re.ReplaceAll([]byte(s), []byte(SEP)))
-	fullResultList := strings.Split(result, SEP)
-	resultList := make([]string, 0)
-	for _, result = range(fullResultList) {
-		result = strings.Trim(result, " \r\t")
-		if len(result) >= 4 && strings.Contains(result, "0") {
-			resultList = append(resultList, result)
-		}
-	}
+	re = regexp.MustCompile("\\d+-[-\\d]+")
+	resultList := re.FindAllString(result, -1)[:2]
 	return strings.Join(resultList, SEP)
 }
 
