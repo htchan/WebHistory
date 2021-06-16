@@ -82,8 +82,6 @@ func getContent(client http.Client, url string) string {
 	bodyStr := string(re.ReplaceAll(
 		[]byte(strings.ReplaceAll(strings.ReplaceAll(string(body), "\r", ""), "\n", "")),
 		[]byte("<script/>")))
-	re = regexp.MustCompile("\\d[\\d.-]*")
-	bodyStr = string(re.ReplaceAll([]byte(bodyStr), []byte("000")))
 	return bodyStr
 }
 
@@ -125,8 +123,9 @@ func compare(s1, s2 string) bool {
 func reduce(s string) string {
 	re := regexp.MustCompile("<.*?>")
 	result := string(re.ReplaceAll([]byte(s), []byte(SEP)))
-	re = regexp.MustCompile("\\d+-[-\\d]+")
+	re = regexp.MustCompile("\\d+[-/][-/\\d]+")
 	resultList := re.FindAllString(result, -1)[:2]
+	fmt.Println(resultList)
 	return strings.Join(resultList, SEP)
 }
 
