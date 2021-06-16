@@ -82,8 +82,8 @@ func getContent(client http.Client, url string) string {
 	bodyStr := string(re.ReplaceAll(
 		[]byte(strings.ReplaceAll(strings.ReplaceAll(string(body), "\r", ""), "\n", "")),
 		[]byte("<script/>")))
-	re = regexp.MustCompile("\\d")
-	bodyStr = string(re.ReplaceAll([]byte(bodyStr), []byte("0")))
+	re = regexp.MustCompile("\\d[\\d.-]*")
+	bodyStr = string(re.ReplaceAll([]byte(bodyStr), []byte("000")))
 	return bodyStr
 }
 
@@ -128,7 +128,8 @@ func reduce(s string) string {
 	fullResultList := strings.Split(result, SEP)
 	resultList := make([]string, 0)
 	for _, result = range(fullResultList) {
-		if len(strings.Trim(result, " \r")) >= 5 {
+		result = strings.Trim(result, " \r\t")
+		if len(result) >= 4 && strings.Contains(result, "0") {
 			resultList = append(resultList, result)
 		}
 	}
