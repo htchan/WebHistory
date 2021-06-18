@@ -36,7 +36,7 @@ func closeDatabase() {
 
 func Urls() []string {
 	result := make([]string, 0)
-	rows, err := database.Query("select url from websites")
+	rows, err := database.Query("select url from websites order by updateTime desc")
 	if err != nil { panic(err) }
 	var temp string
 	for rows.Next() {
@@ -49,7 +49,7 @@ func Urls() []string {
 func GetWeb(url string) Website {
 	rows, err := database.Query(
 		"select url, title, content, updateTime, accessTime from websites " +
-		"where url=? order by updateTime desc", url)
+		"where url=?", url)
 	if err != nil { panic(err) }
 	var web Website
 	var updateTime, accessTime int
