@@ -120,13 +120,32 @@ func compare(s1, s2 string) bool {
 	return true
 }
 
-func reduce(s string) string {
+func extractContent(s string) string {
+	re := regexp.MustCompile("<.*?>")
+	result := string(re.ReplaceAll([]byte(s), []byte(SEP)))
+	fmt.Println(resultList)
+	return strings.Join(resultList, SEP)
+}
+
+func extractDate(s string) string {
 	re := regexp.MustCompile("<.*?>")
 	result := string(re.ReplaceAll([]byte(s), []byte(SEP)))
 	re = regexp.MustCompile("\\d+[-/][-/\\d]+")
-	resultList := re.FindAllString(result, -1)[:2]
+	resultList := re.FindAllString(result, -1)
 	fmt.Println(resultList)
 	return strings.Join(resultList, SEP)
+}
+
+func replaceKeyword(s []string, replaceStr string) string {
+	re := regexp.MustCompile("(" + strings.Join(s, "|") + ")")
+	result := string(re.ReplaceAll([]byte(s), []byte(replaceStr)))
+	fmt.Println(resultList)
+	return strings.Join(resultList, SEP)
+}
+
+func reduce(s string) (result string) {
+	result = strings.Join(strings.Split(replaceDate, SEP)[:2], SEP)
+	return
 }
 
 func (web *Website) Update() {
