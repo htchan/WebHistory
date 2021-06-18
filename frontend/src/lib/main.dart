@@ -8,10 +8,11 @@ void main() {
   runApp(MyApp());
 }
 
+String host = "192.168.128.146";
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
-  String url = 'http://localhost:9105/api/web-history';
+  String url = 'http://${host}/api/web-history';
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

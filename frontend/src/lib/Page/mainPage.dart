@@ -21,6 +21,10 @@ class _MainPageState extends State<MainPage> {
   final GlobalKey scaffoldKey = GlobalKey();
 
   _MainPageState(this.url) {
+    _loadData();
+  }
+
+  void _loadData() {
     final String apiUrl = '$url/list';
     http.get(Uri.parse(apiUrl))
     .then((response) {
@@ -47,27 +51,32 @@ class _MainPageState extends State<MainPage> {
         final String apiUrl = '$url/refresh';
         http.post(
           Uri.parse(apiUrl),
-          body: jsonEncode(<String, String>{
+          body: <String, String>{
             'url': website['url']??"",
-          }),
-        );
+          },
+        )
+        .then( (response) => _loadData() );
         await canLaunch(website['url']??"")? await launch(website['url']??""):"";
       },
       child:ListTile(
-        leading: (accessTime.millisecondsSinceEpoch > updateTime.millisecondsSinceEpoch) ? 
+        leading: (accessTime.millisecondsSinceEpoch < updateTime.millisecondsSinceEpoch) ? 
           const Icon(Icons.check_circle) : 
           const Icon(Icons.remove_circle),
         title: Text(website['title']??"Load title fail"),
-        subtitle: Text((website['url']??"") + '\n' + updateTime.toLocal().toString()),
+        subtitle: Text(
+          (website['url']??"") + '\n' +
+          'Update Time: ' + updateTime.toLocal().toString() + '\n' +
+          'Access Time: ' + accessTime.toLocal().toString()
+        ),
         trailing: IconButton(
           icon: const Icon(Icons.delete), 
           onPressed: () {
             final String apiUrl = '$url/delete';
-            http.delete(
+            http.post(
               Uri.parse(apiUrl),
-              body: jsonEncode(<String, String>{
+              body: <String, String>{
                 'url': website['url'] == '' ? 'unknown' : (website['url']??"unknown")
-              }),
+              },
             )
             .then((response) {
               if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -94,7 +103,8 @@ class _MainPageState extends State<MainPage> {
               Navigator.pushNamed(
                 scaffoldKey.currentContext!,
                 '/add'
-              );
+              )
+              .then( (value) => _loadData() );
             }, 
             icon: const Icon(Icons.add_circle),
           )

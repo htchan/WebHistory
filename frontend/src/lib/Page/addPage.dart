@@ -1,9 +1,8 @@
-import 'dart:convert';
 // ignore: file_names
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
 
 class AddPage extends StatefulWidget{
   final String url;
@@ -24,21 +23,43 @@ class _AddPageState extends State<AddPage> {
 
   String? validateUrl(String? url) {
     if (url == null || url.isEmpty) { return "Empty url"; }
-    if (!url.startsWith("http")) { return "invalid url (not start with http"; }
+    if (!url.startsWith("http")) { return "invalid url (not start with http)"; }
     return null;
   }
 
-  void addUrl(String url) {
+  void addUrl(TextEditingController text) {
     if (scaffoldKey.currentState!.validate()) {
       String apiUrl = '$url/add';
       http.post(
         Uri.parse(apiUrl),
-        body: jsonEncode(<String, String>{
-          'url': url
-        })
-      );
+        body: <String, String>{
+          'url': text.text
+        }
+      )
+      .then( (response) {
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          text.text = "";
+          successToast("url <${text.text}> add success");
+        } else {
+          successToast("fail");
+        }
+      });
     }
   }
+  void successToast(String msg) {
+    Fluttertoast.showToast(
+        msg: msg,
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 5,
+        fontSize: 16.0,
+        backgroundColor: Colors.grey.shade300,
+        textColor: Colors.black,
+        webBgColor: "#DDDDDD",
+        webPosition: "center",
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +81,7 @@ class _AddPageState extends State<AddPage> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: ElevatedButton(
-                onPressed: () => addUrl(text.text),
+                onPressed: () => addUrl(text),
                 child: const Text('Submit'),
               ),
             ),
