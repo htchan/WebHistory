@@ -43,8 +43,11 @@ func Urls() []string {
 	var updateTime, accessTime int64
 	for rows.Next() {
 		rows.Scan(&temp, &updateTime, &accessTime)
-		if updateTime > accessTime { resultUpdate = append(resultUpdate, temp) }
-		else { resultUnchange = append(resultUnchange, temp) }
+		if updateTime > accessTime {
+			resultUpdate = append(resultUpdate, temp)
+		} else {
+			resultUnchange = append(resultUnchange, temp)
+		}
 	}
 	return append(resultUpdate, resultUnchange...)
 }
@@ -125,29 +128,23 @@ func compare(s1, s2 string) bool {
 
 func extractContent(s string) string {
 	re := regexp.MustCompile("<.*?>")
-	result := string(re.ReplaceAll([]byte(s), []byte(SEP)))
-	fmt.Println(resultList)
-	return strings.Join(resultList, SEP)
+	return string(re.ReplaceAll([]byte(s), []byte(SEP)))
 }
 
 func extractDate(s string) string {
-	re := regexp.MustCompile("<.*?>")
-	result := string(re.ReplaceAll([]byte(s), []byte(SEP)))
-	re = regexp.MustCompile("\\d+[-/][-/\\d]+")
-	resultList := re.FindAllString(result, -1)
+	re := regexp.MustCompile("\\d+[-/][-/\\d]+")
+	resultList := re.FindAllString(s, -1)
 	fmt.Println(resultList)
 	return strings.Join(resultList, SEP)
 }
 
-func replaceKeyword(s []string, replaceStr string) string {
-	re := regexp.MustCompile("(" + strings.Join(s, "|") + ")")
-	result := string(re.ReplaceAll([]byte(s), []byte(replaceStr)))
-	fmt.Println(resultList)
-	return strings.Join(resultList, SEP)
+func replaceKeyword(inputStr string, targetStr []string, replaceStr string) string {
+	re := regexp.MustCompile("(" + strings.Join(targetStr, "|") + ")")
+	return string(re.ReplaceAll([]byte(inputStr), []byte(replaceStr)))
 }
 
 func reduce(s string) (result string) {
-	result = strings.Join(strings.Split(replaceDate, SEP)[:2], SEP)
+	result = strings.Join(strings.Split(extractDate(s), SEP)[:2], SEP)
 	return
 }
 
