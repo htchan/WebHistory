@@ -132,7 +132,7 @@ func extractContent(s string) string {
 }
 
 func extractDate(s string) string {
-	re := regexp.MustCompile("\\d+[-/][-/\\d]+")
+	re := regexp.MustCompile("\\d{1,4}([-/]\\d{1,4})+")
 	resultList := re.FindAllString(s, -1)
 	fmt.Println(resultList)
 	return strings.Join(resultList, SEP)
@@ -144,7 +144,9 @@ func replaceKeyword(inputStr string, targetStr []string, replaceStr string) stri
 }
 
 func reduce(s string) (result string) {
-	result = strings.Join(strings.Split(extractDate(s), SEP)[:2], SEP)
+	result = extractContent(s)
+	result = strings.Join(strings.Split(extractDate(result), SEP)[:2], SEP)
+	// print(result)
 	return
 }
 
