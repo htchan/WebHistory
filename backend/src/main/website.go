@@ -35,15 +35,18 @@ func closeDatabase() {
 }
 
 func Urls() []string {
-	result := make([]string, 0)
-	rows, err := database.Query("select url from websites order by updateTime desc")
+	resultUpdate := make([]string, 0)
+	resultUnchange := make([]string, 0)
+	rows, err := database.Query("select url, updateTime, accessTime from websites order by updateTime desc")
 	if err != nil { panic(err) }
 	var temp string
+	var updateTime, accessTime int64
 	for rows.Next() {
-		rows.Scan(&temp)
-		result = append(result, temp)
+		rows.Scan(&temp, &updateTime, &accessTime)
+		if updateTime > accessTime { resultUpdate = append(resultUpdate, temp) }
+		else { resultUnchange = append(resultUnchange, temp) }
 	}
-	return result
+	return append(resultUpdate, resultUnchange...)
 }
 
 func GetWeb(url string) Website {
