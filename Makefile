@@ -27,6 +27,3 @@ frontend:
 		-v ${frontend_dst_volume}:/build/web \
 		-v ${frontend_src_volume}:/usr/src/app
 		flutter sh -c "flutter pub get ; flutter build web"
-	echo $(frontend_src_volume)
-	docker cp ${frontend_src_volume}/. web_history_frontend:/frontend
-	docker rm web_history_frontend
