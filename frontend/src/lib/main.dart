@@ -10,7 +10,7 @@ void main() {
 }
 
 // String host = "192.168.128.146";
-String host = "localhost:9105";
+String host = "192.168.128.146";
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
