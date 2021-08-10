@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import '../Components/websiteCard.dart';
 
 class MainPage extends StatefulWidget{
   final String url;
@@ -30,11 +31,15 @@ class _MainPageState extends State<MainPage> {
     .then((response) {
       if (response.statusCode >= 200 && response.statusCode < 300) {
           Map<String, dynamic> body = Map.from(jsonDecode(response.body));
-          List<Map<String, String>> websites = List.from(body['websites'])
-          .map( (item) => Map<String, String>.from(item)).toList();
+          List websiteGroups = List<List>.from(body['websiteGroups']);
+          print(websiteGroups.length);
           setState(() {
-            _web = websites.map(
-              (website) => _renderWebsiteCard(websites.indexOf(website), website)
+            _web = websiteGroups.map(
+              (websiteGroup) {
+                Map<String, String> website = Map<String, String>.from(websiteGroup[0]);
+                website["title"] = website["groupName"]??"unknown";
+                return WebsiteCard(url, website, _loadData, openDetailsPage);
+              }
             ).toList();
           });
       } else {
@@ -42,53 +47,20 @@ class _MainPageState extends State<MainPage> {
       }
     });
   }
-
-  Widget _renderWebsiteCard(int i, Map<String, String> website) {
-    var accessTime = DateTime.parse(website['accessTime']??"20121225T0000");
-    var updateTime = DateTime.parse(website['updateTime']??"20121225T0000");
-    return GestureDetector(
-      onTap: () async {
-        final String apiUrl = '$url/refresh';
-        http.post(
-          Uri.parse(apiUrl),
-          body: <String, String>{
-            'url': website['url']??"",
-          },
-        )
-        .then( (response) => _loadData() );
-        await canLaunch(website['url']??"")? await launch(website['url']??""):"";
-      },
-      child:ListTile(
-        leading: (accessTime.millisecondsSinceEpoch < updateTime.millisecondsSinceEpoch) ? 
-          const Icon(Icons.check_circle) : 
-          const Icon(Icons.remove_circle),
-        title: Text(website['title']??"Load title fail"),
-        subtitle: Text(
-          (website['url']??"") + '\n' +
-          'Update Time: ' + updateTime.toLocal().toString() + '\n' +
-          'Access Time: ' + accessTime.toLocal().toString()
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete), 
-          onPressed: () {
-            final String apiUrl = '$url/delete';
-            http.post(
-              Uri.parse(apiUrl),
-              body: <String, String>{
-                'url': website['url'] == '' ? 'unknown' : (website['url']??"unknown")
-              },
-            )
-            .then((response) {
-              if (response.statusCode >= 200 && response.statusCode < 300) {
-                setState(() {
-                  _web.removeAt(i);
-                });
-              }
-            });
-          },
-        ),
-      ),
-    );
+  
+  void openDetailsPage(String groupName) {
+    Navigator.pushNamed(
+      scaffoldKey.currentContext!,
+      '/details?groupName=${groupName}'
+    )
+    .then( (value) => _loadData() );
+  }
+  void openInsertPage() {
+    Navigator.pushNamed(
+      scaffoldKey.currentContext!,
+      '/add'
+    )
+    .then( (value) => _loadData() );
   }
 
   @override
@@ -99,13 +71,7 @@ class _MainPageState extends State<MainPage> {
         title: const Text('Web History'),
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.pushNamed(
-                scaffoldKey.currentContext!,
-                '/add'
-              )
-              .then( (value) => _loadData() );
-            }, 
+            onPressed: openInsertPage, 
             icon: const Icon(Icons.add_circle),
           )
         ],

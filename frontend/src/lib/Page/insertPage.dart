@@ -1,25 +1,27 @@
 // ignore: file_names
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:http/http.dart' as http;
 
-class AddPage extends StatefulWidget{
+class InsertPage extends StatefulWidget{
   final String url;
 
-  const AddPage({Key? key, required this.url}) : super(key: key);
+  const InsertPage({Key? key, required this.url}) : super(key: key);
 
   @override
-  _AddPageState createState() => _AddPageState(this.url);
+  _InsertPageState createState() => _InsertPageState(this.url);
 }
 
-class _AddPageState extends State<AddPage> {
+class _InsertPageState extends State<InsertPage> {
   final String url;
   List<Widget> _web = [ const Center(child: Text("Loading")) ];
   // List<Widget> _buttons = _renderStageButton();
   final GlobalKey<FormState> scaffoldKey = GlobalKey<FormState>();
 
-  _AddPageState(this.url);
+  _InsertPageState(this.url);
 
   String? validateUrl(String? url) {
     if (url == null || url.isEmpty) { return "Empty url"; }
@@ -29,7 +31,8 @@ class _AddPageState extends State<AddPage> {
 
   void addUrl(TextEditingController text) {
     if (scaffoldKey.currentState!.validate()) {
-      String apiUrl = '$url/add';
+      String apiUrl = '$url/websites/create';
+      // add loading animate
       http.post(
         Uri.parse(apiUrl),
         body: <String, String>{
@@ -37,16 +40,16 @@ class _AddPageState extends State<AddPage> {
         }
       )
       .then( (response) {
+        // remove loading animate
         if (response.statusCode >= 200 && response.statusCode < 300) {
           text.text = "";
-          successToast("url <${text.text}> add success");
-        } else {
-          successToast("fail");
         }
+        var data = response.body;
+        resultToast(jsonDecode(data)["message"]);
       });
     }
   }
-  void successToast(String msg) {
+  void resultToast(String msg) {
     Fluttertoast.showToast(
         msg: msg,
         toastLength: Toast.LENGTH_LONG,
@@ -59,7 +62,6 @@ class _AddPageState extends State<AddPage> {
         webPosition: "center",
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
