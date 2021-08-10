@@ -59,17 +59,17 @@ func GroupNames() []string {
 	var temp string
 	for rows.Next() {
 		rows.Scan(&temp)
-		result = append(Result, temp)
+		result = append(result, temp)
 	}
 	return result
 }
 
 func Group2Urls(groupName string) []string {
 	urls := make([]string, 0)
-	rows, err := database.Query("select url from websites where groupName=?", groupName)
+	rows, err := database.Query("select url from websites where groupName=? order by updateTime desc", groupName)
 	if err != nil { panic(err) }
 	var temp string
-	if rows.Next() {
+	for rows.Next() {
 		rows.Scan(&temp)
 		urls = append(urls, temp)
 	}
@@ -78,7 +78,7 @@ func Group2Urls(groupName string) []string {
 
 func Url2Website(url string) Website {
 	rows, err := database.Query(
-		"select url, title, groupName content, updateTime, accessTime from websites " +
+		"select url, title, groupName, content, updateTime, accessTime from websites " +
 		"where url=?", url)
 	if err != nil { panic(err) }
 	var web Website
@@ -124,17 +124,21 @@ func (website Website) getTitle() string {
 	return ""
 }
 
-func (web *Website) _checkBodyUpdate(client http.Client, url string) bool {
+func (website *Website) _checkBodyUpdate(client http.Client, url string) bool {
 	bodyUpdate, titleUpdate := false, false
-	body := reduce(getContent(client, url))
-	if !contentUpdated(web.content, body) {
-		web.content = body
+	body := reduce(website.getContent(client))
+	if !contentUpdated(website.content, body) {
+		website.content = body
 		bodyUpdate = true
 	}
-	title := getTitle(url)
-	if (title != web.Title) {
-		web.Title = title
+	title := website.getTitle()
+	if (title != website.Title) {
+		website.Title = title
 		titleUpdate = true
+	}
+	print(website.GroupName)
+	if (website.GroupName == "") {
+		website.GroupName = website.Title
 	}
 	return bodyUpdate || titleUpdate
 }
@@ -174,19 +178,20 @@ func reduce(s string) (result string) {
 	return
 }
 
-func (web *Website) Update() {
+func (website *Website) Update() {
 	client := http.Client{Timeout: 30*time.Second}
-	resp, err := client.Get(web.Url);
+	resp, err := client.Get(website.Url);
 	if err != nil { 
-		web.Title = "Unknown"
+		website.Title = "Unknown"
+		if (website.GroupName == "") { website.GroupName = website.Title; }
 		return
 	}
-	if web._checkTimeUpdate(resp.Header.Get("last-modified")) ||
-		web._checkBodyUpdate(client, web.Url) {
-		fmt.Println(web.Title + "\tupdate")
-		web.UpdateTime = time.Now()
+	if website._checkTimeUpdate(resp.Header.Get("last-modified")) ||
+		website._checkBodyUpdate(client, website.Url) {
+		fmt.Println(website.Title + "\tupdate")
+		website.UpdateTime = time.Now()
 	} else {
-		fmt.Println(web.Title + "\tnot update")
+		fmt.Println(website.Title + "\tnot update")
 	}
 }
 
@@ -201,13 +206,13 @@ func (website Website) Save() {
 	tx, err := database.Begin()
 	if err != nil { panic(err) }
 	result, err := tx.Exec("update websites set " +
-		"title=?, groupName=? content=?, updateTime=?, accessTime=? where url=?",
+		"title=?, groupName=?, content=?, updateTime=?, accessTime=? where url=?",
 		website.Title, website.GroupName, website.content, 
 		website.UpdateTime.Unix(), website.AccessTime.Unix(), website.Url)
 	if err != nil { panic(err) }
 	rowsAffected, err := result.RowsAffected()
 	if err != nil { panic(err) }
-	if rowsAffected == 0 { web.insert(tx) }
+	if rowsAffected == 0 { website.insert(tx) }
 	err = tx.Commit()
 	if err != nil { panic(err) }
 }
@@ -226,7 +231,7 @@ func (website Website) Map() map[string]interface{} {
 	return map[string]interface{} {
 		"url": website.Url,
 		"title": website.Title,
-		"groupName": website.GroupName
+		"groupName": website.GroupName,
 		"updateTime": website.UpdateTime,
 		"accessTime": website.AccessTime,
 	}
