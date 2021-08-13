@@ -54,7 +54,7 @@ func Urls() []string {
 
 func GroupNames() []string {
 	result := make([]string, 0)
-	rows, err := database.Query("select groupName from websites group by groupName order by updateTime desc")
+	rows, err := database.Query("select groupName from websites group by groupName order by max(updateTime) desc")
 	if err != nil { panic(err) }
 	var temp string
 	for rows.Next() {
