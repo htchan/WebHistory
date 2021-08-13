@@ -30,12 +30,9 @@ func createWebsite(res http.ResponseWriter, req *http.Request) {
 		fmt.Fprintln(res, "{ \"message\" : \"invalid url\" }")
 	}
 	website := Website{Url: url, GroupName: groupName, AccessTime: time.Now()}
-	//TODO: turn this to serial
-	func() {
-		website.Update()
-		fmt.Println(website.Map())
-		website.Save()
-	} ()
+	website.Update()
+	fmt.Println(website.Map())
+	website.Save()
 	fmt.Fprintln(res, "{ \"message\" : \"website <" + website.Title + "> inserted\" }")
 }
 

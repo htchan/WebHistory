@@ -196,6 +196,7 @@ func (website *Website) Update() {
 	if website._checkTimeUpdate(resp.Header.Get("last-modified")) ||
 		website._checkBodyUpdate(client, website.Url) {
 		fmt.Println(website.Title + "\tupdate")
+		if (website.GroupName == "") { website.GroupName = website.Title; }
 		website.UpdateTime = time.Now()
 	} else {
 		fmt.Println(website.Title + "\tnot update")
@@ -203,9 +204,9 @@ func (website *Website) Update() {
 }
 
 func (website Website) insert(tx *sql.Tx) {
-	_, err := tx.Exec("insert into websites (url, title, content, updateTime, accessTime) " +
+	_, err := tx.Exec("insert into websites (url, title, groupName, content, updateTime, accessTime) " +
 		"values (?, ?, ?, ?, ?)",
-		website.Url, website.Title, website.content, website.UpdateTime.Unix(), website.AccessTime.Unix())
+		website.Url, website.Title, website.GroupName, website.content, website.UpdateTime.Unix(), website.AccessTime.Unix())
 	if err != nil { panic(err) }
 }
 
