@@ -160,10 +160,17 @@ func extractContent(s string) string {
 }
 
 func extractDate(s string) string {
-	re := regexp.MustCompile("\\d{1,4}([-/]\\d{1,4})+")
+	re := regexp.MustCompile("\\d{1,4}([-/年月日號号]\\d{1,4}[年月日號号]?)+")
 	resultList := re.FindAllString(s, -1)
 	fmt.Println(resultList)
 	return strings.Join(resultList, SEP)
+}
+
+func validDate(s string) string {
+	validLength := 2
+	dates := strings.Split(s, SEP)
+	if validLength > len(dates) { validLength = len(dates) }
+	return strings.Join(dates[:validLength], SEP)
 }
 
 func replaceKeyword(inputStr string, targetStr []string, replaceStr string) string {
@@ -173,7 +180,7 @@ func replaceKeyword(inputStr string, targetStr []string, replaceStr string) stri
 
 func reduce(s string) (result string) {
 	result = extractContent(s)
-	result = strings.Join(strings.Split(extractDate(result), SEP)[:2], SEP)
+	result = validDate(extractDate(result))
 	// print(result)
 	return
 }

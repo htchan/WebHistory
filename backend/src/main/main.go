@@ -134,7 +134,7 @@ func changeWebsiteGroup(res http.ResponseWriter, req *http.Request) {
 	groupName := req.Form.Get("groupName")
 	fmt.Println(url, groupName)
 	website := Url2Website(url)
-	if !isSubSet(website.Title, groupName) || len(website.Title) == 0 {
+	if !isSubSet(website.Title, strings.ReplaceAll(groupName, " ", "")) || len(website.Title) == 0 {
 		res.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(res, "{ \"error\" : \"invalid group name\" }")
 		return
