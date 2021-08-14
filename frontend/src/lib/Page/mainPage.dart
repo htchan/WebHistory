@@ -25,6 +25,10 @@ class _MainPageState extends State<MainPage> {
     _loadData();
   }
 
+  bool isWebsiteUpdated(Map website) {
+    return website['updateTime'] > website['accessTime'];
+  }
+
   void _loadData() {
     final String apiUrl = '$url/list';
     http.get(Uri.parse(apiUrl))
@@ -32,6 +36,14 @@ class _MainPageState extends State<MainPage> {
       if (response.statusCode >= 200 && response.statusCode < 300) {
           Map<String, dynamic> body = Map.from(jsonDecode(response.body));
           List websiteGroups = List<List>.from(body['websiteGroups']);
+          websiteGroups = [
+            ...websiteGroups.where( (websiteGroup) => 
+              websiteGroup.length > 0 ? isWebsiteUpdated(websiteGroup[0]) : false
+            ),
+            ...websiteGroups.where( (websiteGroup) =>
+              websiteGroup.length > 0 ? !isWebsiteUpdated(websiteGroup[0]) : true
+            ),
+          ];
           print(websiteGroups.length);
           setState(() {
             _web = websiteGroups.map(
