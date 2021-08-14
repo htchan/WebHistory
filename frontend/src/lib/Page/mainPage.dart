@@ -26,7 +26,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   bool isWebsiteUpdated(Map website) {
-    return website['updateTime'] > website['accessTime'];
+    return website['updateTime'].compareTo(website['accessTime']) > 0r;
   }
 
   void _loadData() {
