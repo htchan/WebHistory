@@ -17,4 +17,6 @@ WORKDIR /usr/src/app
 
 COPY --from=builder /go/src/github.com/htchan/WebHistory/main .
 
+ENV database_volume="/database/websites.db"
+
 CMD ['./main']

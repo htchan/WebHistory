@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
+	"os"
 )
 
 func methodNotSupport(res http.ResponseWriter) {
@@ -166,7 +167,7 @@ func regularUpdateWebsites() {
 
 func main() {
 	fmt.Println("hello")
-	openDatabase("./database/websites.db")
+	openDatabase(os.Getenv("database_volume"))
 	fmt.Println(database)
 	go func() {
 		regularUpdateWebsites()
