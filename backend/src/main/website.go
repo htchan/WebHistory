@@ -205,7 +205,7 @@ func (website *Website) Update() {
 
 func (website Website) insert(tx *sql.Tx) {
 	_, err := tx.Exec("insert into websites (url, title, groupName, content, updateTime, accessTime) " +
-		"values (?, ?, ?, ?, ?)",
+		"values (?, ?, ?, ?, ?, ?)",
 		website.Url, website.Title, website.GroupName, website.content, website.UpdateTime.Unix(), website.AccessTime.Unix())
 	if err != nil { panic(err) }
 }

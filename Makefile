@@ -10,12 +10,14 @@ backend_container_exist = $(shell docker ps | grep $(backend_container_name))
 
 .PHONY: backend frontend
 
+build:
+	docker build -f ./backend/Dockerfile -t web_history_backend ./backend
+
 backend:
 	if [ "$(backend_container_exist)" != "" ]; then \
 		docker kill $(backend_container_name); \
 		docker container rm $(backend_container_name); \
 	fi
-	docker build -f ./backend/Dockerfile -t web_history_backend ./backend
 	docker image prune -f
 	docker run --name $(backend_container_name) -d \
 		--network=router \
@@ -23,7 +25,7 @@ backend:
 		web_history_backend ./main
 
 frontend:
-	docker run--name web_history_frontend --rm \
+	docker run --name web_history_frontend --rm \
 		-v ${frontend_dst_volume}:/build/web \
-		-v ${frontend_src_volume}:/usr/src/app
+		-v ${frontend_src_volume}:/usr/src/app \
 		flutter sh -c "flutter pub get ; flutter build web"
