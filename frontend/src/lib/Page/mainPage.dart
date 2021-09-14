@@ -17,6 +17,7 @@ class MainPage extends StatefulWidget{
 
 class _MainPageState extends State<MainPage> {
   final String url;
+  List<List> websiteGroups = [];
   List<Widget> _web = [ const Center(child: Text("Loading")) ];
   // List<Widget> _buttons = _renderStageButton();
   final GlobalKey scaffoldKey = GlobalKey();
@@ -35,7 +36,7 @@ class _MainPageState extends State<MainPage> {
     .then((response) {
       if (response.statusCode >= 200 && response.statusCode < 300) {
           Map<String, dynamic> body = Map.from(jsonDecode(response.body));
-          List websiteGroups = List<List>.from(body['websiteGroups']);
+          websiteGroups = List<List>.from(body['websiteGroups']);
           websiteGroups = [
             ...websiteGroups.where( (websiteGroup) => 
               websiteGroup.length > 0 ? isWebsiteUpdated(websiteGroup[0]) : false
@@ -74,6 +75,28 @@ class _MainPageState extends State<MainPage> {
     )
     .then( (value) => _loadData() );
   }
+  void openAllUnreadComic() {
+    print(websiteGroups[0]);
+    print(isWebsiteUpdated(websiteGroups[0][0]));
+    // loop website groups
+    Future.wait(
+      websiteGroups.where( (websiteGroup) {
+        return isWebsiteUpdated(websiteGroup[0]);
+      })
+      .map( (websiteGroup) async {
+        await canLaunch(websiteGroup[0]['url'])? await launch(websiteGroup[0]['url']) : "";
+        // and update backend server of opened website
+        final String apiUrl = '$url/websites/refresh';
+        return http.post(
+          Uri.parse(apiUrl),
+          body: <String, String>{
+            'url': websiteGroup[0]['url']??"",
+          }
+        );
+      })
+    )
+    .then( (response) { _loadData(); });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +105,10 @@ class _MainPageState extends State<MainPage> {
       appBar: AppBar(
         title: const Text('Web History'),
         actions: [
+          IconButton(
+            onPressed: openAllUnreadComic,
+            icon: const Icon(Icons.open_in_browser_outlined)
+          ),
           IconButton(
             onPressed: openInsertPage, 
             icon: const Icon(Icons.add_circle),
