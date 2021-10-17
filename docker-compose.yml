@@ -1,0 +1,38 @@
+version: "3.7"
+
+services:
+    backend:
+        build: 
+            context: ./backend
+            dockerfile: ./build/Dockerfile
+        volumes:
+            - ./bin/database:/database
+        networks:
+            - router
+        profiles:
+            - all
+            - backend
+            - web
+        command: sh -c "./backend"
+
+    frontend:
+        image: "flutter:latest"
+        volumes:
+            - frontend_volume:/build/web
+            - ./frontend/src:/usr/src/app
+        networks:
+            - router
+        profiles:
+            - all
+            - frontend
+            - web
+        command: sh -c "flutter --version ; flutter pub get ; flutter build web"
+
+volumes:
+    frontend_volume:
+        name: web_history_frontend_volume
+
+networks:
+    router:
+        driver: bridge
+        name: router

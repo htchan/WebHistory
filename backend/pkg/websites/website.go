@@ -1,4 +1,4 @@
-package main
+package websites
 
 import (
 	"time"
@@ -22,12 +22,13 @@ type Website struct {
 
 const SEP = "\n"
 
-func openDatabase(location string) {
+func OpenDatabase(location string) {
 	var err error
 	database, err = sql.Open("sqlite3", location)
 	if err != nil { panic(err) }
 	database.SetMaxIdleConns(5);
 	database.SetMaxOpenConns(50);
+	fmt.Println(database)
 }
 
 func closeDatabase() {

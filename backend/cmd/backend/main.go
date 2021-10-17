@@ -8,6 +8,9 @@ import (
 	"log"
 	"strings"
 	"os"
+
+	"github.com/htchan/WebHistory/internal"
+	"github.com/htchan/WebHistory/pkg/websites"
 )
 
 func methodNotSupport(res http.ResponseWriter) {
@@ -30,7 +33,7 @@ func createWebsite(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(res, "{ \"message\" : \"invalid url\" }")
 	}
-	website := Website{Url: url, GroupName: groupName, AccessTime: time.Now()}
+	website := websites.Website{Url: url, GroupName: groupName, AccessTime: time.Now()}
 	website.Update()
 	fmt.Println(website.Map())
 	website.Save()
@@ -47,10 +50,10 @@ func listWebsites(res http.ResponseWriter, req *http.Request) {
 
 	websiteGroups := make([][]map[string]interface{}, 0)
 
-	for _, groupName := range GroupNames() {
+	for _, groupName := range websites.GroupNames() {
 		websiteGroup := make([]map[string]interface{}, 0)
-		for _, url := range Group2Urls(groupName) {
-			websiteGroup = append(websiteGroup, Url2Website(url).Map())
+		for _, url := range websites.Group2Urls(groupName) {
+			websiteGroup = append(websiteGroup, websites.Url2Website(url).Map())
 		}
 		websiteGroups = append(websiteGroups, websiteGroup)
 	}
@@ -87,7 +90,7 @@ func refreshWebsite(res http.ResponseWriter, req *http.Request) {
 	}
 	req.ParseForm()
 	url := req.Form.Get("url")
-	website := Url2Website(url)
+	website := websites.Url2Website(url)
 	website.AccessTime = time.Now()
 	website.Save()
 	responseByte, err := json.Marshal(map[string]interface{} { "website": website.Map() })
@@ -110,7 +113,7 @@ func deleteWebsite(res http.ResponseWriter, req *http.Request) {
 	if err != nil {panic(err)}
 	url := req.Form.Get("url")
 	fmt.Println(url)
-	website := Url2Website(url)
+	website := websites.Url2Website(url)
 	if website.UpdateTime.Unix() == -62135596800 && website.AccessTime.Unix() == -62135596800 {
 		res.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(res, "{ \"error\" : \"website not found\" }")
@@ -131,8 +134,8 @@ func changeWebsiteGroup(res http.ResponseWriter, req *http.Request) {
 	url := req.Form.Get("url")
 	groupName := req.Form.Get("groupName")
 	fmt.Println(url, groupName)
-	website := Url2Website(url)
-	if !isSubSet(website.Title, strings.ReplaceAll(groupName, " ", "")) || len(website.Title) == 0 {
+	website := websites.Url2Website(url)
+	if !internal.IsSubSet(website.Title, strings.ReplaceAll(groupName, " ", "")) || len(website.Title) == 0 {
 		res.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(res, "{ \"error\" : \"invalid group name\" }")
 		return
@@ -155,8 +158,8 @@ func changeWebsiteGroup(res http.ResponseWriter, req *http.Request) {
 
 func regularUpdateWebsites() {
 	fmt.Println(time.Now(), "regular update")
-	for _, url := range Urls() {
-		website := Url2Website(url)
+	for _, url := range websites.Urls() {
+		website := websites.Url2Website(url)
 		fmt.Println(website.Url)
 		website.Update()
 		fmt.Println(website.UpdateTime)
@@ -167,8 +170,7 @@ func regularUpdateWebsites() {
 
 func main() {
 	fmt.Println("hello")
-	openDatabase(os.Getenv("database_volume"))
-	fmt.Println(database)
+	websites.OpenDatabase(os.Getenv("database_volume"))
 	go func() {
 		regularUpdateWebsites()
 		for range time.Tick(time.Hour * 23) { regularUpdateWebsites() }
