@@ -30,7 +30,7 @@ services:
 
 volumes:
     frontend_volume:
-        name: web_history_frontend_volume
+        name: webhistory_frontend_volume
 
 networks:
     router:
