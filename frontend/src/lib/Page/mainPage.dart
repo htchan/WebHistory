@@ -34,7 +34,7 @@ class _MainPageState extends State<MainPage> {
 
   void _loadData() {
     final String apiUrl = '$url/list';
-    http.get(Uri.parse(apiUrl), headers: {"Authroization": token})
+    http.get(Uri.parse(apiUrl), headers: {"Authorization": token})
     .then((response) {
       if (response.statusCode >= 200 && response.statusCode < 300) {
           Map<String, dynamic> body = Map.from(jsonDecode(response.body));

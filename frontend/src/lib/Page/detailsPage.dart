@@ -38,7 +38,7 @@ class _DetailsPageState extends State<DetailsPage> {
 
   void _loadData() {
     final String apiUrl = '$url/list';
-    http.get(Uri.parse(apiUrl), headers: {"Authroization": token})
+    http.get(Uri.parse(apiUrl), headers: {"Authorization": token})
     .then((response) {
       if (response.statusCode >= 200 && response.statusCode < 300) {
           Map<String, dynamic> body = Map.from(jsonDecode(response.body));
@@ -86,7 +86,7 @@ class _DetailsPageState extends State<DetailsPage> {
                   "url": website["url"],
                   "groupName": groupNameText.text
                 },
-                headers: {"Authroization": token}
+                headers: {"Authorization": token}
               )
               .then( (response) {
                 if (response.statusCode >= 200 && response.statusCode < 300) {

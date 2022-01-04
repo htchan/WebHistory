@@ -40,7 +40,7 @@ class _InsertPageState extends State<InsertPage> {
         body: <String, String>{
           'url': text.text
         },
-        headers: {"Authroization": token}
+        headers: {"Authorization": token}
       )
       .then( (response) {
         // remove loading animate
