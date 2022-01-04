@@ -23,7 +23,7 @@ class LoginPage extends StatelessWidget {
   }
 
   void redirect(String url) {
-    window.location.href = url;
+    window.location.replace(url);
   }
 
   @override
