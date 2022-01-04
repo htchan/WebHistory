@@ -16,6 +16,7 @@ class LoginPage extends StatelessWidget {
     if (token != "") {
       final Storage _localStorage = window.localStorage;
       _localStorage["web_history_token"] = token;
+      redirect("/web-history/");
     } else {
       redirect(dotenv.env['USER_SERVICE_URL']!);
     }

@@ -38,8 +38,8 @@ void main() async {
   runApp(MyApp());
 }
 
-// String host = "192.168.128.146";
-String host = "localhost:9105";
+String host = "192.168.128.146";
+// String host = "localhost:9105";
 final Storage _localStorage = window.localStorage;
 
 class MyApp extends StatelessWidget {
