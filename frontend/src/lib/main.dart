@@ -1,20 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:webhistory/Page/detailsPage.dart';
+import 'dart:html';
 import './Page/mainPage.dart';
 import './Page/insertPage.dart';
+import 'Page/loginPage.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
-  setUrlStrategy(PathUrlStrategy());
+class Strategy extends HashUrlStrategy {
+  final PlatformLocation _platformLocation;
+
+  Strategy([
+    PlatformLocation _platformLocation = const BrowserPlatformLocation(),
+  ]) : _platformLocation = _platformLocation,
+      super(_platformLocation);
+
+  @override
+  String prepareExternalUrl(String internalUrl) {
+    return internalUrl.isEmpty
+      ? '${_platformLocation.pathname}${_platformLocation.search}'
+      : '$internalUrl';
+  }
+
+  @override
+  String getPath() {
+    String path = _platformLocation.pathname + _platformLocation.search;
+    if (!_platformLocation.hash.startsWith('#/')) {
+      path += _platformLocation.hash;
+    }
+    return path;
+  }
+}
+
+void main() async {
+  await dotenv.load(fileName: ".env");
+  setUrlStrategy(Strategy());
   runApp(MyApp());
 }
 
 // String host = "192.168.128.146";
-String host = "192.168.128.146";
+String host = "localhost:9105";
+final Storage _localStorage = window.localStorage;
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   String url = 'http://${host}/api/web-history';
+  String authToken = _localStorage['token'] ?? "";
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -29,17 +60,26 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       onGenerateRoute: (settings) {
         var uri = Uri.parse(settings.name??"");
-        print(uri.pathSegments);
+        String token = uri.queryParameters["web_history_token"] ?? "";
+        if (token != "") {
+          authToken = token;
+          _localStorage["web_history_token"] = authToken;
+        }
+        if (authToken == "") {
+          return MaterialPageRoute(builder: (context) => LoginPage(), settings: settings);
+        }
         if (uri.pathSegments.indexOf('add') == 0) {
-          return MaterialPageRoute(builder: (context) => InsertPage(url: url,),
+          return MaterialPageRoute(builder: (context) => InsertPage(url: url, token: authToken),
             settings: settings);
         } else if (uri.pathSegments.indexOf('details') == 0) {
           String groupName = uri.queryParameters["groupName"]??"";
           print("going to ${groupName}");
-          return MaterialPageRoute(builder: (context) => DetailsPage(url: url, groupName: groupName),
+          return MaterialPageRoute(builder: (context) => DetailsPage(url: url, groupName: groupName, token: authToken),
             settings: settings);
+        } else if (uri.path == '/web-history/token') {
+          return MaterialPageRoute(builder: (context) => LoginPage(), settings: settings);
         } else {
-          return MaterialPageRoute(builder: (context) => MainPage(url: url,),
+          return MaterialPageRoute(builder: (context) => MainPage(url: url, token: authToken),
             settings: settings);
         }
       }

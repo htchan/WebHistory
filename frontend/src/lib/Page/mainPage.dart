@@ -6,23 +6,25 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import '../Components/websiteCard.dart';
 
-class MainPage extends StatefulWidget{
+class MainPage extends StatefulWidget {
   final String url;
+  final String token;
 
-  const MainPage({Key? key, required this.url}) : super(key: key);
+  const MainPage({Key? key, required this.url, required this.token}) : super(key: key);
 
   @override
-  _MainPageState createState() => _MainPageState(this.url);
+  _MainPageState createState() => _MainPageState(this.url, this.token);
 }
 
 class _MainPageState extends State<MainPage> {
   final String url;
+  final String token;
   List<List> websiteGroups = [];
   List<Widget> _web = [ const Center(child: Text("Loading")) ];
   // List<Widget> _buttons = _renderStageButton();
   final GlobalKey scaffoldKey = GlobalKey();
 
-  _MainPageState(this.url) {
+  _MainPageState(this.url, this.token) {
     _loadData();
   }
 
@@ -32,7 +34,7 @@ class _MainPageState extends State<MainPage> {
 
   void _loadData() {
     final String apiUrl = '$url/list';
-    http.get(Uri.parse(apiUrl))
+    http.get(Uri.parse(apiUrl), headers: {"Authroization": token})
     .then((response) {
       if (response.statusCode >= 200 && response.statusCode < 300) {
           Map<String, dynamic> body = Map.from(jsonDecode(response.body));
@@ -91,7 +93,8 @@ class _MainPageState extends State<MainPage> {
           Uri.parse(apiUrl),
           body: <String, String>{
             'url': websiteGroup[0]['url']??"",
-          }
+          },
+          headers: {"Authorization": token}
         );
       })
     )

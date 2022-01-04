@@ -8,20 +8,22 @@ import 'package:http/http.dart' as http;
 
 class InsertPage extends StatefulWidget{
   final String url;
+  final String token;
 
-  const InsertPage({Key? key, required this.url}) : super(key: key);
+  const InsertPage({Key? key, required this.url, required this.token}) : super(key: key);
 
   @override
-  _InsertPageState createState() => _InsertPageState(this.url);
+  _InsertPageState createState() => _InsertPageState(this.url, this.token);
 }
 
 class _InsertPageState extends State<InsertPage> {
   final String url;
+  final String token;
   List<Widget> _web = [ const Center(child: Text("Loading")) ];
   // List<Widget> _buttons = _renderStageButton();
   final GlobalKey<FormState> scaffoldKey = GlobalKey<FormState>();
 
-  _InsertPageState(this.url);
+  _InsertPageState(this.url, this.token);
 
   String? validateUrl(String? url) {
     if (url == null || url.isEmpty) { return "Empty url"; }
@@ -37,7 +39,8 @@ class _InsertPageState extends State<InsertPage> {
         Uri.parse(apiUrl),
         body: <String, String>{
           'url': text.text
-        }
+        },
+        headers: {"Authroization": token}
       )
       .then( (response) {
         // remove loading animate

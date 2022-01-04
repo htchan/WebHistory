@@ -8,21 +8,21 @@ import 'package:webhistory/Components/websiteCard.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class DetailsPage extends StatefulWidget{
-  final String url, groupName;
+  final String url, groupName, token;
 
-  const DetailsPage({Key? key, required this.url, required this.groupName}) : super(key: key);
+  const DetailsPage({Key? key, required this.url, required this.groupName, required this.token}) : super(key: key);
 
   @override
-  _DetailsPageState createState() => _DetailsPageState(this.url, this.groupName);
+  _DetailsPageState createState() => _DetailsPageState(this.url, this.groupName, this.token);
 }
 
 
 class _DetailsPageState extends State<DetailsPage> {
-  final String url, groupName;
+  final String url, groupName, token;
   final GlobalKey<FormState> scaffoldKey = GlobalKey<FormState>();
   List<Widget> websiteGroup = [];
 
-  _DetailsPageState(this.url, this.groupName) {
+  _DetailsPageState(this.url, this.groupName, this.token) {
     _loadData();
   }
 
@@ -38,7 +38,7 @@ class _DetailsPageState extends State<DetailsPage> {
 
   void _loadData() {
     final String apiUrl = '$url/list';
-    http.get(Uri.parse(apiUrl))
+    http.get(Uri.parse(apiUrl), headers: {"Authroization": token})
     .then((response) {
       if (response.statusCode >= 200 && response.statusCode < 300) {
           Map<String, dynamic> body = Map.from(jsonDecode(response.body));
@@ -85,7 +85,8 @@ class _DetailsPageState extends State<DetailsPage> {
                 body: <String, String> {
                   "url": website["url"],
                   "groupName": groupNameText.text
-                }
+                },
+                headers: {"Authroization": token}
               )
               .then( (response) {
                 if (response.statusCode >= 200 && response.statusCode < 300) {
