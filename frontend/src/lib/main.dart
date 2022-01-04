@@ -45,7 +45,6 @@ final Storage _localStorage = window.localStorage;
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   String url = 'http://${host}/api/web-history';
-  String authToken = _localStorage['token'] ?? "";
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -60,13 +59,9 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       onGenerateRoute: (settings) {
         var uri = Uri.parse(settings.name??"");
-        String token = uri.queryParameters["web_history_token"] ?? "";
-        if (token != "") {
-          authToken = token;
-          _localStorage["web_history_token"] = authToken;
-        }
+        String authToken = _localStorage['web_history_token'] ?? "";
         if (authToken == "") {
-          return MaterialPageRoute(builder: (context) => LoginPage(), settings: settings);
+          return MaterialPageRoute(builder: (context) => LoginPage(queryParams: uri.queryParameters), settings: settings);
         }
         if (uri.pathSegments.indexOf('add') == 0) {
           return MaterialPageRoute(builder: (context) => InsertPage(url: url, token: authToken),
@@ -76,8 +71,8 @@ class MyApp extends StatelessWidget {
           print("going to ${groupName}");
           return MaterialPageRoute(builder: (context) => DetailsPage(url: url, groupName: groupName, token: authToken),
             settings: settings);
-        } else if (uri.path == '/web-history/token') {
-          return MaterialPageRoute(builder: (context) => LoginPage(), settings: settings);
+        } else if (uri.path.startsWith('/web-history/user-service/login')) {
+          return MaterialPageRoute(builder: (context) => LoginPage(queryParams: uri.queryParameters), settings: settings);
         } else {
           return MaterialPageRoute(builder: (context) => MainPage(url: url, token: authToken),
             settings: settings);
