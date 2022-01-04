@@ -18,6 +18,36 @@ func methodNotSupport(res http.ResponseWriter) {
 	fmt.Fprintln(res, "{ \"error\" : \"method not support\" }")
 }
 
+func unauthorized(res http.ResponseWriter) {
+	res.WriteHeader(http.StatusUnauthorized)
+	fmt.Fprintln(res, "{ \"error\" : \"unauthorized\" }")
+}
+
+func userServiceLogin(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if req.Method != http.MethodPost {
+		methodNotSupport(res)
+		return
+	}
+
+	err := req.ParseForm()
+	if err != nil {panic(err)}
+	token := req.Form.Get("token")
+	userUUID := internal.FindUserByToken(token)
+
+	if userUUID == "" {
+		res.Header().Set("Content-Type", "application/json; charset=utf-8")
+		unauthorized(res)
+		return
+	}
+	http.SetCookie(res, &http.Cookie{
+		Name: "token",
+		Value: token,
+	})
+	http.Redirect(res, req, "http://localhost:8105/web-history", 302)
+}
+
 func createWebsite(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
@@ -25,6 +55,12 @@ func createWebsite(res http.ResponseWriter, req *http.Request) {
 		methodNotSupport(res)
 		return
 	}
+	token := req.Header.Get("Authorization")
+	if token == "" {
+		unauthorized(res)
+		return
+	}
+	userUUID := internal.FindUserByToken(token)
 	err := req.ParseForm()
 	if err != nil {panic(err)}
 	url := req.Form.Get("url")
@@ -33,7 +69,7 @@ func createWebsite(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(res, "{ \"message\" : \"invalid url\" }")
 	}
-	website := websites.Website{Url: url, GroupName: groupName, AccessTime: time.Now()}
+	website := websites.Website{UserUUID: userUUID, Url: url, GroupName: groupName, AccessTime: time.Now()}
 	website.Update()
 	fmt.Println(website.Map())
 	website.Save()
@@ -47,13 +83,19 @@ func listWebsites(res http.ResponseWriter, req *http.Request) {
 		methodNotSupport(res)
 		return
 	}
+	token := req.Header.Get("Authorization")
+	if token == "" {
+		unauthorized(res)
+		return
+	}
+	userUUID := internal.FindUserByToken(token)
 
 	websiteGroups := make([][]map[string]interface{}, 0)
 
-	for _, groupName := range websites.GroupNames() {
+	for _, groupName := range websites.FindAllGroupNames(userUUID) {
 		websiteGroup := make([]map[string]interface{}, 0)
-		for _, url := range websites.Group2Urls(groupName) {
-			websiteGroup = append(websiteGroup, websites.Url2Website(url).Map())
+		for _, url := range websites.FindUrlsByGroupName(userUUID, groupName) {
+			websiteGroup = append(websiteGroup, websites.FindWebsiteByUrl(userUUID, url).Map())
 		}
 		websiteGroups = append(websiteGroups, websiteGroup)
 	}
@@ -88,9 +130,16 @@ func refreshWebsite(res http.ResponseWriter, req *http.Request) {
 		methodNotSupport(res)
 		return
 	}
+	token := req.Header.Get("Authorization")
+	if token == "" {
+		unauthorized(res)
+		return
+	}
+	userUUID := internal.FindUserByToken(token)
+
 	req.ParseForm()
 	url := req.Form.Get("url")
-	website := websites.Url2Website(url)
+	website := websites.FindWebsiteByUrl(userUUID, url)
 	website.AccessTime = time.Now()
 	website.Save()
 	responseByte, err := json.Marshal(map[string]interface{} { "website": website.Map() })
@@ -109,11 +158,18 @@ func deleteWebsite(res http.ResponseWriter, req *http.Request) {
 		methodNotSupport(res)
 		return
 	}
+	token := req.Header.Get("Authorization")
+	if token == "" {
+		unauthorized(res)
+		return
+	}
+	userUUID := internal.FindUserByToken(token)
+
 	err := req.ParseForm()
 	if err != nil {panic(err)}
 	url := req.Form.Get("url")
 	fmt.Println(url)
-	website := websites.Url2Website(url)
+	website := websites.FindWebsiteByUrl(userUUID, url)
 	if website.UpdateTime.Unix() == -62135596800 && website.AccessTime.Unix() == -62135596800 {
 		res.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(res, "{ \"error\" : \"website not found\" }")
@@ -129,12 +185,19 @@ func changeWebsiteGroup(res http.ResponseWriter, req *http.Request) {
 		methodNotSupport(res)
 		return
 	}
+	token := req.Header.Get("Authorization")
+	if token == "" {
+		unauthorized(res)
+		return
+	}
+	userUUID := internal.FindUserByToken(token)
+
 	err := req.ParseForm()
 	if err != nil {panic(err)}
 	url := req.Form.Get("url")
 	groupName := req.Form.Get("groupName")
 	fmt.Println(url, groupName)
-	website := websites.Url2Website(url)
+	website := websites.FindWebsiteByUrl(userUUID, url)
 	if !internal.IsSubSet(website.Title, strings.ReplaceAll(groupName, " ", "")) || len(website.Title) == 0 {
 		res.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(res, "{ \"error\" : \"invalid group name\" }")
@@ -158,8 +221,7 @@ func changeWebsiteGroup(res http.ResponseWriter, req *http.Request) {
 
 func regularUpdateWebsites() {
 	fmt.Println(time.Now(), "regular update")
-	for _, url := range websites.Urls() {
-		website := websites.Url2Website(url)
+	for _, website := range websites.FindAllWebsites() {
 		fmt.Println(website.Url)
 		website.Update()
 		fmt.Println(website.UpdateTime)
@@ -175,6 +237,7 @@ func main() {
 		regularUpdateWebsites()
 		for range time.Tick(time.Hour * 23) { regularUpdateWebsites() }
 	}()
+	http.HandleFunc("/api/web-history/user_service/login", userServiceLogin)
 	http.HandleFunc("/api/web-history/websites/create", createWebsite)
 	http.HandleFunc("/api/web-history/list", listWebsites)
 	http.HandleFunc("/api/web-history/websites/refresh", refreshWebsite)

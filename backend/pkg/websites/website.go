@@ -7,92 +7,16 @@ import (
 	"strings"
 	"regexp"
 	"fmt"
-	
-	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
 )
 
-var database *sql.DB
-
 type Website struct {
+	UserUUID string
 	Url, Title, GroupName string
 	content string
 	UpdateTime, AccessTime time.Time
 }
 
 const SEP = "\n"
-
-func OpenDatabase(location string) {
-	var err error
-	database, err = sql.Open("sqlite3", location)
-	if err != nil { panic(err) }
-	database.SetMaxIdleConns(5);
-	database.SetMaxOpenConns(50);
-	fmt.Println(database)
-}
-
-func closeDatabase() {
-	database.Close()
-}
-
-func Urls() []string {
-	resultUpdate := make([]string, 0)
-	resultUnchange := make([]string, 0)
-	rows, err := database.Query("select url, updateTime, accessTime from websites order by groupName, updateTime desc")
-	if err != nil { panic(err) }
-	var temp string
-	var updateTime, accessTime int64
-	for rows.Next() {
-		rows.Scan(&temp, &updateTime, &accessTime)
-		if updateTime > accessTime {
-			resultUpdate = append(resultUpdate, temp)
-		} else {
-			resultUnchange = append(resultUnchange, temp)
-		}
-	}
-	return append(resultUpdate, resultUnchange...)
-}
-
-func GroupNames() []string {
-	result := make([]string, 0)
-	rows, err := database.Query("select groupName from websites group by groupName order by max(updateTime) desc")
-	if err != nil { panic(err) }
-	var temp string
-	for rows.Next() {
-		rows.Scan(&temp)
-		result = append(result, temp)
-	}
-	return result
-}
-
-func Group2Urls(groupName string) []string {
-	urls := make([]string, 0)
-	rows, err := database.Query("select url from websites where groupName=? order by updateTime desc", groupName)
-	if err != nil { panic(err) }
-	var temp string
-	for rows.Next() {
-		rows.Scan(&temp)
-		urls = append(urls, temp)
-	}
-	return urls
-}
-
-func Url2Website(url string) Website {
-	rows, err := database.Query(
-		"select url, title, groupName, content, updateTime, accessTime from websites " +
-		"where url=?", url)
-	if err != nil { panic(err) }
-	var web Website
-	var updateTime, accessTime int
-	if rows.Next() {
-		rows.Scan(&web.Url, &web.Title, &web.GroupName, &web.content, &updateTime, &accessTime)
-		web.UpdateTime = time.Unix(int64(updateTime), 0)
-		web.AccessTime = time.Unix(int64(accessTime), 0)
-	}
-	err = rows.Close()
-	if err != nil { panic(err) }
-	return web
-}
 
 func (website Website) _checkTimeUpdate(timeStr string) bool {
 	if timeStr == "" { return false }
@@ -202,38 +126,6 @@ func (website *Website) Update() {
 	} else {
 		fmt.Println(website.Title + "\tnot update")
 	}
-}
-
-func (website Website) insert(tx *sql.Tx) {
-	_, err := tx.Exec("insert into websites (url, title, groupName, content, updateTime, accessTime) " +
-		"values (?, ?, ?, ?, ?, ?)",
-		website.Url, website.Title, website.GroupName, website.content, website.UpdateTime.Unix(), website.AccessTime.Unix())
-	if err != nil { panic(err) }
-}
-
-func (website Website) Save() {
-	tx, err := database.Begin()
-	if err != nil { panic(err) }
-	result, err := tx.Exec("update websites set " +
-		"title=?, groupName=?, content=?, updateTime=?, accessTime=? where url=?",
-		website.Title, website.GroupName, website.content, 
-		website.UpdateTime.Unix(), website.AccessTime.Unix(), website.Url)
-	if err != nil { panic(err) }
-	rowsAffected, err := result.RowsAffected()
-	if err != nil { panic(err) }
-	if rowsAffected == 0 { website.insert(tx) }
-	err = tx.Commit()
-	if err != nil { panic(err) }
-}
-
-func (website Website) Delete() {
-	tx, err := database.Begin()
-	if err != nil { panic(err) }
-	_, err = tx.Exec("delete from websites where url=?", website.Url)
-	if err != nil { panic(err) }
-	err = tx.Commit()
-	if err != nil { panic(err) }
-
 }
 
 func (website Website) Map() map[string]interface{} {

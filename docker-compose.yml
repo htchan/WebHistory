@@ -13,6 +13,8 @@ services:
             - all
             - backend
             - web
+        env_file:
+            - ./backend/assets/.env
         command: sh -c "./backend"
 
     frontend:
