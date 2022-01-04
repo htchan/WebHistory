@@ -45,7 +45,7 @@ func userServiceLogin(res http.ResponseWriter, req *http.Request) {
 		Name: "token",
 		Value: token,
 	})
-	http.Redirect(res, req, "http://localhost:8105/web-history", 302)
+	http.Redirect(res, req, os.Getenv("WEB_HISTORY_FRONTEND_TOKEN_URL"), 302)
 }
 
 func createWebsite(res http.ResponseWriter, req *http.Request) {
