@@ -23,6 +23,27 @@ func unauthorized(res http.ResponseWriter) {
 	fmt.Fprintln(res, "{ \"error\" : \"unauthorized\" }")
 }
 
+func userServiceLogin(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if req.Method != http.MethodPost {
+		methodNotSupport(res)
+		return
+	}
+
+	err := req.ParseForm()
+	if err != nil {panic(err)}
+	token := req.Form.Get("token")
+	userUUID := internal.FindUserByToken(token)
+
+	if userUUID == "" {
+		res.Header().Set("Content-Type", "application/json; charset=utf-8")
+		unauthorized(res)
+		return
+	}
+	http.Redirect(res, req, os.Getenv("WEB_HISTORY_FRONTEND_TOKEN_URL") + "?token=" + token, 302)
+}
+
 func createWebsite(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
@@ -212,7 +233,7 @@ func main() {
 		regularUpdateWebsites()
 		for range time.Tick(time.Hour * 23) { regularUpdateWebsites() }
 	}()
-
+	http.HandleFunc("/api/web-history/user_service/login", userServiceLogin)
 	http.HandleFunc("/api/web-history/websites/create", createWebsite)
 	http.HandleFunc("/api/web-history/list", listWebsites)
 	http.HandleFunc("/api/web-history/websites/refresh", refreshWebsite)
