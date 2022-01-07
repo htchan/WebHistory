@@ -87,7 +87,11 @@ func extractContent(s string) string {
 func extractDate(s string) string {
 	re := regexp.MustCompile("\\d{1,4}([-/年月日號号]\\d{1,4}[年月日號号]?)+")
 	resultList := re.FindAllString(s, -1)
-	fmt.Println(resultList)
+	if len(resultList) > 10 {
+		fmt.Println(resultList[:10])
+	} else {
+		fmt.Println(resultList)
+	}
 	return strings.Join(resultList, SEP)
 }
 
