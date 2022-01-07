@@ -53,7 +53,7 @@ class _MainPageState extends State<MainPage> {
               (websiteGroup) {
                 Map<String, String> website = Map<String, String>.from(websiteGroup[0]);
                 website["title"] = website["groupName"]??"unknown";
-                return WebsiteCard(url, website, _loadData, openDetailsPage);
+                return WebsiteCard(url, website, this.token, _loadData, openDetailsPage);
               }
             ).toList();
           });

@@ -14,7 +14,8 @@ class WebsiteCard extends StatelessWidget {
   final Function? showChangeGroupDialog;
   final Map website;
   final bool isEdit;
-  WebsiteCard(this.url, this.website, this.updateListCallBack, this.openDetailsPage, {this.isEdit = false, this.showChangeGroupDialog});
+  final String token;
+  WebsiteCard(this.url, this.website, this.token, this.updateListCallBack, this.openDetailsPage, {this.isEdit = false, this.showChangeGroupDialog});
 
   void openURL() async {
     final String apiUrl = '$url/websites/refresh';
@@ -23,6 +24,7 @@ class WebsiteCard extends StatelessWidget {
       body: <String, String>{
         'url': website['url']??"",
       },
+      headers: {"Authorization": token}
     )
     .then( (response) => updateListCallBack() );
     // TODO: if it is not available to launch, it have to give a pop up
@@ -36,6 +38,7 @@ class WebsiteCard extends StatelessWidget {
       body: <String, String>{
         'url': website['url'] == '' ? 'unknown' : (website['url']??"unknown")
       },
+      headers: {"Authorization": token}
     )
     .then((response) {
       if (response.statusCode >= 200 && response.statusCode < 300) {
