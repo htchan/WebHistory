@@ -125,6 +125,7 @@ class _DetailsPageState extends State<DetailsPage> {
       (website) => WebsiteCard(
         url,
         website,
+        this.token,
         _loadData,
         (dummy) => null,
         isEdit: true,
