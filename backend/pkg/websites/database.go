@@ -85,13 +85,13 @@ func FindUrlsByGroupName(userUUID, groupName string) []string {
 
 func FindWebsiteByUrl(userUUID, url string) Website {
 	rows, err := database.Query(
-		"select url, title, groupName, content, updateTime, accessTime from websites " +
+		"select user_uuid,url, title, groupName, content, updateTime, accessTime from websites " +
 		"where user_uuid=? and url=?", userUUID, url)
 	if err != nil { panic(err) }
 	var web Website
 	var updateTime, accessTime int
 	if rows.Next() {
-		rows.Scan(&web.Url, &web.Title, &web.GroupName, &web.content, &updateTime, &accessTime)
+		rows.Scan(&web.UserUUID, &web.Url, &web.Title, &web.GroupName, &web.content, &updateTime, &accessTime)
 		web.UpdateTime = time.Unix(int64(updateTime), 0)
 		web.AccessTime = time.Unix(int64(accessTime), 0)
 	}
