@@ -215,24 +215,10 @@ func changeWebsiteGroup(res http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(res, string(responseByte))
 }
 
-func regularUpdateWebsites() {
-	fmt.Println(time.Now(), "regular update")
-	for _, website := range websites.FindAllWebsites() {
-		fmt.Println(website.Url)
-		website.Update()
-		fmt.Println(website.UpdateTime)
-		website.Save()
-	}
-	fmt.Println(time.Now(), "regular update finish")
-}
-
 func main() {
 	fmt.Println("hello")
 	websites.OpenDatabase(os.Getenv("database_volume"))
-	go func() {
-		regularUpdateWebsites()
-		for range time.Tick(time.Hour * 23) { regularUpdateWebsites() }
-	}()
+	
 	http.HandleFunc("/api/web-history/user_service/login", userServiceLogin)
 	http.HandleFunc("/api/web-history/websites/create", createWebsite)
 	http.HandleFunc("/api/web-history/list", listWebsites)

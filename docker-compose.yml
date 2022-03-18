@@ -4,7 +4,7 @@ services:
     backend:
         build: 
             context: ./backend
-            dockerfile: ./build/Dockerfile
+            dockerfile: ./build/Dockerfile.backend
         volumes:
             - ./bin/database:/database
         networks:
@@ -14,8 +14,27 @@ services:
             - backend
             - web
         env_file:
-            - ./backend/assets/.env
+            - ./backend/assets/.env.backend
         command: sh -c "./backend"
+
+    batch:
+        build:
+            context: ./backend
+            dockerfile: ./build/Dockerfile.batch
+        deploy:
+            resources:
+                limits:
+                    memory: '20M'
+        volumes:
+            - ./bin/database:/database
+            - ./bin/logs:/logs
+        networks:
+            - router
+        profiles:
+            - all
+            - batch
+        command: sh -c "crond && tail -f /dev/null"
+
 
     frontend:
         image: "flutter:latest"

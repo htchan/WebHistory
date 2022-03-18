@@ -12,5 +12,11 @@ backend_local:
 backend:
 	docker-compose --profile backend up -d
 
+batch:
+	docker-compose --profile batch up -d --force-recreate --build
+
 frontend:
 	docker-compose --profile frontend up
+
+frontend_local:
+	cd frontend/src; flutter run -d chrome
