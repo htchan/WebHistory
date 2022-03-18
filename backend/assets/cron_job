@@ -1,0 +1,1 @@
+00 00,12 * * * cd /usr/src/app ; ./batch >> /logs/batch.log 2>&1
