@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:collection/collection.dart';
 // ignore: file_names
 import 'package:flutter/material.dart';
 // ignore: import_of_legacy_library_into_null_safe
@@ -85,7 +86,8 @@ class _MainPageState extends State<MainPage> {
       websiteGroups.where( (websiteGroup) {
         return isWebsiteUpdated(websiteGroup[0]);
       })
-      .map( (websiteGroup) async {
+      .mapIndexed( (i, websiteGroup) async {
+	await Future.delayed(Duration(milliseconds: i * 500));
         await canLaunch(websiteGroup[0]['url'])? await launch(websiteGroup[0]['url']) : "";
         // and update backend server of opened website
         final String apiUrl = '$url/websites/refresh';
