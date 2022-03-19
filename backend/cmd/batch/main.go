@@ -1,22 +1,22 @@
 package main
 
 import (
-	"time"
-	"fmt"
 	"os"
 
+	"github.com/htchan/WebHistory/internal/logging"
 	"github.com/htchan/WebHistory/pkg/websites"
 )
 
 func regularUpdateWebsites() {
-	fmt.Println(time.Now(), "regular update")
+	logging.LogBatchStatus("start")
 	for _, website := range websites.FindAllWebsites() {
-		fmt.Println(website.Url)
+		logging.LogUpdate(website.Url, "start")
 		website.Update()
-		fmt.Println(website.UpdateTime)
+		logging.LogUpdate(website.Url, website.Map())
 		website.Save()
+		logging.LogUpdate(website.Url, "finish")
 	}
-	fmt.Println(time.Now(), "regular update finish")
+	logging.LogBatchStatus("complete")
 }
 
 func main() {

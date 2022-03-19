@@ -6,7 +6,8 @@ import (
 	"io/ioutil"
 	"strings"
 	"regexp"
-	"fmt"
+
+	"github.com/htchan/WebHistory/internal/logging"
 )
 
 type Website struct {
@@ -51,7 +52,7 @@ func (website Website) getTitle() string {
 
 func (website *Website) _checkBodyUpdate(client http.Client, url string) bool {
 	bodyUpdate, titleUpdate := false, false
-	body := reduce(website.getContent(client))
+	body := reduce(website.getContent(client), url)
 	if !contentUpdated(website.content, body) {
 		website.content = body
 		bodyUpdate = true
@@ -84,13 +85,13 @@ func extractContent(s string) string {
 	return string(re.ReplaceAll([]byte(s), []byte(SEP)))
 }
 
-func extractDate(s string) string {
+func extractDate(s, url string) string {
 	re := regexp.MustCompile("\\d{1,4}([-/年月日號号]\\d{1,4}[年月日號号]?)+")
 	resultList := re.FindAllString(s, -1)
 	if len(resultList) > 10 {
-		fmt.Println(resultList[:10])
+		logging.LogUpdate(url, resultList[:10])
 	} else {
-		fmt.Println(resultList)
+		logging.LogUpdate(url, resultList)
 	}
 	return strings.Join(resultList, SEP)
 }
@@ -107,9 +108,9 @@ func replaceKeyword(inputStr string, targetStr []string, replaceStr string) stri
 	return string(re.ReplaceAll([]byte(inputStr), []byte(replaceStr)))
 }
 
-func reduce(s string) (result string) {
+func reduce(s, url string) (result string) {
 	result = extractContent(s)
-	result = validDate(extractDate(result))
+	result = validDate(extractDate(result, url))
 	// print(result)
 	return
 }
@@ -124,11 +125,11 @@ func (website *Website) Update() {
 	}
 	if website._checkTimeUpdate(resp.Header.Get("last-modified")) ||
 		website._checkBodyUpdate(client, website.Url) {
-		fmt.Println(website.Title + "\tupdate")
+		logging.LogUpdate(website.Url, website.Title+"\tupdate")
 		if (website.GroupName == "") { website.GroupName = website.Title; }
 		website.UpdateTime = time.Now()
 	} else {
-		fmt.Println(website.Title + "\tnot update")
+		logging.LogUpdate(website.Url, website.Title+"\tnot update")
 	}
 }
 

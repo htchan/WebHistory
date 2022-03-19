@@ -9,7 +9,8 @@ import (
 	"strings"
 	"os"
 
-	"github.com/htchan/WebHistory/internal"
+	"github.com/htchan/WebHistory/internal/utils"
+	"github.com/htchan/WebHistory/internal/logging"
 	"github.com/htchan/WebHistory/pkg/websites"
 )
 
@@ -34,7 +35,7 @@ func userServiceLogin(res http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {panic(err)}
 	token := req.Form.Get("token")
-	userUUID := internal.FindUserByToken(token)
+	userUUID := utils.FindUserByToken(token)
 
 	if userUUID == "" {
 		res.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -56,10 +57,11 @@ func createWebsite(res http.ResponseWriter, req *http.Request) {
 		unauthorized(res)
 		return
 	}
-	userUUID := internal.FindUserByToken(token)
+	userUUID := utils.FindUserByToken(token)
 	err := req.ParseForm()
 	if err != nil {panic(err)}
 	url := req.Form.Get("url")
+	logging.LogRequest("create-website.start", map[string]interface{} { "url": url })
 	groupName := req.Form.Get("groupName")
 	if url == "" || !strings.HasPrefix(url, "http") {
 		res.WriteHeader(http.StatusBadRequest)
@@ -67,8 +69,8 @@ func createWebsite(res http.ResponseWriter, req *http.Request) {
 	}
 	website := websites.Website{UserUUID: userUUID, Url: url, GroupName: groupName, AccessTime: time.Now()}
 	website.Update()
-	fmt.Println(website.Map())
 	website.Save()
+	logging.LogRequest("create-website.complete", website.Map())
 	fmt.Fprintln(res, "{ \"message\" : \"website <" + website.Title + "> inserted\" }")
 }
 
@@ -84,7 +86,7 @@ func listWebsites(res http.ResponseWriter, req *http.Request) {
 		unauthorized(res)
 		return
 	}
-	userUUID := internal.FindUserByToken(token)
+	userUUID := utils.FindUserByToken(token)
 
 	websiteGroups := make([][]map[string]interface{}, 0)
 
@@ -131,10 +133,11 @@ func refreshWebsite(res http.ResponseWriter, req *http.Request) {
 		unauthorized(res)
 		return
 	}
-	userUUID := internal.FindUserByToken(token)
+	userUUID := utils.FindUserByToken(token)
 
 	req.ParseForm()
 	url := req.Form.Get("url")
+	logging.LogRequest("refresh-website", map[string]interface{} { "url": url })
 	website := websites.FindWebsiteByUrl(userUUID, url)
 	website.AccessTime = time.Now()
 	website.Save()
@@ -159,12 +162,12 @@ func deleteWebsite(res http.ResponseWriter, req *http.Request) {
 		unauthorized(res)
 		return
 	}
-	userUUID := internal.FindUserByToken(token)
+	userUUID := utils.FindUserByToken(token)
 
 	err := req.ParseForm()
 	if err != nil {panic(err)}
 	url := req.Form.Get("url")
-	fmt.Println(url)
+	logging.LogRequest("delete-website", map[string]interface{} { "url": url })
 	website := websites.FindWebsiteByUrl(userUUID, url)
 	if website.UpdateTime.Unix() == -62135596800 && website.AccessTime.Unix() == -62135596800 {
 		res.WriteHeader(http.StatusBadRequest)
@@ -186,15 +189,15 @@ func changeWebsiteGroup(res http.ResponseWriter, req *http.Request) {
 		unauthorized(res)
 		return
 	}
-	userUUID := internal.FindUserByToken(token)
+	userUUID := utils.FindUserByToken(token)
 
 	err := req.ParseForm()
 	if err != nil {panic(err)}
 	url := req.Form.Get("url")
 	groupName := req.Form.Get("groupName")
-	fmt.Println(url, groupName)
+	logging.LogRequest("change-website-group", map[string]interface{} {"url": url, "group": groupName})
 	website := websites.FindWebsiteByUrl(userUUID, url)
-	if !internal.IsSubSet(website.Title, strings.ReplaceAll(groupName, " ", "")) || len(website.Title) == 0 {
+	if !utils.IsSubSet(website.Title, strings.ReplaceAll(groupName, " ", "")) || len(website.Title) == 0 {
 		res.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(res, "{ \"error\" : \"invalid group name\" }")
 		return

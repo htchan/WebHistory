@@ -1,11 +1,12 @@
 package websites
 
 import (
-	"fmt"
 	"time"
 
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/htchan/WebHistory/internal/logging"
 )
 
 var database *sql.DB
@@ -16,7 +17,7 @@ func OpenDatabase(location string) {
 	if err != nil { panic(err) }
 	database.SetMaxIdleConns(5);
 	database.SetMaxOpenConns(50);
-	fmt.Println(database)
+	logging.Log("database.open", database)
 }
 
 func closeDatabase() {
