@@ -5,6 +5,8 @@ import (
 
 	"github.com/htchan/WebHistory/internal/logging"
 	"github.com/htchan/WebHistory/pkg/websites"
+
+	"github.com/htchan/ApiParser"
 )
 
 func regularUpdateWebsites() {
@@ -20,6 +22,7 @@ func regularUpdateWebsites() {
 }
 
 func main() {
+	ApiParser.Setup("/api_parser")
 	websites.OpenDatabase(os.Getenv("database_volume"))
 	
 	regularUpdateWebsites()		

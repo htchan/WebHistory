@@ -29,6 +29,7 @@ services:
         volumes:
             - ./bin/database:/database
             - ./bin/logs:/logs
+            - ./backend/assets/api_parser:/api_parser
             - /etc/timezone:/etc/timezone:ro
         networks:
             - router

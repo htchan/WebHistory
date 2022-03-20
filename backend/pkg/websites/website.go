@@ -8,7 +8,17 @@ import (
 	"regexp"
 
 	"github.com/htchan/WebHistory/internal/logging"
+
+	"github.com/htchan/ApiParser"
 )
+
+func logDates(url string, dates []string) {
+	if len(dates) > 10 {
+		logging.LogUpdate(url, dates[:10])
+	} else {
+		logging.LogUpdate(url, dates)
+	}
+}
 
 type Website struct {
 	UserUUID string
@@ -29,90 +39,54 @@ func (website Website) _checkTimeUpdate(timeStr string) bool {
 	return false
 }
 
-func (website Website) getContent(client http.Client) string {
-	resp, err := client.Get(website.Url)
-	if err != nil { panic(err) }
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {panic(err)}
-	re := regexp.MustCompile("(<script.*?/script>|<style.*?/style>|<path.*?/path>)")
-	bodyStr := string(re.ReplaceAll(
-		[]byte(strings.ReplaceAll(strings.ReplaceAll(string(body), "\r", ""), "\n", "")),
-		[]byte("<script/>")))
-	return bodyStr
-}
-
-func (website Website) getTitle() string {
-	client := http.Client{Timeout: 30*time.Second}
-	body := website.getContent(client)
-	re := regexp.MustCompile("<title.*?>(.*?)</title>")
-	groups := re.FindStringSubmatch(body)
-	if (len(groups) > 1) { return groups[1] }
-	return ""
-}
-
-func (website *Website) _checkBodyUpdate(client http.Client, url string) bool {
+func (website *Website) _checkBodyUpdate(responseBody string) bool {
 	bodyUpdate, titleUpdate := false, false
-	body := reduce(website.getContent(client), url)
-	if !contentUpdated(website.content, body) {
-		website.content = body
+	responseApi := ApiParser.Parse(responseBody, "website.info")
+	title := responseApi.Data["Title"]
+	dates := make([]string, len(responseApi.Items))
+	for i := range responseApi.Items { dates[i] = responseApi.Items[i]["Date"] }
+	logDates(website.Url, dates)
+	if website.isUpdated(dates) {
+		website.content = strings.Join(dates, SEP)
 		bodyUpdate = true
 	}
-	title := website.getTitle()
 	if (title != website.Title) {
 		website.Title = title
 		titleUpdate = true
 	}
-	print(website.GroupName)
+	logging.LogUpdate(website.Url, website.Title)
 	if (website.GroupName == "") {
 		website.GroupName = website.Title
 	}
 	return bodyUpdate || titleUpdate
 }
 
-func contentUpdated(s1, s2 string) bool {
-	list1, list2 := strings.Split(s1, SEP), strings.Split(s2, SEP)
-	if len(list1) == 0 || len(list2) == 0 || len(list1) != len(list2) { return false }
-	for i := range list1 {
-		if list1[i] != list2[i] {
-			return false
+func (website *Website) isUpdated(updatedDates []string) bool {
+	currentDates := strings.Split(website.content, SEP)
+	if len(currentDates) == 0 || len(updatedDates) == 0 || len(currentDates) != len(updatedDates) { return false }
+	for i := range currentDates {
+		if currentDates[i] != updatedDates[i] {
+			return true
 		}
 	}
-	return true
+	return false
 }
 
-func extractContent(s string) string {
-	re := regexp.MustCompile("<.*?>")
-	return string(re.ReplaceAll([]byte(s), []byte(SEP)))
-}
-
-func extractDate(s, url string) string {
-	re := regexp.MustCompile("\\d{1,4}([-/年月日號号]\\d{1,4}[年月日號号]?)+")
-	resultList := re.FindAllString(s, -1)
-	if len(resultList) > 10 {
-		logging.LogUpdate(url, resultList[:10])
-	} else {
-		logging.LogUpdate(url, resultList)
-	}
-	return strings.Join(resultList, SEP)
-}
-
-func validDate(s string) string {
-	validLength := 2
-	dates := strings.Split(s, SEP)
-	if validLength > len(dates) { validLength = len(dates) }
-	return strings.Join(dates[:validLength], SEP)
-}
-
-func replaceKeyword(inputStr string, targetStr []string, replaceStr string) string {
-	re := regexp.MustCompile("(" + strings.Join(targetStr, "|") + ")")
-	return string(re.ReplaceAll([]byte(inputStr), []byte(replaceStr)))
-}
-
-func reduce(s, url string) (result string) {
-	result = extractContent(s)
-	result = validDate(extractDate(result, url))
-	// print(result)
-	return
+func pruneResponse(response *http.Response) string {
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil { return "" }
+	re := regexp.MustCompile("(<script.*?/script>|<style.*?/style>|<path.*?/path>)")
+	bodyStr := re.ReplaceAllString(
+		strings.ReplaceAll(strings.ReplaceAll(string(body), "\r", ""), "\n", ""),
+		"<delete/>",
+	)
+	re = regexp.MustCompile("<(/?title.*?)>")
+	bodyStr = re.ReplaceAllString(bodyStr, "[$1]")
+	re = regexp.MustCompile("(<.*?>)+")
+	bodyStr = re.ReplaceAllString(bodyStr, SEP)
+	re = regexp.MustCompile("\\[(/?title.*?)\\]")
+	bodyStr = re.ReplaceAllString(bodyStr, "<$1>")
+	return bodyStr
 }
 
 func (website *Website) Update() {
@@ -123,8 +97,9 @@ func (website *Website) Update() {
 		if (website.GroupName == "") { website.GroupName = website.Title; }
 		return
 	}
+	body := pruneResponse(resp)
 	if website._checkTimeUpdate(resp.Header.Get("last-modified")) ||
-		website._checkBodyUpdate(client, website.Url) {
+		website._checkBodyUpdate(body) {
 		logging.LogUpdate(website.Url, website.Title+"\tupdate")
 		if (website.GroupName == "") { website.GroupName = website.Title; }
 		website.UpdateTime = time.Now()
