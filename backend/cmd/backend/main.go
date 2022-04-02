@@ -12,6 +12,8 @@ import (
 	"github.com/htchan/WebHistory/internal/utils"
 	"github.com/htchan/WebHistory/internal/logging"
 	"github.com/htchan/WebHistory/pkg/websites"
+
+	"github.com/htchan/ApiParser"
 )
 
 func methodNotSupport(res http.ResponseWriter) {

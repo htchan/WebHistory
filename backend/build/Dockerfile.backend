@@ -12,7 +12,8 @@ COPY ./internal ./internal
 COPY ./pkg ./pkg
 COPY ./cmd/backend ./cmd/backend
 
-RUN go build -v ./cmd/backend
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    go build -v ./cmd/backend
 
 
 FROM golang:1.16.3-alpine3.13

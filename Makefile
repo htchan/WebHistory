@@ -1,7 +1,7 @@
 .PHONY: backend frontend
 
 build:
-	docker-compose --profile all build
+	DOCKER_BUILDKIT=1 docker-compose --profile all build
 
 backend_local:
 	docker run --name web_history_local \

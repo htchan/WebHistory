@@ -12,7 +12,8 @@ COPY ./internal ./internal
 COPY ./pkg ./pkg
 COPY ./cmd/batch ./cmd/batch
 
-RUN go build -v ./cmd/batch
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    go build -v ./cmd/batch
 
 
 FROM golang:1.16.3-alpine3.13
