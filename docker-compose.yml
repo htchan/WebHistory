@@ -7,6 +7,7 @@ services:
             dockerfile: ./build/Dockerfile.backend
         volumes:
             - ./bin/database:/database
+            - ./backend/assets/api_parser:/api_parser
             - /etc/timezone:/etc/timezone/ro
         networks:
             - router

@@ -219,6 +219,7 @@ func changeWebsiteGroup(res http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	ApiParser.Setup("/api_parser")
 	fmt.Println("hello")
 	websites.OpenDatabase(os.Getenv("database_volume"))
 	
