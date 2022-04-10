@@ -13,7 +13,7 @@ backend:
 	docker-compose --profile backend up -d
 
 batch:
-	docker-compose --profile batch up -d --force-recreate --build
+	docker-compose --profile batch up -d
 
 frontend:
 	docker-compose --profile frontend up
