@@ -14,9 +14,9 @@ import (
 
 func logDates(url string, dates []string) {
 	if len(dates) > 10 {
-		logging.LogUpdate(url, dates[:10])
+		logging.LogUpdate(url, "result-dates", dates[:10])
 	} else {
-		logging.LogUpdate(url, dates)
+		logging.LogUpdate(url, "result-dates", dates)
 	}
 }
 
@@ -54,7 +54,7 @@ func (website *Website) _checkBodyUpdate(responseBody string) bool {
 		website.Title = title
 		titleUpdate = true
 	}
-	logging.LogUpdate(website.Url, website.Title)
+	logging.LogUpdate(website.Url, "title", website.Title)
 	if (website.GroupName == "") {
 		website.GroupName = website.Title
 	}
@@ -100,11 +100,11 @@ func (website *Website) Update() {
 	body := pruneResponse(resp)
 	if website._checkTimeUpdate(resp.Header.Get("last-modified")) ||
 		website._checkBodyUpdate(body) {
-		logging.LogUpdate(website.Url, website.Title+"\tupdate")
+		logging.LogUpdate(website.Url, "updated", website.Title)
 		if (website.GroupName == "") { website.GroupName = website.Title; }
 		website.UpdateTime = time.Now()
 	} else {
-		logging.LogUpdate(website.Url, website.Title+"\tnot update")
+		logging.LogUpdate(website.Url, "not-updated", website.Title)
 	}
 }
 

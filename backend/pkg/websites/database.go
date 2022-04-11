@@ -21,6 +21,7 @@ func OpenDatabase(location string) {
 }
 
 func closeDatabase() {
+	logging.Log("dataabse.close", database)
 	database.Close()
 }
 

@@ -14,12 +14,12 @@ func Log(prefix string, data interface{}) {
 	}
 }
 
-func LogUpdate(url string, data interface{}) {
+func LogUpdate(url string, status string, data interface{}) {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		log.Printf("web-history.update.[%v] %v", url, data)
+		log.Printf("web-history.update.%v.[%v] %v", url, status, data)
 	} else {
-		log.Printf("web-history.update.[%v] %v", url, string(jsonData))
+		log.Printf("web-history.update.%v.[%v] %v", url, status, string(jsonData))
 	}
 }
 
