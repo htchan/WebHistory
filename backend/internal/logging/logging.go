@@ -17,9 +17,9 @@ func Log(prefix string, data interface{}) {
 func LogUpdate(url string, status string, data interface{}) {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		log.Printf("web-history.update.%v.[%v] %v", url, status, data)
+		log.Printf("web-history.update.%v.[%v] %v", status, url, data)
 	} else {
-		log.Printf("web-history.update.%v.[%v] %v", url, status, string(jsonData))
+		log.Printf("web-history.update.%v.[%v] %v", status, url, string(jsonData))
 	}
 }
 
