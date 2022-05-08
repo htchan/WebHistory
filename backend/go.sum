@@ -45,6 +45,8 @@ github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+
 github.com/grpc-ecosystem/grpc-gateway v1.16.0/go.mod h1:BDjrQk3hbvj6Nolgz8mAMFbcEtjT1g+wF4CSlocrBnw=
 github.com/htchan/ApiParser v0.0.0-20220320054029-18ea8ef7c972 h1:3NFMAMShKy1xciC5VkGSR5+hFssTMz1lVxMX+Xlzin0=
 github.com/htchan/ApiParser v0.0.0-20220320054029-18ea8ef7c972/go.mod h1:EwC9oKVQOQDRiVYGHi+uSXSJg+RrTMQtPEWePrkQ49I=
+github.com/htchan/ApiParser v0.0.3 h1:WBAhW2lEvKfNIOTdFV3TgCl27ljUU1/EhV2GE5qbe48=
+github.com/htchan/ApiParser v0.0.3/go.mod h1:EwC9oKVQOQDRiVYGHi+uSXSJg+RrTMQtPEWePrkQ49I=
 github.com/htchan/UserService v0.0.0-20220101064522-c9d57069f9df h1:gG++WNyG89kcVQJeKQb2Pj5N4XV6ppJ6QpQd4DtHamc=
 github.com/htchan/UserService v0.0.0-20220101064522-c9d57069f9df/go.mod h1:yXUGOcNXjVXzn5BPfDTcMnOnkqn/xeYZR6hetHgqjaQ=
 github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
