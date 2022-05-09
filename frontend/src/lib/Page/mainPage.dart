@@ -30,16 +30,16 @@ class _MainPageState extends State<MainPage> {
   }
 
   bool isWebsiteUpdated(Map website) {
-    return website['updateTime'].compareTo(website['accessTime']) > 0;
+    return website['update_time'].compareTo(website['access_time']) > 0;
   }
 
   void _loadData() {
-    final String apiUrl = '$url/list';
+    final String apiUrl = '$url/websites';
     http.get(Uri.parse(apiUrl), headers: {"Authorization": token})
     .then((response) {
       if (response.statusCode >= 200 && response.statusCode < 300) {
           Map<String, dynamic> body = Map.from(jsonDecode(response.body));
-          websiteGroups = List<List>.from(body['websiteGroups']);
+          websiteGroups = List<List>.from(body['website_groups']);
           websiteGroups = [
             ...websiteGroups.where( (websiteGroup) => 
               websiteGroup.length > 0 ? isWebsiteUpdated(websiteGroup[0]) : false
@@ -53,7 +53,7 @@ class _MainPageState extends State<MainPage> {
             _web = websiteGroups.map(
               (websiteGroup) {
                 Map<String, String> website = Map<String, String>.from(websiteGroup[0]);
-                website["title"] = website["groupName"]??"unknown";
+                website["title"] = website["group_name"]??"unknown";
                 return WebsiteCard(url, website, this.token, _loadData, openDetailsPage);
               }
             ).toList();
@@ -91,7 +91,7 @@ class _MainPageState extends State<MainPage> {
         await canLaunch(websiteGroup[0]['url'])? await launch(websiteGroup[0]['url']) : "";
         // and update backend server of opened website
         final String apiUrl = '$url/websites/refresh';
-        return http.post(
+        return http.put(
           Uri.parse(apiUrl),
           body: <String, String>{
             'url': websiteGroup[0]['url']??"",

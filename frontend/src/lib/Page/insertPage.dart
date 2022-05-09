@@ -33,7 +33,7 @@ class _InsertPageState extends State<InsertPage> {
 
   void addUrl(TextEditingController text) {
     if (scaffoldKey.currentState!.validate()) {
-      String apiUrl = '$url/websites/create';
+      String apiUrl = '$url/websites';
       // add loading animate
       http.post(
         Uri.parse(apiUrl),

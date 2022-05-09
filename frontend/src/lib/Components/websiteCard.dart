@@ -19,7 +19,7 @@ class WebsiteCard extends StatelessWidget {
 
   void openURL() async {
     final String apiUrl = '$url/websites/refresh';
-    http.post(
+    http.put(
       Uri.parse(apiUrl),
       body: <String, String>{
         'url': website['url']??"",
@@ -32,12 +32,10 @@ class WebsiteCard extends StatelessWidget {
   }
 
   void removeCard() {
-    final String apiUrl = '$url/websites/delete';
-    http.post(
-      Uri.parse(apiUrl),
-      body: <String, String>{
-        'url': website['url'] == '' ? 'unknown' : (website['url']??"unknown")
-      },
+    final String apiUrl = '$url/websites';
+    final String targetIdentifier = website['url'] == '' ? 'unknown' : (website['url']??"unknown");
+    http.delete(
+      Uri.parse('$apiUrl?url=$targetIdentifier'),
       headers: {"Authorization": token}
     )
     .then((response) {
@@ -74,7 +72,7 @@ class WebsiteCard extends StatelessWidget {
       caption: "Details",
       color: Colors.blue,
       icon: Icons.info,
-      onTap: () => openDetailsPage(website["groupName"])
+      onTap: () => openDetailsPage(website["group_name"])
     );
   }
   Widget renderChangeGroupAction() {
@@ -94,8 +92,8 @@ class WebsiteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var accessTime = DateTime.parse(website['accessTime']??"20121225T0000");
-    var updateTime = DateTime.parse(website['updateTime']??"20121225T0000");
+    var accessTime = DateTime.parse(website['access_time']??"20121225T0000");
+    var updateTime = DateTime.parse(website['update_time']??"20121225T0000");
     return Slidable(
       actionPane: SlidableDrawerActionPane(),
       actionExtentRatio:0.2,
