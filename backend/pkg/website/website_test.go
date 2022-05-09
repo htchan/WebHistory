@@ -189,4 +189,22 @@ func TestWebsite(t *testing.T) {
 			t.Errorf("wrong host: %v", result)
 		}
 	})
+
+	t.Run("MarshalJSON", func (t *testing.T) {
+		
+	})
+}
+
+func TestWebsitesToWebsiteGroups(t *testing.T) {
+	websites := []Website{
+		NewWebsite("ttp://localhost/1", "12345"),
+		NewWebsite("ttp://localhost/2", "12345"),
+		NewWebsite("ttp://localhost/3", "12345"),
+	}
+	t.Run("success", func (t *testing.T) {
+		result := WebsitesToWebsiteGroups(websites)
+		if len(result) != 1 || len(result[0]) != 3 {
+			t.Errorf("return %v", result)
+		}
+	})
 }

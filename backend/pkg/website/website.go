@@ -6,6 +6,7 @@ import (
 	"strings"
 	"database/sql"
 	"net/url"
+	"encoding/json"
 )
 
 var NotFoundError = errors.New("website not found")
@@ -154,6 +155,22 @@ func (w Website) Map() map[string]interface{} {
 	}
 }
 
+func (w Website) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		URL string `json:"url"`
+		Title string `json:"title"`
+		GroupName string `json:"group_name"`
+		UpdateTime time.Time `json:"update_time"`
+		AccessTime time.Time `json:"access_time"`
+	}{
+		URL: w.URL,
+		Title: w.Title,
+		GroupName: w.GroupName,
+		UpdateTime: w.UpdateTime,
+		AccessTime: w.AccessTime,
+	})
+}
+
 func (w Website) Host() string {
 	u, err := url.Parse(w.URL)
 	if err != nil || w.URL == "" {
@@ -162,4 +179,21 @@ func (w Website) Host() string {
 	host := u.Host
 	splitedHost := strings.Split(host, ".")
 	return strings.Join(splitedHost[len(splitedHost) - 2:], ".")
+}
+
+type WebsiteGroup []Website
+
+func WebsitesToWebsiteGroups(websites []Website) []WebsiteGroup {
+	websiteGroupMap := make(map[string]WebsiteGroup)
+	for _, w := range websites {
+		group, _ := websiteGroupMap[w.GroupName]
+		websiteGroupMap[w.GroupName] = append(group, w)
+	}
+	result := make([]WebsiteGroup, len(websiteGroupMap))
+	i := 0
+	for _, item := range websiteGroupMap {
+		result[i] = item
+		i++
+	}
+	return result
 }
