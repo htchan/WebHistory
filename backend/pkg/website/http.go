@@ -27,6 +27,12 @@ func writeError(res http.ResponseWriter, statusCode int, err error) {
 	fmt.Println(res, fmt.Sprintf(`{ "error": "%v" }`, err))
 }
 
+func redirectLogin(res http.ResponseWriter, req *http.Request) {
+	loginURL := os.Getenv("LOGIN_URL")
+	serviceUUID := os.Getenv("SERVICE_UUID")
+	http.Redirect(res, req, fmt.Sprintf("%v?service=%v", loginURL, serviceUUID))
+}
+
 var UnauthorizedError = errors.New("unauthorized")
 var InvalidParamsError = errors.New("invalid params")
 
@@ -57,7 +63,7 @@ func createWebsiteHandler(db *sql.DB) http.HandlerFunc {
 		res.Header().Set("Access-Control-Allow-Origin", "*")
 		userUUID, err := UserUUID(req)
 		if err != nil {
-			writeError(res, http.StatusUnauthorized, err)
+			redirectLogin(res, req)
 			return
 		}
 		url, err := WebsiteParams(req)
@@ -83,7 +89,7 @@ func listWebsiteHandler(db *sql.DB) http.HandlerFunc {
 		res.Header().Set("Access-Control-Allow-Origin", "*")
 		userUUID, err := UserUUID(req)
 		if err != nil {
-			writeError(res, http.StatusUnauthorized, err)
+			redirectLogin(res, req)
 			return
 		}
 		websites, err := FindAllUserWebsites(db, userUUID)
@@ -107,7 +113,7 @@ func refreshWebsiteHandler(db *sql.DB) http.HandlerFunc {
 		res.Header().Set("Access-Control-Allow-Origin", "*")
 		userUUID, err := UserUUID(req)
 		if err != nil {
-			writeError(res, http.StatusUnauthorized, err)
+			redirectLogin(res, req)
 			return
 		}
 		url, err := WebsiteParams(req)
@@ -147,7 +153,7 @@ func deleteWebsiteHandler(db *sql.DB) http.HandlerFunc {
 		res.Header().Set("Access-Control-Allow-Origin", "*")
 		userUUID, err := UserUUID(req)
 		if err != nil {
-			writeError(res, http.StatusUnauthorized, err)
+			redirectLogin(res, req)
 			return
 		}
 		url, err := deleteParams(req)
@@ -191,7 +197,7 @@ func changeWebsiteGroupHandler(db *sql.DB) http.HandlerFunc {
 		res.Header().Set("Access-Control-Allow-Origin", "*")
 		userUUID, err := UserUUID(req)
 		if err != nil {
-			writeError(res, http.StatusUnauthorized, err)
+			redirectLogin(res, req)
 			return
 		}
 		url, groupName, err := ChangeGroupNameParams(req)
