@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"log"
 	"fmt"
+	"os"
 	"strings"
 	"encoding/json"
 	"time"
@@ -30,7 +31,7 @@ func writeError(res http.ResponseWriter, statusCode int, err error) {
 func redirectLogin(res http.ResponseWriter, req *http.Request) {
 	loginURL := os.Getenv("LOGIN_URL")
 	serviceUUID := os.Getenv("SERVICE_UUID")
-	http.Redirect(res, req, fmt.Sprintf("%v?service=%v", loginURL, serviceUUID))
+	http.Redirect(res, req, fmt.Sprintf("%v?service=%v", loginURL, serviceUUID), 302)
 }
 
 var UnauthorizedError = errors.New("unauthorized")
