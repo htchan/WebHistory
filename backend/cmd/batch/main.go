@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/htchan/WebHistory/pkg/website"
 
@@ -15,14 +16,14 @@ func generateHostChannels(websites []website.Website) chan chan website.Website 
 	hostChannels := make(chan chan website.Website)
 	hostChannelMap := make(map[string]chan website.Website)
 	go func(hostChannels chan chan website.Website) {
-		for _, w := range websites {
-			if w.Host() == "" {
+		for _, web := range websites {
+			if web.Host() == "" {
 				continue
 			}
-			hostChannel, ok := hostChannelMap[w.Host()]
+			hostChannel, ok := hostChannelMap[web.Host()]
 			if !ok {
 				newChannel := make(chan website.Website)
-				hostChannelMap[w.Host()] = newChannel
+				hostChannelMap[web.Host()] = newChannel
 				hostChannels <- newChannel
 				newChannel <- w
 			} else {
@@ -48,12 +49,13 @@ func regularUpdateWebsites(db *sql.DB) {
 	for hostChannel := range generateHostChannels(websites) {
 		go func(hostChannel chan website.Website) {
 			wg.Add(1)
-			for w := range hostChannel {
-				log.Println(w.URL, "start", nil)
-				w.Update()
-				log.Println(w.URL, "info", w.Map())
-				w.Save(db)
-				log.Println(w.URL, "finish", nil)
+			for web := range hostChannel {
+				log.Println(web.URL, "start", nil)
+				web.Update()
+				log.Println(web.URL, "info", web.Map())
+				web.Save(db)
+				log.Println(web.URL, "finish", nil)
+				time.Sleep(1 * time.Second)
 			}
 			wg.Done()
 		}(hostChannel)

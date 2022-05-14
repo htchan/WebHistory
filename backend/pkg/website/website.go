@@ -7,11 +7,13 @@ import (
 	"database/sql"
 	"net/url"
 	"encoding/json"
+	"github.com/google/uuid"
 )
 
 var NotFoundError = errors.New("website not found")
 
 type Website struct {
+	UUID string
 	UserUUID string
 	URL, Title, GroupName string
 	content string
@@ -19,29 +21,30 @@ type Website struct {
 }
 
 func NewWebsite(url, userUUID string) Website {
-	w := Website{
+	web := Website{
+		UUID: uuid.New().String(),
 		URL: url,
 		UserUUID: userUUID,
 		AccessTime: time.Now(),
 		UpdateTime: time.Now(),
 	}
-	w.Update()
-	return w
+	web.Update()
+	return web
 }
 
 const createSQL = `INSERT OR IGNORE INTO websites 
-(url, title, content, update_time) VALUES (?, ?, ?, ?);
+(uuid, url, title, content, update_time) VALUES (?, ?, ?, ?, ?);
 INSERT OR IGNORE INTO user_websites
-(user_uuid, url, access_time, group_name) VALUES (?, ?, ?, ?);`
+(uuid, user_uuid, access_time, group_name) VALUES (?, ?, ?, ?, ?);`
 
-func (w Website) Create(db *sql.DB) error {
+func (web Website) Create(db *sql.DB) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	_, err = tx.Exec(
-		createSQL, w.URL, w.Title, w.content, w.UpdateTime,
-		w.UserUUID, w.URL, w.AccessTime, w.GroupName,
+		createSQL, web.UUID, web.URL, web.Title, web.content, web.UpdateTime,
+		web.UUID, web.UserUUID, web.AccessTime, web.GroupName,
 	)
 	if err != nil {
 		return err
@@ -50,18 +53,18 @@ func (w Website) Create(db *sql.DB) error {
 }
 
 const updateSQL = `UPDATE websites set 
-title=?, content=?, update_time=? where url=?;
+title=?, content=?, update_time=? where UUID=?;
 UPDATE user_websites SET access_time=?, group_name=? 
-where user_uuid=? and url=?`
+where user_uuid=? and UUID=?`
 
-func (w Website) Save(db *sql.DB) error {
+func (web Website) Save(db *sql.DB) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	_, err = tx.Exec(
-		updateSQL, w.Title, w.content, w.UpdateTime, w.URL,
-		w.AccessTime, w.GroupName, w.UserUUID, w.URL, 
+		updateSQL, web.Title, web.content, web.UpdateTime, web.UUID,
+		web.AccessTime, web.GroupName, web.UserUUID, web.UUID, 
 	)
 	if err != nil {
 		return err
@@ -69,15 +72,15 @@ func (w Website) Save(db *sql.DB) error {
 	return tx.Commit()
 }
 
-func (w Website) Delete(db *sql.DB) error {
+func (web Website) Delete(db *sql.DB) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	_, err = tx.Exec(
-		`delete from user_websites where url=? and user_uuid=?;
-		delete from websites where url=? and (select count(*) from user_websites where url=?) = 0;`,
-		w.URL, w.UserUUID, w.URL, w.URL,
+		`delete from user_websites where UUID=? and user_uuid=?;
+		delete from websites where UUID=? and (select count(*) from user_websites where UUID=?) = 0;`,
+		web.URL, web.UserUUID, web.UUID, web.UUID,
 	)
 	if err != nil {
 		return err
@@ -86,24 +89,24 @@ func (w Website) Delete(db *sql.DB) error {
 }
 
 func FindAllWebsites(db *sql.DB) ([]Website, error) {
-	rows, err := db.Query("select url, title, content, update_time from websites")
+	rows, err := db.Query("select uuid, url, title, content, update_time from websites")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	result := make([]Website, 0)
 	for rows.Next() {
-		var w Website
-		rows.Scan(&w.URL, &w.Title, &w.content, &w.UpdateTime)
-		result = append(result, w)
+		var web Website
+		rows.Scan(&web.UUID, &web.URL, &web.Title, &web.content, &web.UpdateTime)
+		result = append(result, web)
 	}
 	return result, nil
 }
 
 func FindAllUserWebsites(db *sql.DB, userUUID string) ([]Website, error) {
 	rows, err := db.Query(
-		`select websites.url, title, content, update_time, user_uuid, access_time, group_name
-		from websites join user_websites on websites.url=user_websites.url 
+		`select websites.uuid, url, title, content, update_time, user_uuid, access_time, group_name
+		from websites join user_websites on websites.uuid=user_websites.uuid 
 		where user_uuid=?`,
 		userUUID,
 	)
@@ -113,67 +116,70 @@ func FindAllUserWebsites(db *sql.DB, userUUID string) ([]Website, error) {
 	defer rows.Close()
 	result := make([]Website, 0)
 	for rows.Next() {
-		var w Website
+		var web Website
 		rows.Scan(
-			&w.URL, &w.Title, &w.content, &w.UpdateTime,
-			&w.UserUUID, &w.AccessTime, &w.GroupName,
+			&web.UUID, &web.URL, &web.Title, &web.content, &web.UpdateTime,
+			&web.UserUUID, &web.AccessTime, &web.GroupName,
 		)
-		result = append(result, w)
+		result = append(result, web)
 	}
 	return result, nil
 }
 
-func FindUserWebsite(db *sql.DB, userUUID, url string) (Website, error) {
+func FindUserWebsite(db *sql.DB, userUUID, webUUID string) (Website, error) {
 	rows, err := db.Query(
-		`select websites.url, title, content, update_time, user_uuid, access_time, group_name
-		from websites join user_websites on websites.url=user_websites.url 
-		where user_uuid=? and websites.url=?`,
-		userUUID, url,
+		`select websites.uuid, url, title, content, update_time, user_uuid, access_time, group_name
+		from websites join user_websites on websites.uuid=user_websites.uuid 
+		where user_uuid=? and websites.uuid=?`,
+		userUUID, webUUID,
 	)
 	if err != nil {
 		return Website{}, err
 	}
 	defer rows.Close()
 	if rows.Next() {
-		var w Website
+		var web Website
 		rows.Scan(
-			&w.URL, &w.Title, &w.content, &w.UpdateTime,
-			&w.UserUUID, &w.AccessTime, &w.GroupName,
+			&web.UUID, &web.URL, &web.Title, &web.content, &web.UpdateTime,
+			&web.UserUUID, &web.AccessTime, &web.GroupName,
 		)
-		return w, nil
+		return web, nil
 	}
 	return Website{}, NotFoundError
 }
 
-func (w Website) Map() map[string]interface{} {
+func (web Website) Map() map[string]interface{} {
 	return map[string]interface{} {
-		"url": w.URL,
-		"title": w.Title,
-		"groupName": w.GroupName,
-		"updateTime": w.UpdateTime,
-		"accessTime": w.AccessTime,
+		"uuid": web.UUID,
+		"url": web.URL,
+		"title": web.Title,
+		"groupName": web.GroupName,
+		"updateTime": web.UpdateTime,
+		"accessTime": web.AccessTime,
 	}
 }
 
-func (w Website) MarshalJSON() ([]byte, error) {
+func (web Website) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
+		UUID string `json:"uuid"`
 		URL string `json:"url"`
 		Title string `json:"title"`
 		GroupName string `json:"group_name"`
 		UpdateTime time.Time `json:"update_time"`
 		AccessTime time.Time `json:"access_time"`
 	}{
-		URL: w.URL,
-		Title: w.Title,
-		GroupName: w.GroupName,
-		UpdateTime: w.UpdateTime,
-		AccessTime: w.AccessTime,
+		UUID: web.UUID,
+		URL: web.URL,
+		Title: web.Title,
+		GroupName: web.GroupName,
+		UpdateTime: web.UpdateTime,
+		AccessTime: web.AccessTime,
 	})
 }
 
-func (w Website) Host() string {
-	u, err := url.Parse(w.URL)
-	if err != nil || w.URL == "" {
+func (web Website) Host() string {
+	u, err := url.Parse(web.URL)
+	if err != nil || web.URL == "" {
 		return ""
 	}
 	host := u.Host
@@ -185,9 +191,9 @@ type WebsiteGroup []Website
 
 func WebsitesToWebsiteGroups(websites []Website) []WebsiteGroup {
 	websiteGroupMap := make(map[string]WebsiteGroup)
-	for _, w := range websites {
-		group, _ := websiteGroupMap[w.GroupName]
-		websiteGroupMap[w.GroupName] = append(group, w)
+	for _, web := range websites {
+		group, _ := websiteGroupMap[web.GroupName]
+		websiteGroupMap[web.GroupName] = append(group, web)
 	}
 	result := make([]WebsiteGroup, len(websiteGroupMap))
 	i := 0

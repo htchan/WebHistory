@@ -9,7 +9,7 @@ import (
 	"github.com/htchan/WebHistory/pkg/website"
 
 	"github.com/htchan/ApiParser"
-	"github.com/julienschmidt/httprouter"
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
@@ -21,7 +21,7 @@ func main() {
 		return
 	}
 	defer db.Close()
-	router := httprouter.New()
+	router := chi.NewRouter()
 	website.AddWebsiteRoutes(router, db)
 
 	log.Fatal(http.ListenAndServe(":9105", router))

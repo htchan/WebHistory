@@ -10,7 +10,8 @@ import (
 	"strings"
 	"encoding/json"
 	"time"
-	"github.com/julienschmidt/httprouter"
+	"context"
+	"github.com/go-chi/chi/v5"
 	"github.com/htchan/WebHistory/internal/utils"
 )
 
@@ -36,210 +37,230 @@ func redirectLogin(res http.ResponseWriter, req *http.Request) {
 
 var UnauthorizedError = errors.New("unauthorized")
 var InvalidParamsError = errors.New("invalid params")
+var RecordNotFoundError = errors.New("record not found")
 
-func UserUUID(req *http.Request) (string, error) {
-	token := req.Header.Get("Authorization")
-	if token == "" {
-		return "", UnauthorizedError
-	}
-	userUUID := utils.FindUserByToken(token)
-	return userUUID, nil
+func Authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(
+		func(res http.ResponseWriter, req *http.Request) {
+			token := req.Header.Get("Authorization")
+			userUUID := ""
+			if token != "" {
+				userUUID = utils.FindUserByToken(token)
+			}
+			if userUUID == "" {
+				writeError(res, http.StatusUnauthorized, UnauthorizedError)
+				return
+			}
+			ctx := context.WithValue(req.Context(), "userUUID", userUUID)
+			next.ServeHTTP(res, req.WithContext(ctx))
+		},
+	)
+}
+func SetContentType(next http.Handler) http.Handler {
+	return http.HandlerFunc(
+		func (res http.ResponseWriter, req *http.Request) {
+			res.Header().Set("Content-Type", "application/json; charset=utf-8")
+			next.ServeHTTP(res, req)
+		},
+	)
 }
 
-func WebsiteParams(req *http.Request) (string, error) {
-	err := req.ParseForm()
-	if err != nil {
-		return "", InvalidParamsError
+// func listWebsiteHandler(db *sql.DB) http.HandlerFunc {
+// 	return func (res http.ResponseWriter, req *http.Request) {
+// 		res.Header().Set("Content-Type", "application/json; charset=utf-8")
+// 		res.Header().Set("Access-Control-Allow-Origin", "*")
+// 		// userUUID, err := UserUUID(req)
+// 		if err != nil {
+// 			redirectLogin(res, req)
+// 			return
+// 		}
+// 		websites, err := FindAllUserWebsites(db, userUUID)
+// 		if err != nil {
+// 			writeError(res, http.StatusBadRequest, err)
+// 			return
+// 		}
+// 		websiteGroups := WebsitesToWebsiteGroups(websites)
+// 		err = json.NewEncoder(res).Encode(
+// 			map[string][]WebsiteGroup{"website_groups": websiteGroups},
+// 		)
+// 		if err != nil {
+// 			writeError(res, http.StatusInternalServerError, errors.New("parse response error"))
+// 		}
+// 	}
+// }
+
+func getAllWebsiteGroups(db *sql.DB) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		userUUID := req.Context().Value("userUUID").(string)
+		webs, err := FindAllUserWebsites(db, userUUID)
+		if err != nil {
+			writeError(res, http.StatusBadRequest, RecordNotFoundError)
+		}
+		json.NewEncoder(res).Encode(WebsitesToWebsiteGroups(webs))
 	}
-	url := req.Form.Get("url")
-	if url == "" || !strings.HasPrefix(url, "http") {
-		return "", InvalidParamsError
-	}
-	return url, nil
 }
 
-func createWebsiteHandler(db *sql.DB) http.HandlerFunc {
+func getWebsiteGroup(db *sql.DB) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		userUUID := req.Context().Value("userUUID").(string)
+		groupName := chi.URLParam(req, "groupName")
+
+		webs, err := FindAllUserWebsites(db, userUUID)
+		if err != nil {
+			writeError(res, http.StatusBadRequest, RecordNotFoundError)
+		}
+		for _, g := range WebsitesToWebsiteGroups(webs) {
+			if g[0].GroupName == groupName {
+				json.NewEncoder(res).Encode(g)
+				return
+			}
+		}
+		writeError(res, http.StatusBadRequest, RecordNotFoundError)
+	}
+}
+
+func WebsiteParams(next http.Handler) http.Handler {
+	return http.HandlerFunc(
+		func (res http.ResponseWriter, req *http.Request) {
+			err := req.ParseForm()
+			if err != nil {
+				writeError(res, http.StatusBadRequest, InvalidParamsError)
+				return
+			}
+			url := req.Form.Get("url")
+			if url == "" || !strings.HasPrefix(url, "http") {
+				writeError(res, http.StatusBadRequest, InvalidParamsError)
+				return
+			}
+			ctx := context.WithValue(req.Context(), "webURL", url)
+			next.ServeHTTP(res, req.WithContext(ctx))
+		},
+	)
+}
+
+func createWebsite(db *sql.DB) http.HandlerFunc {
 	return func (res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-Type", "application/json; charset=utf-8")
-		res.Header().Set("Access-Control-Allow-Origin", "*")
-		userUUID, err := UserUUID(req)
-		if err != nil {
-			redirectLogin(res, req)
-			return
-		}
-		url, err := WebsiteParams(req)
-		if err != nil {
-			writeError(res, http.StatusBadRequest, err)
-			return
-		}
+		// userUUID, err := UserUUID(req)
+		userUUID := req.Context().Value("userUUID").(string)
+		url := req.Context().Value("webURL").(string)
 		log.Println("create-website.start", fmt.Sprintf(`{ "url": "%v" }`, url))
-		w := NewWebsite(url, userUUID)
-		err = w.Create(db)
+		web := NewWebsite(url, userUUID)
+		err := web.Create(db)
 		if err != nil {
 			writeError(res, http.StatusBadRequest, err)
 			return
 		}
-		log.Println("create-website.complete", w.Map())
-		fmt.Fprintln(res, fmt.Sprintf(`{ "message": "website <%v> inserted" }`, w.Title))
+		log.Println("create-website.complete", web.Map())
+		fmt.Fprintln(res, fmt.Sprintf(`{ "message": "website <%v> inserted" }`, web.Title))
 	}
 }
 
-func listWebsiteHandler(db *sql.DB) http.HandlerFunc {
-	return func (res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-Type", "application/json; charset=utf-8")
-		res.Header().Set("Access-Control-Allow-Origin", "*")
-		userUUID, err := UserUUID(req)
-		if err != nil {
-			redirectLogin(res, req)
-			return
-		}
-		websites, err := FindAllUserWebsites(db, userUUID)
-		if err != nil {
-			writeError(res, http.StatusBadRequest, err)
-			return
-		}
-		websiteGroups := WebsitesToWebsiteGroups(websites)
-		err = json.NewEncoder(res).Encode(
-			map[string][]WebsiteGroup{"website_groups": websiteGroups},
+func QueryWebsite(db *sql.DB) func(http.Handler) http.Handler {
+	return func (next http.Handler) http.Handler {
+		return http.HandlerFunc(
+			func (res http.ResponseWriter, req *http.Request) {
+				userUUID := req.Context().Value("userUUID").(string)
+				webUUID := chi.URLParam(req, "webUUID")
+				web, err := FindUserWebsite(db, userUUID, webUUID)
+				if err != nil {
+					writeError(res, http.StatusBadRequest, err)
+					return
+				}
+				ctx := context.WithValue(req.Context(), "website", web)
+				next.ServeHTTP(res, req.WithContext(ctx))
+			},
 		)
-		if err != nil {
-			writeError(res, http.StatusInternalServerError, errors.New("parse response error"))
-		}
 	}
 }
 
-func refreshWebsiteHandler(db *sql.DB) http.HandlerFunc {
+func getWebsite(db *sql.DB) http.HandlerFunc {
 	return func (res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-Type", "application/json; charset=utf-8")
-		res.Header().Set("Access-Control-Allow-Origin", "*")
-		userUUID, err := UserUUID(req)
-		if err != nil {
-			redirectLogin(res, req)
-			return
-		}
-		url, err := WebsiteParams(req)
-		if err != nil {
-			writeError(res, http.StatusBadRequest, err)
-			return
-		}
-		w, err := FindUserWebsite(db, userUUID, url)
-		if err != nil {
-			writeError(res, http.StatusBadRequest, err)
-			return
-		}
-		w.AccessTime = time.Now()
-		err = w.Save(db)
-		if err != nil {
-			writeError(res, http.StatusBadRequest, err)
-			return
-		}
-		err = json.NewEncoder(res).Encode(w)
+		web := req.Context().Value("websites").(Website)
+		json.NewEncoder(res).Encode(web)
+	}
+}
+
+func refreshWebsite(db *sql.DB) http.HandlerFunc {
+	return func (res http.ResponseWriter, req *http.Request) {
+		web := req.Context().Value("website").(Website)
+		web.AccessTime = time.Now()
+		err := web.Save(db)
 		if err != nil {
 			writeError(res, http.StatusInternalServerError, err)
+			return
 		}
+		json.NewEncoder(res).Encode(web)
 	}
 }
 
-func deleteParams(req *http.Request) (string, error) {
-	url := req.URL.Query().Get("url")
-	if url == "" || !strings.HasPrefix(url, "http") {
-		return "", InvalidParamsError
-	}
-	return url, nil
-}
-
-func deleteWebsiteHandler(db *sql.DB) http.HandlerFunc {
+func deleteWebsite(db *sql.DB) http.HandlerFunc {
 	return func (res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-Type", "application/json; charset=utf-8")
-		res.Header().Set("Access-Control-Allow-Origin", "*")
-		userUUID, err := UserUUID(req)
+		web := req.Context().Value("website").(Website)
+		err := web.Delete(db)
 		if err != nil {
-			redirectLogin(res, req)
-			return
-		}
-		url, err := deleteParams(req)
-		if err != nil {
-			writeError(res, http.StatusBadRequest, err)
-			log.Println("delete-website", err)
-			return
-		}
-		log.Println("delete-website", fmt.Sprintf(`{ "url": %v }"`, url))
-		w, err := FindUserWebsite(db, userUUID, url)
-		if err != nil {
-			writeError(res, http.StatusBadRequest, err)
-			log.Println("delete-website", err)
-			return
-		}
-		err = w.Delete(db)
-		if err != nil {
-			writeError(res, http.StatusBadRequest, err)
+			writeError(res, http.StatusInternalServerError, err)
 			log.Println("delete-website", err)
 			return
 		}
 	}
 }
 
-func ChangeGroupNameParams(req *http.Request) (url, groupName string, err error) {
-	err = req.ParseForm()
-	if err != nil {
-		return "", "", InvalidParamsError
-	}
-	url = req.Form.Get("url")
-	groupName = req.Form.Get("group_name")
-	if url == "" || !strings.HasPrefix(url, "http") || groupName == "" {
-		return "", "", InvalidParamsError
-	}
-	return url, groupName, nil
+func GroupNameParams(next http.Handler) http.Handler {
+	return http.HandlerFunc(
+		func (res http.ResponseWriter, req *http.Request) {
+			err := req.ParseForm()
+			if err != nil {
+				writeError(res, http.StatusBadRequest, InvalidParamsError)
+				return
+			}
+			groupName := req.Form.Get("group_name")
+			ctx := context.WithValue(req.Context(), "group", groupName)
+			next.ServeHTTP(res, req.WithContext(ctx))
+		},
+	)
 }
 
-func changeWebsiteGroupHandler(db *sql.DB) http.HandlerFunc {
+func changeWebsiteGroup(db *sql.DB) http.HandlerFunc {
 	return func (res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-Type", "application/json; charset=utf-8")
-		res.Header().Set("Access-Control-Allow-Origin", "*")
-		userUUID, err := UserUUID(req)
-		if err != nil {
-			redirectLogin(res, req)
-			return
-		}
-		url, groupName, err := ChangeGroupNameParams(req)
-		if err != nil {
-			writeError(res, http.StatusBadRequest, err)
-			return
-		}
-		log.Println("create-website-group.start", fmt.Sprintf(`{ "url": "%v", "group_name": "%v" }`, url, groupName))
-		w, err := FindUserWebsite(db, userUUID, url)
-		if err != nil {
-			writeError(res, http.StatusBadRequest, err)
-			return
-		}
-		if !utils.IsSubSet(w.Title, strings.ReplaceAll(groupName, " ", "")) || len(w.Title) == 0 {
+		web := req.Context().Value("website").(Website)
+		groupName := req.Context().Value("group").(string)
+		if !utils.IsSubSet(web.Title, strings.ReplaceAll(groupName, " ", "")) || len(web.Title) == 0 {
 			writeError(res, http.StatusBadRequest, errors.New("invalid group name"))
 			return
 		}
-		w.GroupName = groupName
-		err = w.Save(db)
+		web.GroupName = groupName
+		err := web.Save(db)
 		if err != nil {
 			writeError(res, http.StatusBadRequest, err)
 			return
 		}
-		err = json.NewEncoder(res).Encode(w)
-		if err != nil {
-			writeError(res, http.StatusInternalServerError, errors.New("parse response error"))
-			return
-		}
+		json.NewEncoder(res).Encode(web)
 	}
 }
 
+func AddWebsiteRoutes(router chi.Router, db *sql.DB) {
+	router.Route("/api/web-history", func (router chi.Router) {
+		router.Options("/*", optionsHandler)
 
-func AddWebsiteRoutes(router *httprouter.Router, db *sql.DB) {
-	router.HandlerFunc(http.MethodOptions, "/api/web-history/websites", optionsHandler)
-	router.HandlerFunc(http.MethodOptions, "/api/web-history/websites/refresh", optionsHandler)
-	router.HandlerFunc(http.MethodOptions, "/api/web-history/websites/change-group", optionsHandler)
+		router.Route("/websites", func (router chi.Router) {
+			router.Use(Authenticate)
+			router.Use(SetContentType)
 
-	router.HandlerFunc(http.MethodPost, "/api/web-history/websites", createWebsiteHandler(db))
-	router.HandlerFunc(http.MethodGet, "/api/web-history/websites", listWebsiteHandler(db))
-	router.HandlerFunc(http.MethodPut, "/api/web-history/websites/refresh", refreshWebsiteHandler(db))
-	router.HandlerFunc(http.MethodDelete, "/api/web-history/websites", deleteWebsiteHandler(db))
-	router.HandlerFunc(http.MethodPut, "/api/web-history/websites/change-group", changeWebsiteGroupHandler(db))
+			router.Route("/groups", func (router chi.Router) {
+				router.Get("/", getAllWebsiteGroups(db))
+				router.Get("/{groupName}", getWebsiteGroup(db))
+			})
+
+			router.With(WebsiteParams).Post("/", createWebsite(db))
+
+			router.Route("/{webUUID}", func (router chi.Router) {
+				router.Use(QueryWebsite(db))
+				
+				router.Get("/", getWebsite(db))
+				router.Delete("/", deleteWebsite(db))
+				router.Put("refresh", refreshWebsite(db))
+				router.With(GroupNameParams).Put("change-group", changeWebsiteGroup(db))
+			})
+		})
+	})
 }
-//3wb1lxcYgkOe5IN4XebSzyDFwoepnxKbeLIFb26vitqMvvLwyTM7D4Uf5OpmmrXS

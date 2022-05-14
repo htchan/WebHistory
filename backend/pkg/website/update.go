@@ -14,18 +14,18 @@ import (
 const SEP = "\n"
 const DateLength = 10
 
-func (w Website) _checkTimeUpdate(timeStr string) bool {
+func (web Website) _checkTimeUpdate(timeStr string) bool {
 	if timeStr == "" { return false }
 	layout := "Mon, 2 Jan 2006 15:04:05 GMT"
 	t, err := time.Parse(layout, timeStr)
-	if err == nil && t.After(w.UpdateTime) {
+	if err == nil && t.After(web.UpdateTime) {
 		return true
 	}
 	return false
 }
 
-func (w *Website) isUpdated(updatedDates []string) bool {
-	currentDates := strings.Split(w.content, SEP)
+func (web *Website) isUpdated(updatedDates []string) bool {
+	currentDates := strings.Split(web.content, SEP)
 	if len(updatedDates) == 0 {
 		return false
 	}
@@ -43,7 +43,7 @@ func (w *Website) isUpdated(updatedDates []string) bool {
 	return false
 }
 
-func (w *Website) _checkBodyUpdate(responseBody string) bool {
+func (web *Website) _checkBodyUpdate(responseBody string) bool {
 	bodyUpdate, titleUpdate := false, false
 	responseApi := ApiParser.Parse("website.info", responseBody)
 	title := responseApi.Data["Title"]
@@ -51,18 +51,18 @@ func (w *Website) _checkBodyUpdate(responseBody string) bool {
 	for i := range responseApi.Items {
 		dates[i] = responseApi.Items[i]["Date"]
 	}
-	log.Println(w.URL, dates)
-	if w.isUpdated(dates) {
-		w.content = strings.Join(dates, SEP)
+	log.Println(web.URL, dates)
+	if web.isUpdated(dates) {
+		web.content = strings.Join(dates, SEP)
 		bodyUpdate = true
 	}
-	if (title != w.Title) {
-		w.Title = title
+	if (title != web.Title) {
+		web.Title = title
 		titleUpdate = true
 	}
-	log.Println(w.URL, "title", w.Title)
-	if (w.GroupName == "") {
-		w.GroupName = w.Title
+	log.Println(web.URL, "title", web.Title)
+	if (web.GroupName == "") {
+		web.GroupName = web.Title
 	}
 	return bodyUpdate || titleUpdate
 }
@@ -91,22 +91,22 @@ func pruneResponse(response *http.Response) string {
 	return bodyStr
 }
 
-func (w *Website) Update() {
+func (web *Website) Update() {
 	client := http.Client{Timeout: 30*time.Second}
-	resp, err := client.Get(w.URL);
+	resp, err := client.Get(web.URL);
 	if err != nil { 
-		if w.Title == "" { w.Title = "Unknown" }
-		if (w.GroupName == "") { w.GroupName = w.Title; }
-		log.Println(w.URL, "failed to fetch", err)
+		if web.Title == "" { web.Title = "Unknown" }
+		if (web.GroupName == "") { web.GroupName = web.Title; }
+		log.Println(web.URL, "failed to fetch", err)
 		return
 	}
 	body := pruneResponse(resp)
 	// if website._checkTimeUpdate(resp.Header.Get("last-modified")) ||
-	if w._checkBodyUpdate(body) {
-		log.Println(w.URL, "updated", w.Title)
-		if (w.GroupName == "") { w.GroupName = w.Title; }
-		w.UpdateTime = time.Now()
+	if web._checkBodyUpdate(body) {
+		log.Println(web.URL, "updated", web.Title)
+		if (web.GroupName == "") { web.GroupName = web.Title; }
+		web.UpdateTime = time.Now()
 	} else {
-		log.Println(w.URL, "not-updated", w.Title)
+		log.Println(web.URL, "not-updated", web.Title)
 	}
 }
