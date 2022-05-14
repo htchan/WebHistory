@@ -34,7 +34,8 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _loadData() {
-    final String apiUrl = '$url/websites';
+    final String apiUrl = '$url/websites/groups';
+    print(token);
     http.get(Uri.parse(apiUrl), headers: {"Authorization": token})
     .then((response) {
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -90,7 +91,7 @@ class _MainPageState extends State<MainPage> {
 	await Future.delayed(Duration(milliseconds: i * 500));
         await canLaunch(websiteGroup[0]['url'])? await launch(websiteGroup[0]['url']) : "";
         // and update backend server of opened website
-        final String apiUrl = '$url/websites/refresh';
+        final String apiUrl = '$url/websites/${websiteGroup[0]['uuid']}/refresh';
         return http.put(
           Uri.parse(apiUrl),
           body: <String, String>{

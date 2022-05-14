@@ -37,17 +37,14 @@ class _DetailsPageState extends State<DetailsPage> {
   }
 
   void _loadData() {
-    final String apiUrl = '$url/websites';
+    final String apiUrl = '$url/websites/groups/${groupName}';
+    print(apiUrl);
     http.get(Uri.parse(apiUrl), headers: {"Authorization": token})
     .then((response) {
       if (response.statusCode >= 200 && response.statusCode < 300) {
           Map<String, dynamic> body = Map.from(jsonDecode(response.body));
-          List<Map<String, String>> targetWebsiteGroup = List<List>.from(body['website_groups'])
-            .firstWhere(
-              (websiteGroup) => Map<String, String>.from(websiteGroup[0])["group_name"] == groupName,
-              orElse: () => []
-            )
-            .map( (item) => Map<String, String>.from(item) ).toList();
+          List<Map<String, String>> targetWebsiteGroup = List<dynamic>.from(body['website_group'])
+            .map((web) => Map<String, String>.from(web)).toList();
           if (targetWebsiteGroup.length > 0) {
             setState(() { websiteGroup = renderWebsites(targetWebsiteGroup); });
           } else {
@@ -78,7 +75,7 @@ class _DetailsPageState extends State<DetailsPage> {
           FlatButton(
             child: Text("Change"),
             onPressed: () {
-              final String apiUrl = '$url/websites/change-group';
+              final String apiUrl = '$url/websites/${website['uuid']}/change-group';
               // send the group name to server
               http.put(
                 Uri.parse(apiUrl),

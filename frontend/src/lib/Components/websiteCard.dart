@@ -18,7 +18,7 @@ class WebsiteCard extends StatelessWidget {
   WebsiteCard(this.url, this.website, this.token, this.updateListCallBack, this.openDetailsPage, {this.isEdit = false, this.showChangeGroupDialog});
 
   void openURL() async {
-    final String apiUrl = '$url/websites/refresh';
+    final String apiUrl = '$url/websites/${website['uuid']}/refresh';
     http.put(
       Uri.parse(apiUrl),
       body: <String, String>{
@@ -32,10 +32,10 @@ class WebsiteCard extends StatelessWidget {
   }
 
   void removeCard() {
-    final String apiUrl = '$url/websites';
-    final String targetIdentifier = website['url'] == '' ? 'unknown' : (website['url']??"unknown");
+    final String apiUrl = '$url/websites/${website['uuid']}/';
+    // final String targetIdentifier = website['url'] == '' ? 'unknown' : (website['url']??"unknown");
     http.delete(
-      Uri.parse('$apiUrl?url=$targetIdentifier'),
+      Uri.parse('$apiUrl'),
       headers: {"Authorization": token}
     )
     .then((response) {
