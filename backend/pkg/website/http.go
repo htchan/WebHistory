@@ -12,17 +12,9 @@ import (
 	"time"
 	"context"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"github.com/htchan/WebHistory/internal/utils"
 )
-
-func optionsHandler(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json; charset=utf-8")
-	res.Header().Set("Access-Control-Allow-Origin", "*")
-	res.Header().Set("Access-Control-Allow-Headers", "*")
-	res.Header().Set("Access-Control-Allow-Methods", "*")
-	res.WriteHeader(http.StatusOK)
-	return
-}
 
 func writeError(res http.ResponseWriter, statusCode int, err error) {
 	res.WriteHeader(statusCode)
@@ -42,6 +34,10 @@ var RecordNotFoundError = errors.New("record not found")
 func Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(
 		func(res http.ResponseWriter, req *http.Request) {
+			if req.Method == http.MethodOptions {
+				next.ServeHTTP(res, req)
+				return
+			}
 			token := req.Header.Get("Authorization")
 			userUUID := ""
 			if token != "" {
@@ -65,30 +61,6 @@ func SetContentType(next http.Handler) http.Handler {
 	)
 }
 
-// func listWebsiteHandler(db *sql.DB) http.HandlerFunc {
-// 	return func (res http.ResponseWriter, req *http.Request) {
-// 		res.Header().Set("Content-Type", "application/json; charset=utf-8")
-// 		res.Header().Set("Access-Control-Allow-Origin", "*")
-// 		// userUUID, err := UserUUID(req)
-// 		if err != nil {
-// 			redirectLogin(res, req)
-// 			return
-// 		}
-// 		websites, err := FindAllUserWebsites(db, userUUID)
-// 		if err != nil {
-// 			writeError(res, http.StatusBadRequest, err)
-// 			return
-// 		}
-// 		websiteGroups := WebsitesToWebsiteGroups(websites)
-// 		err = json.NewEncoder(res).Encode(
-// 			map[string][]WebsiteGroup{"website_groups": websiteGroups},
-// 		)
-// 		if err != nil {
-// 			writeError(res, http.StatusInternalServerError, errors.New("parse response error"))
-// 		}
-// 	}
-// }
-
 func getAllWebsiteGroups(db *sql.DB) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		userUUID := req.Context().Value("userUUID").(string)
@@ -96,7 +68,9 @@ func getAllWebsiteGroups(db *sql.DB) http.HandlerFunc {
 		if err != nil {
 			writeError(res, http.StatusBadRequest, RecordNotFoundError)
 		}
-		json.NewEncoder(res).Encode(WebsitesToWebsiteGroups(webs))
+		json.NewEncoder(res).Encode(map[string]interface{} {
+			"website_groups": WebsitesToWebsiteGroups(webs),
+		})
 	}
 }
 
@@ -111,7 +85,9 @@ func getWebsiteGroup(db *sql.DB) http.HandlerFunc {
 		}
 		for _, g := range WebsitesToWebsiteGroups(webs) {
 			if g[0].GroupName == groupName {
-				json.NewEncoder(res).Encode(g)
+				json.NewEncoder(res).Encode(map[string]interface{} {
+					"website_group": g,
+				})
 				return
 			}
 		}
@@ -151,7 +127,9 @@ func createWebsite(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		log.Println("create-website.complete", web.Map())
-		fmt.Fprintln(res, fmt.Sprintf(`{ "message": "website <%v> inserted" }`, web.Title))
+		json.NewEncoder(res).Encode(map[string]interface{} {
+			"message": fmt.Sprintf("website <%v> inserted", web.Title),
+		})
 	}
 }
 
@@ -176,7 +154,9 @@ func QueryWebsite(db *sql.DB) func(http.Handler) http.Handler {
 func getWebsite(db *sql.DB) http.HandlerFunc {
 	return func (res http.ResponseWriter, req *http.Request) {
 		web := req.Context().Value("websites").(Website)
-		json.NewEncoder(res).Encode(web)
+		json.NewEncoder(res).Encode(map[string]interface{} {
+			"website": web,
+		})
 	}
 }
 
@@ -189,7 +169,9 @@ func refreshWebsite(db *sql.DB) http.HandlerFunc {
 			writeError(res, http.StatusInternalServerError, err)
 			return
 		}
-		json.NewEncoder(res).Encode(web)
+		json.NewEncoder(res).Encode(map[string]interface{} {
+			"website": web,
+		})
 	}
 }
 
@@ -202,6 +184,9 @@ func deleteWebsite(db *sql.DB) http.HandlerFunc {
 			log.Println("delete-website", err)
 			return
 		}
+		json.NewEncoder(res).Encode(map[string]interface{} {
+			"message": fmt.Sprintf("website <%v> deleted", web.Title),
+		})
 	}
 }
 
@@ -234,15 +219,25 @@ func changeWebsiteGroup(db *sql.DB) http.HandlerFunc {
 			writeError(res, http.StatusBadRequest, err)
 			return
 		}
-		json.NewEncoder(res).Encode(web)
+		json.NewEncoder(res).Encode(map[string]interface{} {
+			"website": web,
+		})
 	}
 }
 
 func AddWebsiteRoutes(router chi.Router, db *sql.DB) {
 	router.Route("/api/web-history", func (router chi.Router) {
-		router.Options("/*", optionsHandler)
-
 		router.Route("/websites", func (router chi.Router) {
+			router.Use(
+				cors.Handler(
+					cors.Options{
+					AllowedOrigins:   []string{"*"},
+					AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+					AllowedHeaders:   []string{"*"},
+					MaxAge:           300, // Maximum value not ignored by any of major browsers
+					},
+				),
+			)
 			router.Use(Authenticate)
 			router.Use(SetContentType)
 
@@ -253,13 +248,11 @@ func AddWebsiteRoutes(router chi.Router, db *sql.DB) {
 
 			router.With(WebsiteParams).Post("/", createWebsite(db))
 
-			router.Route("/{webUUID}", func (router chi.Router) {
-				router.Use(QueryWebsite(db))
-				
+			router.With(QueryWebsite(db)).Route("/{webUUID}", func (router chi.Router) {
 				router.Get("/", getWebsite(db))
 				router.Delete("/", deleteWebsite(db))
-				router.Put("refresh", refreshWebsite(db))
-				router.With(GroupNameParams).Put("change-group", changeWebsiteGroup(db))
+				router.Put("/refresh", refreshWebsite(db))
+				router.With(GroupNameParams).Put("/change-group", changeWebsiteGroup(db))
 			})
 		})
 	})

@@ -25,9 +25,9 @@ func generateHostChannels(websites []website.Website) chan chan website.Website 
 				newChannel := make(chan website.Website)
 				hostChannelMap[web.Host()] = newChannel
 				hostChannels <- newChannel
-				newChannel <- w
+				newChannel <- web
 			} else {
-				hostChannel <- w
+				hostChannel <- web
 			}
 		}
 		for key := range hostChannelMap {

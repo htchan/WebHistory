@@ -35,7 +35,7 @@ func NewWebsite(url, userUUID string) Website {
 const createSQL = `INSERT OR IGNORE INTO websites 
 (uuid, url, title, content, update_time) VALUES (?, ?, ?, ?, ?);
 INSERT OR IGNORE INTO user_websites
-(uuid, user_uuid, access_time, group_name) VALUES (?, ?, ?, ?, ?);`
+(uuid, user_uuid, access_time, group_name) VALUES (?, ?, ?, ?);`
 
 func (web Website) Create(db *sql.DB) error {
 	tx, err := db.Begin()
@@ -78,9 +78,9 @@ func (web Website) Delete(db *sql.DB) error {
 		return err
 	}
 	_, err = tx.Exec(
-		`delete from user_websites where UUID=? and user_uuid=?;
-		delete from websites where UUID=? and (select count(*) from user_websites where UUID=?) = 0;`,
-		web.URL, web.UserUUID, web.UUID, web.UUID,
+		`delete from user_websites where uuid=? and user_uuid=?;
+		delete from websites where uuid=? and (select count(*) from user_websites where uuid=?) = 0;`,
+		web.UUID, web.UserUUID, web.UUID, web.UUID,
 	)
 	if err != nil {
 		return err
