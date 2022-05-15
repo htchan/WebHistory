@@ -32,9 +32,10 @@ func NewWebsite(url, userUUID string) Website {
 	return web
 }
 
-const createSQL = `INSERT OR IGNORE INTO websites 
-(uuid, url, title, content, update_time) VALUES (?, ?, ?, ?, ?);
-INSERT OR IGNORE INTO user_websites
+const createWebsiteSQL = `INSERT OR IGNORE INTO websites 
+(uuid, url, title, content, update_time) VALUES (?, ?, ?, ?, ?);`
+
+const createUserWebsiteSQL = `INSERT INTO user_websites
 (uuid, user_uuid, access_time, group_name) VALUES (?, ?, ?, ?);`
 
 func (web Website) Create(db *sql.DB) error {
@@ -43,10 +44,16 @@ func (web Website) Create(db *sql.DB) error {
 		return err
 	}
 	_, err = tx.Exec(
-		createSQL, web.UUID, web.URL, web.Title, web.content, web.UpdateTime,
-		web.UUID, web.UserUUID, web.AccessTime, web.GroupName,
+		createWebsiteSQL, web.UUID, web.URL, web.Title, web.content, web.UpdateTime)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	_, err = tx.Exec(
+		createUserWebsiteSQL, web.UUID, web.UserUUID, web.AccessTime, web.GroupName,
 	)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	return tx.Commit()
