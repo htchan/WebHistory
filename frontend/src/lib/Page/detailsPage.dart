@@ -4,103 +4,50 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:http/http.dart' as http;
+import 'package:webhistory/Clients/webHistoryClient.dart';
 import 'package:webhistory/Components/websiteCard.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:webhistory/WebHistory/Models/webGroup.dart';
 
 class DetailsPage extends StatefulWidget{
-  final String url, groupName, token;
+  final String groupName;
+  WebHistoryClient client;
 
-  const DetailsPage({Key? key, required this.url, required this.groupName, required this.token}) : super(key: key);
+  DetailsPage({Key? key, required this.groupName, required this.client}) : super(key: key);
 
   @override
-  _DetailsPageState createState() => _DetailsPageState(this.url, this.groupName, this.token);
+  _DetailsPageState createState() => _DetailsPageState(this.client, this.groupName);
 }
 
 
 class _DetailsPageState extends State<DetailsPage> {
-  final String url, groupName, token;
+  WebHistoryClient client;
   final GlobalKey<FormState> scaffoldKey = GlobalKey<FormState>();
-  List<Widget> websiteGroup = [];
+  final String groupName;
+  WebGroup? group;
 
-  _DetailsPageState(this.url, this.groupName, this.token) {
+  _DetailsPageState(this.client, this.groupName) {
     _loadData();
   }
 
   void handleNoMatchGroup(int n) {
     String errorMessage = 
-      "No webiste Match group - ${groupName}\nYou will back to Home Page in #{n} seconds";
+      "No webiste Match group - ${group?.latestWeb.groupName}\nYou will back to Home Page in #{n} seconds";
     setState(() {
-      websiteGroup = [ Center(child: Text(errorMessage)) ];
+      group = null;
     });
     Future.delayed(Duration(seconds: n),
       () => Navigator.of(context).pop());
   }
 
   void _loadData() {
-    final String apiUrl = '$url/websites/groups/${groupName}';
-    print(apiUrl);
-    http.get(Uri.parse(apiUrl), headers: {"Authorization": token})
-    .then((response) {
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-          Map<String, dynamic> body = Map.from(jsonDecode(response.body));
-          List<Map<String, String>> targetWebsiteGroup = List<dynamic>.from(body['website_group'])
-            .map((web) => Map<String, String>.from(web)).toList();
-          if (targetWebsiteGroup.length > 0) {
-            setState(() { websiteGroup = renderWebsites(targetWebsiteGroup); });
-          } else {
-            handleNoMatchGroup(3);
-          }
-          
-      } else {
-        handleNoMatchGroup(3);
-      }
+    client.webGroup(groupName)
+    .then( (group) {
+      setState(() { this.group = group; });
+    })
+    .catchError( (e) => {
+      handleNoMatchGroup(3)
     });
-  }
-
-  Future<bool?> showDialog2(Map website) {
-    TextEditingController groupNameText = TextEditingController();
-    return showDialog<bool>(
-      context: context, 
-      builder: (context) => AlertDialog(
-        title: Text("Change Group name"),
-        content: TextFormField(
-          controller: groupNameText,
-          decoration: const InputDecoration(hintText: "Group Name"),
-        ),//Text("Please input the new group name"),
-        actions: [
-          FlatButton(
-            child: Text("Cancel"),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          FlatButton(
-            child: Text("Change"),
-            onPressed: () {
-              final String apiUrl = '$url/websites/${website['uuid']}/change-group';
-              // send the group name to server
-              http.put(
-                Uri.parse(apiUrl),
-                body: <String, String> {
-                  "url": website["url"],
-                  "group_name": groupNameText.text
-                },
-                headers: {"Authorization": token}
-              )
-              .then( (response) {
-                if (response.statusCode >= 200 && response.statusCode < 300) {
-                  _loadData();
-                  Navigator.of(context).pop();
-                  return;
-                }
-                Map<String, String> data = Map<String, String>.from(jsonDecode(response.body));
-                String msg = data["error"] ?? data["message"] ?? "Unknown Error";
-                // show toast for result
-                resultToast(msg);
-              });
-            },
-          )
-        ],
-      )
-    );
   }
   
   void resultToast(String msg) {
@@ -117,16 +64,13 @@ class _DetailsPageState extends State<DetailsPage> {
     );
   }
 
-  List<Widget> renderWebsites(List<Map<String, String>> list) {
-    return list.map(
-      (website) => WebsiteCard(
-        url,
-        website,
-        this.token,
-        _loadData,
-        (dummy) => null,
-        isEdit: true,
-        showChangeGroupDialog: showDialog2,
+  List<Widget> renderWebsites() {
+    if (group == null) return [];
+    return group!.webs.map(
+      (web) => WebsiteCard(
+        client: client,
+        group: WebGroup([web]),
+        updateList: _loadData,
       )
     ).toList();
   }
@@ -138,7 +82,7 @@ class _DetailsPageState extends State<DetailsPage> {
         title: const Text('Web Group Details'),
       ),
       body: Column(
-        children: websiteGroup
+        children: renderWebsites()
       )
     );
   }

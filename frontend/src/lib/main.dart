@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:webhistory/Clients/webHistoryClient.dart';
 import 'package:webhistory/Page/detailsPage.dart';
 import 'dart:html';
 import './Page/mainPage.dart';
@@ -39,12 +40,13 @@ void main() async {
 }
 
 String host = "192.168.128.146";
-// String host = "localhost:9105";
+// String host = "localhost";
 final Storage _localStorage = window.localStorage;
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   String url = 'http://${host}/api/web-history';
+  WebHistoryClient client = WebHistoryClient("localhost", "");
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -62,19 +64,21 @@ class MyApp extends StatelessWidget {
         String authToken = _localStorage['web_history_token'] ?? "";
         if (authToken == "") {
           return MaterialPageRoute(builder: (context) => LoginPage(queryParams: uri.queryParameters), settings: settings);
+        } else {
+          client.authToken = authToken;
         }
         if (uri.pathSegments.indexOf('add') == 0) {
-          return MaterialPageRoute(builder: (context) => InsertPage(url: url, token: authToken),
+          return MaterialPageRoute(builder: (context) => InsertPage(client: client),
             settings: settings);
         } else if (uri.pathSegments.indexOf('details') == 0) {
           String groupName = uri.queryParameters["groupName"]??"";
           print("going to ${groupName}");
-          return MaterialPageRoute(builder: (context) => DetailsPage(url: url, groupName: groupName, token: authToken),
+          return MaterialPageRoute(builder: (context) => DetailsPage(client: client, groupName: groupName),
             settings: settings);
         } else if (uri.path.startsWith('/web-history/user-service/login')) {
           return MaterialPageRoute(builder: (context) => LoginPage(queryParams: uri.queryParameters), settings: settings);
         } else {
-          return MaterialPageRoute(builder: (context) => MainPage(url: url, token: authToken),
+          return MaterialPageRoute(builder: (context) => MainPage(client: client),
             settings: settings);
         }
       }

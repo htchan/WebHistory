@@ -5,27 +5,26 @@ import 'package:flutter/material.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webhistory/Clients/webHistoryClient.dart';
+import 'package:webhistory/WebHistory/Models/webGroup.dart';
 import '../Components/websiteCard.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class MainPage extends StatefulWidget {
-  final String url;
-  final String token;
+  WebHistoryClient client;
 
-  const MainPage({Key? key, required this.url, required this.token}) : super(key: key);
+  MainPage({Key? key, required this.client}) : super(key: key);
 
   @override
-  _MainPageState createState() => _MainPageState(this.url, this.token);
+  _MainPageState createState() => _MainPageState(this.client);
 }
 
 class _MainPageState extends State<MainPage> {
-  final String url;
-  final String token;
-  List<List> websiteGroups = [];
-  List<Widget> _web = [ const Center(child: Text("Loading")) ];
-  // List<Widget> _buttons = _renderStageButton();
+  WebHistoryClient client;
+  List<WebGroup>? groups;
   final GlobalKey scaffoldKey = GlobalKey();
 
-  _MainPageState(this.url, this.token) {
+  _MainPageState(this.client) {
     _loadData();
   }
 
@@ -34,43 +33,28 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _loadData() {
-    final String apiUrl = '$url/websites/groups';
-    print(token);
-    http.get(Uri.parse(apiUrl), headers: {"Authorization": token})
-    .then((response) {
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-          Map<String, dynamic> body = Map.from(jsonDecode(response.body));
-          websiteGroups = List<List>.from(body['website_groups']);
-          websiteGroups = [
-            ...websiteGroups.where( (websiteGroup) => 
-              websiteGroup.length > 0 ? isWebsiteUpdated(websiteGroup[0]) : false
-            ),
-            ...websiteGroups.where( (websiteGroup) =>
-              websiteGroup.length > 0 ? !isWebsiteUpdated(websiteGroup[0]) : true
-            ),
-          ];
-          print(websiteGroups.length);
-          setState(() {
-            _web = websiteGroups.map(
-              (websiteGroup) {
-                Map<String, String> website = Map<String, String>.from(websiteGroup[0]);
-                website["title"] = website["group_name"]??"unknown";
-                return WebsiteCard(url, website, this.token, _loadData, openDetailsPage);
-              }
-            ).toList();
-          });
-      } else {
-        _web = [ const Center(child: Text("Failed to load data")) ];
-      }
+    print("update");
+    client.webGroups().then((groups) {
+      setState( () { this.groups = groups; });
+    })
+    .catchError((e) {
+      //TODO: show popups for the error message
+      setState( () { this.groups = []; });
+      resultToast(e.toString());
     });
   }
-  
-  void openDetailsPage(String groupName) {
-    Navigator.pushNamed(
-      scaffoldKey.currentContext!,
-      '/details?groupName=${groupName}'
-    )
-    .then( (value) => _loadData() );
+  void resultToast(String msg) {
+    Fluttertoast.showToast(
+        msg: msg,
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 5,
+        fontSize: 16.0,
+        backgroundColor: Colors.grey.shade300,
+        textColor: Colors.black,
+        webBgColor: "#DDDDDD",
+        webPosition: "center",
+    );
   }
   void openInsertPage() {
     Navigator.pushNamed(
@@ -80,28 +64,34 @@ class _MainPageState extends State<MainPage> {
     .then( (value) => _loadData() );
   }
   void openAllUnreadComic() {
-    print(websiteGroups[0]);
-    print(isWebsiteUpdated(websiteGroups[0][0]));
+    if (groups == null) return;
     // loop website groups
     Future.wait(
-      websiteGroups.where( (websiteGroup) {
-        return isWebsiteUpdated(websiteGroup[0]);
-      })
-      .mapIndexed( (i, websiteGroup) async {
-	await Future.delayed(Duration(milliseconds: i * 500));
-        await canLaunch(websiteGroup[0]['url'])? await launch(websiteGroup[0]['url']) : "";
+      groups!.where( (group) => group.latestWeb.isUpdated)
+      .mapIndexed( (i, group) async {
+        if (await canLaunch(group.latestWeb.url)) await launch(group.latestWeb.url);
         // and update backend server of opened website
-        final String apiUrl = '$url/websites/${websiteGroup[0]['uuid']}/refresh';
-        return http.put(
-          Uri.parse(apiUrl),
-          body: <String, String>{
-            'url': websiteGroup[0]['url']??"",
-          },
-          headers: {"Authorization": token}
-        );
+        client.refresh(group.latestWeb.uuid);
       })
     )
     .then( (response) { _loadData(); });
+  }
+
+  Widget renderWebsiteCards() {
+    if (groups == null) return Center(child: Text("loading"));
+    if (groups!.length != 0) {
+      return ListView.separated(
+        separatorBuilder: (context, index) => const Divider(height: 10,),
+        itemCount: groups!.length,
+        itemBuilder: (context, index) => WebsiteCard(
+          client: client,
+          group: groups![index],
+          updateList: _loadData,
+        ),
+      );
+    } else {
+      return Center(child: Text("failed to load"));
+    }
   }
 
   @override
@@ -123,11 +113,7 @@ class _MainPageState extends State<MainPage> {
       ),
       key: scaffoldKey,
       body: Container(
-        child: ListView.separated(
-          separatorBuilder: (context, index) => const Divider(height: 10,),
-          itemCount: _web.length,
-          itemBuilder: (context, index) => _web[index],
-        ),
+        child: renderWebsiteCards(),
         margin: const EdgeInsets.symmetric(horizontal: 5.0),
       ),
     );

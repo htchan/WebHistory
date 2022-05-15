@@ -5,25 +5,22 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:http/http.dart' as http;
+import 'package:webhistory/Clients/webHistoryClient.dart';
 
 class InsertPage extends StatefulWidget{
-  final String url;
-  final String token;
+  WebHistoryClient client;
 
-  const InsertPage({Key? key, required this.url, required this.token}) : super(key: key);
+  InsertPage({Key? key, required this.client}) : super(key: key);
 
   @override
-  _InsertPageState createState() => _InsertPageState(this.url, this.token);
+  _InsertPageState createState() => _InsertPageState(this.client);
 }
 
 class _InsertPageState extends State<InsertPage> {
-  final String url;
-  final String token;
-  List<Widget> _web = [ const Center(child: Text("Loading")) ];
-  // List<Widget> _buttons = _renderStageButton();
+  WebHistoryClient client;
   final GlobalKey<FormState> scaffoldKey = GlobalKey<FormState>();
 
-  _InsertPageState(this.url, this.token);
+  _InsertPageState(this.client);
 
   String? validateUrl(String? url) {
     if (url == null || url.isEmpty) { return "Empty url"; }
@@ -33,22 +30,10 @@ class _InsertPageState extends State<InsertPage> {
 
   void addUrl(TextEditingController text) {
     if (scaffoldKey.currentState!.validate()) {
-      String apiUrl = '$url/websites/';
-      // add loading animate
-      http.post(
-        Uri.parse(apiUrl),
-        body: <String, String>{
-          'url': text.text
-        },
-        headers: {"Authorization": token}
-      )
-      .then( (response) {
-        // remove loading animate
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          text.text = "";
-        }
-        var data = response.body;
-        resultToast(jsonDecode(data)["message"]);
+      client.insert(text.text)
+      .then( (popup) {
+        text.text = "";
+        resultToast(popup?.content?? "");
       });
     }
   }
