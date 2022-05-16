@@ -6,13 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:webhistory/Clients/webHistoryClient.dart';
+import 'package:webhistory/repostories/webHistoryRepostory.dart';
 import 'package:webhistory/Components/statusButton.dart';
 import 'package:webhistory/WebHistory/Models/webGroup.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class WebsiteCard extends StatelessWidget {
-  final WebHistoryClient client;
+  final WebHistoryRepostory client;
   final WebGroup group;
   final Function updateList;
   // final String token;
@@ -24,7 +24,7 @@ class WebsiteCard extends StatelessWidget {
 
   void openURL() async {
     // refresh web and call update list
-    client.refresh(group.latestWeb.uuid)
+    client.refreshWeb(group.latestWeb.uuid)
     .then( (response) { updateList(); } );
     // TODO: if it is not available to launch, it have to give a pop up
     if (await canLaunch(group.latestWeb.url)) await launch(group.latestWeb.url);
@@ -70,7 +70,7 @@ class WebsiteCard extends StatelessWidget {
           FlatButton(
             child: Text("Change"),
             onPressed: () {
-              client.chagneGroup(group.latestWeb.uuid, groupNameText.text)
+              client.chagneGroupName(group.latestWeb.uuid, groupNameText.text)
               .then((group) { Navigator.of(context).pop(); })
               .catchError((e) { resultToast(e); });
             },

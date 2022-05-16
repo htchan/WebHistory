@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webhistory/Clients/webHistoryClient.dart';
+import 'package:webhistory/repostories/webHistoryRepostory.dart';
 import 'package:webhistory/WebHistory/Models/webGroup.dart';
 import '../Components/websiteCard.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class MainPage extends StatefulWidget {
-  WebHistoryClient client;
+  WebHistoryRepostory client;
 
   MainPage({Key? key, required this.client}) : super(key: key);
 
@@ -20,7 +20,7 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  WebHistoryClient client;
+  WebHistoryRepostory client;
   List<WebGroup>? groups;
   final GlobalKey scaffoldKey = GlobalKey();
 
@@ -34,7 +34,7 @@ class _MainPageState extends State<MainPage> {
 
   void _loadData() {
     print("update");
-    client.webGroups().then((groups) {
+    client.getWebGroups().then((groups) {
       setState( () { this.groups = groups; });
     })
     .catchError((e) {
@@ -71,7 +71,7 @@ class _MainPageState extends State<MainPage> {
       .mapIndexed( (i, group) async {
         if (await canLaunch(group.latestWeb.url)) await launch(group.latestWeb.url);
         // and update backend server of opened website
-        client.refresh(group.latestWeb.uuid);
+        client.refreshWeb(group.latestWeb.uuid);
       })
     )
     .then( (response) { _loadData(); });

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:webhistory/Clients/webHistoryClient.dart';
+import 'package:webhistory/repostories/webHistoryRepostory.dart';
 import 'package:webhistory/Page/detailsPage.dart';
 import 'dart:html';
 import './Page/mainPage.dart';

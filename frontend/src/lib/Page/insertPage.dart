@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:http/http.dart' as http;
-import 'package:webhistory/Clients/webHistoryClient.dart';
+import 'package:webhistory/repostories/webHistoryRepostory.dart';
 
 class InsertPage extends StatefulWidget{
-  WebHistoryClient client;
+  WebHistoryRepostory client;
 
   InsertPage({Key? key, required this.client}) : super(key: key);
 
@@ -17,7 +17,7 @@ class InsertPage extends StatefulWidget{
 }
 
 class _InsertPageState extends State<InsertPage> {
-  WebHistoryClient client;
+  WebHistoryRepostory client;
   final GlobalKey<FormState> scaffoldKey = GlobalKey<FormState>();
 
   _InsertPageState(this.client);
@@ -30,7 +30,7 @@ class _InsertPageState extends State<InsertPage> {
 
   void addUrl(TextEditingController text) {
     if (scaffoldKey.currentState!.validate()) {
-      client.insert(text.text)
+      client.createWeb(text.text)
       .then( (popup) {
         text.text = "";
         resultToast(popup?.content?? "");

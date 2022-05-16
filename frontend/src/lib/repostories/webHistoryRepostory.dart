@@ -5,15 +5,15 @@ import 'package:webhistory/WebHistory/Models/web.dart';
 import 'package:webhistory/WebHistory/Models/popup.dart';
 import 'package:http/http.dart' as http;
 
-class WebHistoryClient {
+class WebHistoryRepostory {
   String host, authToken;
   final String protocol = "http";
 
-  WebHistoryClient(this.host, this.authToken);
+  WebHistoryRepostory(this.host, this.authToken);
 
   String get url { return "${protocol}://${host}/api/web-history"; }
 
-  Future<List<WebGroup>> webGroups() {
+  Future<List<WebGroup>> getWebGroups() {
     return http.get(Uri.parse("${this.url}/websites/groups"), headers: {'Authorization': this.authToken})
       .then((response) {
         Map<String, dynamic> responseMap = Map.from(jsonDecode(response.body));
@@ -28,7 +28,7 @@ class WebHistoryClient {
       });
   }
 
-  Future<WebGroup?> webGroup(String groupName) {
+  Future<WebGroup?> getWebGroup(String groupName) {
     return http.get(Uri.parse("${this.url}/websites/groups/${groupName}"), headers: {'Authorization': this.authToken})
       .then((response) {
         Map<String, dynamic> responseMap = Map.from(jsonDecode(response.body));
@@ -41,7 +41,7 @@ class WebHistoryClient {
       });
   }
 
-  Future<Popup?> insert(String url) {
+  Future<Popup?> createWeb(String url) {
     return http.post(
       Uri.parse("${this.url}/websites/"),
       body: <String, String> {
@@ -55,7 +55,7 @@ class WebHistoryClient {
     });
   }
 
-  Future<Popup?> refresh(String uuid) {
+  Future<Popup?> refreshWeb(String uuid) {
     print(uuid);
     return http.put(Uri.parse("${this.url}/websites/${uuid}/refresh"), headers: {'Authorization': this.authToken})
       .then((response) {
@@ -64,7 +64,7 @@ class WebHistoryClient {
       });
   }
 
-  Future<Popup?> chagneGroup(String uuid, groupName) {
+  Future<Popup?> chagneGroupName(String uuid, groupName) {
     return http.put(
       Uri.parse("${this.url}/websites/${uuid}/change-group"),
       body: <String, String> {

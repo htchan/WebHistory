@@ -4,14 +4,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:http/http.dart' as http;
-import 'package:webhistory/Clients/webHistoryClient.dart';
+import 'package:webhistory/repostories/webHistoryRepostory.dart';
 import 'package:webhistory/Components/websiteCard.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:webhistory/WebHistory/Models/webGroup.dart';
 
 class DetailsPage extends StatefulWidget{
   final String groupName;
-  WebHistoryClient client;
+  WebHistoryRepostory client;
 
   DetailsPage({Key? key, required this.groupName, required this.client}) : super(key: key);
 
@@ -21,7 +21,7 @@ class DetailsPage extends StatefulWidget{
 
 
 class _DetailsPageState extends State<DetailsPage> {
-  WebHistoryClient client;
+  WebHistoryRepostory client;
   final GlobalKey<FormState> scaffoldKey = GlobalKey<FormState>();
   final String groupName;
   WebGroup? group;
@@ -41,7 +41,7 @@ class _DetailsPageState extends State<DetailsPage> {
   }
 
   void _loadData() {
-    client.webGroup(groupName)
+    client.getWebGroup(groupName)
     .then( (group) {
       setState(() { this.group = group; });
     })
