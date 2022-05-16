@@ -1,8 +1,6 @@
 import 'dart:convert';
 
-import 'package:webhistory/Models/webGroup.dart';
-import 'package:webhistory/Models/web.dart';
-import 'package:webhistory/Models/popup.dart';
+import 'package:webhistory/models/all_models.dart';
 import 'package:http/http.dart' as http;
 
 class WebHistoryRepostory {
@@ -57,11 +55,14 @@ class WebHistoryRepostory {
 
   Future<Popup?> refreshWeb(String uuid) {
     print(uuid);
-    return http.put(Uri.parse("${this.url}/websites/${uuid}/refresh"), headers: {'Authorization': this.authToken})
-      .then((response) {
-        Map<String, dynamic> responseMap = Map.from(jsonDecode(response.body));
-        return Popup.from(<String, String> {"message": "success"});
-      });
+    return http.put(
+      Uri.parse("${this.url}/websites/${uuid}/refresh"),
+      headers: {'Authorization': this.authToken}
+    )
+    .then((response) {
+      Map<String, dynamic> responseMap = Map.from(jsonDecode(response.body));
+      return Popup.from(<String, String> {"message": "success"});
+    });
   }
 
   Future<Popup?> chagneGroupName(String uuid, groupName) {

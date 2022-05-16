@@ -1,54 +1,39 @@
-import 'dart:convert';
-import 'dart:js';
 // ignore: file_names
 import 'package:flutter/material.dart';
-// ignore: import_of_legacy_library_into_null_safe
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:webhistory/repostories/webHistoryRepostory.dart';
-import 'package:webhistory/Components/statusButton.dart';
-import 'package:webhistory/Models/webGroup.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:webhistory/models/all_models.dart';
+
+import 'status_button.dart';
 
 class WebsiteCard extends StatelessWidget {
   final WebHistoryRepostory client;
   final WebGroup group;
+  final Web web;
   final Function updateList;
   // final String token;
-  const WebsiteCard({
+  WebsiteCard({
     required this.client,
     required this.group,
     required this.updateList,
-  });
+  }): this.web = group.latestWeb;
 
   void openURL() async {
     // refresh web and call update list
-    client.refreshWeb(group.latestWeb.uuid)
-    .then( (response) { updateList(); } );
+    client.refreshWeb(web.uuid)
+    .then( (response) { updateList(); } )
+    .catchError( (e) { Popup(e.toString()).show(); } );
+
     // TODO: if it is not available to launch, it have to give a pop up
-    if (await canLaunch(group.latestWeb.url)) await launch(group.latestWeb.url);
+    if (await canLaunch(web.url)) await launch(web.url);
   }
 
   Text renderSubTitleText() {
     return Text(
-      (group.latestWeb.url) + '\n' +
-      'Update Time: ' + group.latestWeb.updateTime.toLocal().toString() + '\n' +
-      'Access Time: ' + group.latestWeb.accessTime.toLocal().toString()
-    );
-  }
-
-  void resultToast(String msg) {
-    Fluttertoast.showToast(
-        msg: msg,
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 5,
-        fontSize: 16.0,
-        backgroundColor: Colors.grey.shade300,
-        textColor: Colors.black,
-        webBgColor: "#DDDDDD",
-        webPosition: "center",
+      (web.url) + '\n' +
+      'Update Time: ' + web.updateTime.toLocal().toString() + '\n' +
+      'Access Time: ' + web.accessTime.toLocal().toString()
     );
   }
 
@@ -63,16 +48,16 @@ class WebsiteCard extends StatelessWidget {
           decoration: const InputDecoration(hintText: "Group Name"),
         ),
         actions: [
-          FlatButton(
+          TextButton(
             child: Text("Cancel"),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          FlatButton(
+          TextButton(
             child: Text("Change"),
             onPressed: () {
-              client.chagneGroupName(group.latestWeb.uuid, groupNameText.text)
+              client.chagneGroupName(web.uuid, groupNameText.text)
               .then((group) { Navigator.of(context).pop(); })
-              .catchError((e) { resultToast(e); });
+              .catchError((e) { Popup(e).show(); });
             },
           )
         ],
@@ -90,7 +75,7 @@ class WebsiteCard extends StatelessWidget {
         onTap: () {
           Navigator.pushNamed(
             context,
-            '/details?groupName=${group.latestWeb.groupName}'
+            '/details?groupName=${web.groupName}'
           )
           .then( (value) => updateList() );
         }
@@ -132,8 +117,8 @@ class WebsiteCard extends StatelessWidget {
       child: GestureDetector(
         onTap: openURL,
         child:ListTile(
-          leading: WebsiteCardStatusButton(checked: group.latestWeb.isUpdated),
-          title: Text(group.latestWeb.groupName),
+          leading: WebsiteCardStatusButton(checked: web.isUpdated),
+          title: Text(web.groupName),
           subtitle: renderSubTitleText(),
         ),
       ),

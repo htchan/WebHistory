@@ -1,3 +1,6 @@
+import 'package:webhistory/repostories/webHistoryRepostory.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 class Web {
   final String uuid, url, title, groupName;
   final DateTime updateTime, accessTime;
@@ -15,5 +18,10 @@ class Web {
   }
   bool get isNull {
     return (uuid == "" && url == "" && title == "" && groupName == "");
+  }
+
+  Future<void> open(WebHistoryRepostory client) async {
+        if (await canLaunch(url)) await launch(url);
+        client.refreshWeb(uuid);
   }
 }

@@ -1,16 +1,11 @@
-// ignore: file_names
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-// ignore: import_of_legacy_library_into_null_safe
-import 'package:http/http.dart' as http;
+import 'package:webhistory/models/popup.dart';
 import 'package:webhistory/repostories/webHistoryRepostory.dart';
 
 class InsertScreen extends StatefulWidget{
-  WebHistoryRepostory client;
+  final WebHistoryRepostory client;
 
-  InsertScreen({Key? key, required this.client}) : super(key: key);
+  const InsertScreen({Key? key, required this.client}) : super(key: key);
 
   @override
   _InsertScreenState createState() => _InsertScreenState(this.client);
@@ -18,7 +13,8 @@ class InsertScreen extends StatefulWidget{
 
 class _InsertScreenState extends State<InsertScreen> {
   WebHistoryRepostory client;
-  final GlobalKey<FormState> scaffoldKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController urlTextController = TextEditingController();
 
   _InsertScreenState(this.client);
 
@@ -28,50 +24,35 @@ class _InsertScreenState extends State<InsertScreen> {
     return null;
   }
 
-  void addUrl(TextEditingController text) {
-    if (scaffoldKey.currentState!.validate()) {
-      client.createWeb(text.text)
-      .then( (popup) {
-        text.text = "";
-        resultToast(popup?.content?? "");
-      });
-    }
-  }
-  void resultToast(String msg) {
-    Fluttertoast.showToast(
-        msg: msg,
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 5,
-        fontSize: 16.0,
-        backgroundColor: Colors.grey.shade300,
-        textColor: Colors.black,
-        webBgColor: "#DDDDDD",
-        webPosition: "center",
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    // show the content
-    TextEditingController text = TextEditingController();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Web History'),
       ),
       body: Form(
-        key: scaffoldKey,
+        key: _formKey,
         child: Column(
           children: [
             TextFormField(
-              controller: text,
+              controller: urlTextController,
               decoration: const InputDecoration(hintText: "Url"),
               validator: validateUrl
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: ElevatedButton(
-                onPressed: () => addUrl(text),
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    client.createWeb(urlTextController.text)
+                    .then( (popup) {
+                      urlTextController.text = "";
+                      popup?.show();
+                    });
+                  } else {
+                    Popup("invald url").show();
+                  }
+                },
                 child: const Text('Submit'),
               ),
             ),
