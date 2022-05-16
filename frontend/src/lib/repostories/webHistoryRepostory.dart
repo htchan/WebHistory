@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:webhistory/WebHistory/Models/webGroup.dart';
-import 'package:webhistory/WebHistory/Models/web.dart';
-import 'package:webhistory/WebHistory/Models/popup.dart';
+import 'package:webhistory/Models/webGroup.dart';
+import 'package:webhistory/Models/web.dart';
+import 'package:webhistory/Models/popup.dart';
 import 'package:http/http.dart' as http;
 
 class WebHistoryRepostory {

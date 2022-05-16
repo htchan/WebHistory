@@ -6,25 +6,25 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webhistory/repostories/webHistoryRepostory.dart';
-import 'package:webhistory/WebHistory/Models/webGroup.dart';
+import 'package:webhistory/Models/webGroup.dart';
 import '../Components/websiteCard.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-class MainPage extends StatefulWidget {
+class MainScreen extends StatefulWidget {
   WebHistoryRepostory client;
 
-  MainPage({Key? key, required this.client}) : super(key: key);
+  MainScreen({Key? key, required this.client}) : super(key: key);
 
   @override
-  _MainPageState createState() => _MainPageState(this.client);
+  _MainScreenState createState() => _MainScreenState(this.client);
 }
 
-class _MainPageState extends State<MainPage> {
+class _MainScreenState extends State<MainScreen> {
   WebHistoryRepostory client;
   List<WebGroup>? groups;
   final GlobalKey scaffoldKey = GlobalKey();
 
-  _MainPageState(this.client) {
+  _MainScreenState(this.client) {
     _loadData();
   }
 
@@ -56,7 +56,7 @@ class _MainPageState extends State<MainPage> {
         webPosition: "center",
     );
   }
-  void openInsertPage() {
+  void openInsertScreen() {
     Navigator.pushNamed(
       scaffoldKey.currentContext!,
       '/add'
@@ -106,7 +106,7 @@ class _MainPageState extends State<MainPage> {
             icon: const Icon(Icons.open_in_browser_outlined)
           ),
           IconButton(
-            onPressed: openInsertPage, 
+            onPressed: openInsertScreen, 
             icon: const Icon(Icons.add_circle),
           )
         ],

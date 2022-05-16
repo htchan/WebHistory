@@ -8,10 +8,10 @@ import 'dart:html';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginScreen extends StatelessWidget {
   final Map queryParams;
 
-  LoginPage({Key? key, required this.queryParams}) : super(key: key) {
+  LoginScreen({Key? key, required this.queryParams}) : super(key: key) {
     String token = queryParams["token"] ?? "";
     if (token != "") {
       final Storage _localStorage = window.localStorage;

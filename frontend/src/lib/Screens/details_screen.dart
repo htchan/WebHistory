@@ -7,32 +7,32 @@ import 'package:http/http.dart' as http;
 import 'package:webhistory/repostories/webHistoryRepostory.dart';
 import 'package:webhistory/Components/websiteCard.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:webhistory/WebHistory/Models/webGroup.dart';
+import 'package:webhistory/Models/webGroup.dart';
 
-class DetailsPage extends StatefulWidget{
+class DetailsScreen extends StatefulWidget{
   final String groupName;
   WebHistoryRepostory client;
 
-  DetailsPage({Key? key, required this.groupName, required this.client}) : super(key: key);
+  DetailsScreen({Key? key, required this.groupName, required this.client}) : super(key: key);
 
   @override
-  _DetailsPageState createState() => _DetailsPageState(this.client, this.groupName);
+  _DetailsScreenState createState() => _DetailsScreenState(this.client, this.groupName);
 }
 
 
-class _DetailsPageState extends State<DetailsPage> {
+class _DetailsScreenState extends State<DetailsScreen> {
   WebHistoryRepostory client;
   final GlobalKey<FormState> scaffoldKey = GlobalKey<FormState>();
   final String groupName;
   WebGroup? group;
 
-  _DetailsPageState(this.client, this.groupName) {
+  _DetailsScreenState(this.client, this.groupName) {
     _loadData();
   }
 
   void handleNoMatchGroup(int n) {
     String errorMessage = 
-      "No webiste Match group - ${group?.latestWeb.groupName}\nYou will back to Home Page in #{n} seconds";
+      "No webiste Match group - ${group?.latestWeb.groupName}\nYou will back to Home Screen in #{n} seconds";
     setState(() {
       group = null;
     });

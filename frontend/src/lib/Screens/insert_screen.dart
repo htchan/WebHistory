@@ -7,20 +7,20 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:webhistory/repostories/webHistoryRepostory.dart';
 
-class InsertPage extends StatefulWidget{
+class InsertScreen extends StatefulWidget{
   WebHistoryRepostory client;
 
-  InsertPage({Key? key, required this.client}) : super(key: key);
+  InsertScreen({Key? key, required this.client}) : super(key: key);
 
   @override
-  _InsertPageState createState() => _InsertPageState(this.client);
+  _InsertScreenState createState() => _InsertScreenState(this.client);
 }
 
-class _InsertPageState extends State<InsertPage> {
+class _InsertScreenState extends State<InsertScreen> {
   WebHistoryRepostory client;
   final GlobalKey<FormState> scaffoldKey = GlobalKey<FormState>();
 
-  _InsertPageState(this.client);
+  _InsertScreenState(this.client);
 
   String? validateUrl(String? url) {
     if (url == null || url.isEmpty) { return "Empty url"; }

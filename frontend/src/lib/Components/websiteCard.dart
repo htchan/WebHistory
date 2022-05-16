@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:webhistory/repostories/webHistoryRepostory.dart';
 import 'package:webhistory/Components/statusButton.dart';
-import 'package:webhistory/WebHistory/Models/webGroup.dart';
+import 'package:webhistory/Models/webGroup.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class WebsiteCard extends StatelessWidget {

@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webhistory/repostories/webHistoryRepostory.dart';
-import 'package:webhistory/Page/detailsPage.dart';
 import 'dart:html';
-import './Page/mainPage.dart';
-import './Page/insertPage.dart';
-import 'Page/loginPage.dart';
+import 'package:webhistory/Screens/all_screen.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -46,7 +43,7 @@ final Storage _localStorage = window.localStorage;
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   String url = 'http://${host}/api/web-history';
-  WebHistoryClient client = WebHistoryClient("localhost", "");
+  WebHistoryRepostory client = WebHistoryRepostory("localhost", "");
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -63,22 +60,22 @@ class MyApp extends StatelessWidget {
         var uri = Uri.parse(settings.name??"");
         String authToken = _localStorage['web_history_token'] ?? "";
         if (authToken == "") {
-          return MaterialPageRoute(builder: (context) => LoginPage(queryParams: uri.queryParameters), settings: settings);
+          return MaterialPageRoute(builder: (context) => LoginScreen(queryParams: uri.queryParameters), settings: settings);
         } else {
           client.authToken = authToken;
         }
         if (uri.pathSegments.indexOf('add') == 0) {
-          return MaterialPageRoute(builder: (context) => InsertPage(client: client),
+          return MaterialPageRoute(builder: (context) => InsertScreen(client: client),
             settings: settings);
         } else if (uri.pathSegments.indexOf('details') == 0) {
           String groupName = uri.queryParameters["groupName"]??"";
           print("going to ${groupName}");
-          return MaterialPageRoute(builder: (context) => DetailsPage(client: client, groupName: groupName),
+          return MaterialPageRoute(builder: (context) => DetailsScreen(client: client, groupName: groupName),
             settings: settings);
         } else if (uri.path.startsWith('/web-history/user-service/login')) {
-          return MaterialPageRoute(builder: (context) => LoginPage(queryParams: uri.queryParameters), settings: settings);
+          return MaterialPageRoute(builder: (context) => LoginScreen(queryParams: uri.queryParameters), settings: settings);
         } else {
-          return MaterialPageRoute(builder: (context) => MainPage(client: client),
+          return MaterialPageRoute(builder: (context) => MainScreen(client: client),
             settings: settings);
         }
       }
