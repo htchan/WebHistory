@@ -6,7 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/htchan/WebHistory/pkg/website"
+	"github.com/htchan/WebHistory/pkg/router"
+	"github.com/htchan/WebHistory/internal/utils"
 
 	"github.com/htchan/ApiParser"
 	"github.com/go-chi/chi/v5"
@@ -15,14 +16,14 @@ import (
 func main() {
 	ApiParser.SetDefault(ApiParser.FromDirectory("/api_parser"))
 	fmt.Println("hello")
-	db, err := website.OpenDatabase(os.Getenv("database_volume"))
+	db, err := utils.OpenDatabase(os.Getenv("database_volume"))
 	if err != nil {
 		log.Println("faile to open database", os.Getenv("database_volume"))
 		return
 	}
 	defer db.Close()
-	router := chi.NewRouter()
-	website.AddWebsiteRoutes(router, db)
+	r := chi.NewRouter()
+	router.AddWebsiteRoutes(r, db)
 
-	log.Fatal(http.ListenAndServe(":9105", router))
+	log.Fatal(http.ListenAndServe(":9105", r))
 }

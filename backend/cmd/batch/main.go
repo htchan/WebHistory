@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/htchan/WebHistory/pkg/website"
+	"github.com/htchan/WebHistory/internal/utils"
 
 	"github.com/htchan/ApiParser"
 )
@@ -21,14 +22,16 @@ func generateHostChannels(websites []website.Website) chan chan website.Website 
 				continue
 			}
 			hostChannel, ok := hostChannelMap[web.Host()]
-			if !ok {
-				newChannel := make(chan website.Website)
-				hostChannelMap[web.Host()] = newChannel
-				hostChannels <- newChannel
-				newChannel <- web
-			} else {
-				hostChannel <- web
-			}
+			go func(ok bool, web website.Website) {
+				if !ok {
+					newChannel := make(chan website.Website)
+					hostChannelMap[web.Host()] = newChannel
+					hostChannels <- newChannel
+					newChannel <- web
+				} else {
+					hostChannel <- web
+				}
+			}(ok, web)
 		}
 		for key := range hostChannelMap {
 			close(hostChannelMap[key])
@@ -67,7 +70,7 @@ func regularUpdateWebsites(db *sql.DB) {
 
 func main() {
 	ApiParser.SetDefault(ApiParser.FromDirectory("/api_parser"))
-	db, err := website.OpenDatabase(os.Getenv("database_volume"))
+	db, err := utils.OpenDatabase(os.Getenv("database_volume"))
 	if err != nil {
 		log.Println("open database failed:", err)
 	}

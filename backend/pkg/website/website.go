@@ -35,10 +35,11 @@ func NewWebsite(url, userUUID string) Website {
 const createWebsiteSQL = `INSERT OR IGNORE INTO websites 
 (uuid, url, title, content, update_time) VALUES (?, ?, ?, ?, ?);`
 
-const createUserWebsiteSQL = `INSERT INTO user_websites
-(uuid, user_uuid, access_time, group_name) VALUES (?, ?, ?, ?);`
+const createUserWebsiteSQL = `INSERT OR IGNORE INTO user_websites
+(uuid, user_uuid, access_time, group_name) VALUES
+((select uuid from websites where url=?), ?, ?, ?) returning uuid;`
 
-func (web Website) Create(db *sql.DB) error {
+func (web *Website) Create(db *sql.DB) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -49,12 +50,15 @@ func (web Website) Create(db *sql.DB) error {
 		tx.Rollback()
 		return err
 	}
-	_, err = tx.Exec(
-		createUserWebsiteSQL, web.UUID, web.UserUUID, web.AccessTime, web.GroupName,
+	rows, err := tx.Query(
+		createUserWebsiteSQL, web.URL, web.UserUUID, web.AccessTime, web.GroupName,
 	)
 	if err != nil {
 		tx.Rollback()
 		return err
+	}
+	if rows.Next() {
+		rows.Scan(&web.UUID)
 	}
 	return tx.Commit()
 }
@@ -114,7 +118,7 @@ func FindAllUserWebsites(db *sql.DB, userUUID string) ([]Website, error) {
 	rows, err := db.Query(
 		`select websites.uuid, url, title, content, update_time, user_uuid, access_time, group_name
 		from websites join user_websites on websites.uuid=user_websites.uuid 
-		where user_uuid=?`,
+		where user_uuid=? order by (update_time > access_time), update_time, access_time`,
 		userUUID,
 	)
 	if err != nil {

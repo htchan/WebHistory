@@ -1,4 +1,4 @@
-package website
+package router
 
 import (
 	"errors"
@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/htchan/WebHistory/internal/utils"
+	"github.com/htchan/WebHistory/pkg/website"
 )
 
 func writeError(res http.ResponseWriter, statusCode int, err error) {
@@ -64,12 +65,12 @@ func SetContentType(next http.Handler) http.Handler {
 func getAllWebsiteGroups(db *sql.DB) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		userUUID := req.Context().Value("userUUID").(string)
-		webs, err := FindAllUserWebsites(db, userUUID)
+		webs, err := website.FindAllUserWebsites(db, userUUID)
 		if err != nil {
 			writeError(res, http.StatusBadRequest, RecordNotFoundError)
 		}
 		json.NewEncoder(res).Encode(map[string]interface{} {
-			"website_groups": WebsitesToWebsiteGroups(webs),
+			"website_groups": website.WebsitesToWebsiteGroups(webs),
 		})
 	}
 }
@@ -79,11 +80,11 @@ func getWebsiteGroup(db *sql.DB) http.HandlerFunc {
 		userUUID := req.Context().Value("userUUID").(string)
 		groupName := chi.URLParam(req, "groupName")
 
-		webs, err := FindAllUserWebsites(db, userUUID)
+		webs, err := website.FindAllUserWebsites(db, userUUID)
 		if err != nil {
 			writeError(res, http.StatusBadRequest, RecordNotFoundError)
 		}
-		for _, g := range WebsitesToWebsiteGroups(webs) {
+		for _, g := range website.WebsitesToWebsiteGroups(webs) {
 			if g[0].GroupName == groupName {
 				json.NewEncoder(res).Encode(map[string]interface{} {
 					"website_group": g,
@@ -120,7 +121,7 @@ func createWebsite(db *sql.DB) http.HandlerFunc {
 		userUUID := req.Context().Value("userUUID").(string)
 		url := req.Context().Value("webURL").(string)
 		log.Println("create-website.start", fmt.Sprintf(`{ "url": "%v" }`, url))
-		web := NewWebsite(url, userUUID)
+		web := website.NewWebsite(url, userUUID)
 		err := web.Create(db)
 		if err != nil {
 			writeError(res, http.StatusBadRequest, err)
@@ -139,7 +140,7 @@ func QueryWebsite(db *sql.DB) func(http.Handler) http.Handler {
 			func (res http.ResponseWriter, req *http.Request) {
 				userUUID := req.Context().Value("userUUID").(string)
 				webUUID := chi.URLParam(req, "webUUID")
-				web, err := FindUserWebsite(db, userUUID, webUUID)
+				web, err := website.FindUserWebsite(db, userUUID, webUUID)
 				if err != nil {
 					writeError(res, http.StatusBadRequest, err)
 					return
@@ -153,7 +154,7 @@ func QueryWebsite(db *sql.DB) func(http.Handler) http.Handler {
 
 func getWebsite(db *sql.DB) http.HandlerFunc {
 	return func (res http.ResponseWriter, req *http.Request) {
-		web := req.Context().Value("websites").(Website)
+		web := req.Context().Value("websites").(website.Website)
 		json.NewEncoder(res).Encode(map[string]interface{} {
 			"website": web,
 		})
@@ -162,7 +163,7 @@ func getWebsite(db *sql.DB) http.HandlerFunc {
 
 func refreshWebsite(db *sql.DB) http.HandlerFunc {
 	return func (res http.ResponseWriter, req *http.Request) {
-		web := req.Context().Value("website").(Website)
+		web := req.Context().Value("website").(website.Website)
 		web.AccessTime = time.Now()
 		err := web.Save(db)
 		if err != nil {
@@ -177,7 +178,7 @@ func refreshWebsite(db *sql.DB) http.HandlerFunc {
 
 func deleteWebsite(db *sql.DB) http.HandlerFunc {
 	return func (res http.ResponseWriter, req *http.Request) {
-		web := req.Context().Value("website").(Website)
+		web := req.Context().Value("website").(website.Website)
 		err := web.Delete(db)
 		if err != nil {
 			writeError(res, http.StatusInternalServerError, err)
@@ -207,7 +208,7 @@ func GroupNameParams(next http.Handler) http.Handler {
 
 func changeWebsiteGroup(db *sql.DB) http.HandlerFunc {
 	return func (res http.ResponseWriter, req *http.Request) {
-		web := req.Context().Value("website").(Website)
+		web := req.Context().Value("website").(website.Website)
 		groupName := req.Context().Value("group").(string)
 		if !utils.IsSubSet(web.Title, strings.ReplaceAll(groupName, " ", "")) || len(web.Title) == 0 {
 			writeError(res, http.StatusBadRequest, errors.New("invalid group name"))

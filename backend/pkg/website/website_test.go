@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 	"testing"
+	"github.com/htchan/WebHistory/internal/utils"
 )
 
 func TestNewWebsite(t *testing.T) {
@@ -28,7 +29,7 @@ func TestWithDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("fail to copy: %v", err)
 	}
-	db, err := OpenDatabase("test.db")
+	db, err := utils.OpenDatabase("test.db")
 	if err != nil {
 		t.Errorf("cannot open database: %v", err)
 	}
@@ -42,7 +43,7 @@ func TestWithDB(t *testing.T) {
 			if err != nil {
 				t.Errorf("return %v", err)
 			}
-			w, err = FindUserWebsite(db, "12345", url)
+			w, err = FindUserWebsite(db, "12345", w.UUID)
 			if err != nil || w.URL != url {
 				t.Errorf("find user web return website: %v, err: %v", w, err)
 			}
@@ -56,7 +57,7 @@ func TestWithDB(t *testing.T) {
 			if err != nil {
 				t.Errorf("return %v", err)
 			}
-			w, err = FindUserWebsite(db, "23456", url)
+			w, err = FindUserWebsite(db, "23456", w.UUID)
 			if err != nil || w.URL != url {
 				t.Errorf("find user web return website: %v, err: %v", w, err)
 			}
@@ -88,7 +89,7 @@ func TestWithDB(t *testing.T) {
 			if err != nil {
 				t.Errorf("return %v", err)
 			}
-			w, err = FindUserWebsite(db, "12345", url)
+			w, err = FindUserWebsite(db, "12345", w.UUID)
 			if err != nil || w.URL != url {
 				t.Errorf("find user web return website: %v, err: %v", w, err)
 			}

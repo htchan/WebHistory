@@ -1,4 +1,4 @@
-package website
+package utils
 
 import (
 	"database/sql"
@@ -6,8 +6,6 @@ import (
 
 	"github.com/htchan/WebHistory/internal/logging"
 )
-
-var database *sql.DB
 
 func OpenDatabase(location string) (*sql.DB, error) {
 	database, err := sql.Open("sqlite3", location)
