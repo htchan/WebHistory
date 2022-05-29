@@ -118,7 +118,7 @@ func FindAllUserWebsites(db *sql.DB, userUUID string) ([]Website, error) {
 	rows, err := db.Query(
 		`select websites.uuid, url, title, content, update_time, user_uuid, access_time, group_name
 		from websites join user_websites on websites.uuid=user_websites.uuid 
-		where user_uuid=? order by (update_time > access_time), update_time, access_time`,
+		where user_uuid=? order by (update_time > access_time) desc, update_time desc, access_time desc`,
 		userUUID,
 	)
 	if err != nil {

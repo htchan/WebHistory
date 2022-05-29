@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 	"testing"
+	"fmt"
 	"github.com/htchan/WebHistory/internal/utils"
 )
 
@@ -150,6 +151,34 @@ func TestWithDB(t *testing.T) {
 			ws, err := FindAllUserWebsites(db, "12345")
 			if err != nil || len(ws) == 0 {
 				t.Errorf("find user web return website: %v, err: %v", ws, err)
+			}
+		})
+
+		t.Run("return website with correct order", func(t *testing.T) {
+			t.Parallel()
+			user_uuid := "ordered_result"
+			url := "http://localhost/web/%v"
+			web_updated := NewWebsite(fmt.Sprintf(url, 1), user_uuid)
+			web_updated.UpdateTime, web_updated.AccessTime = time.UnixMicro(3), time.UnixMicro(1)
+			web_updated.Create(db)
+			web_updated_2 := NewWebsite(fmt.Sprintf(url, 2), user_uuid)
+			web_updated_2.UpdateTime, web_updated_2.AccessTime = time.UnixMicro(2), time.UnixMicro(1)
+			web_updated_2.Create(db)
+			web_accessed := NewWebsite(fmt.Sprintf(url, 3), user_uuid)
+			web_accessed.UpdateTime, web_accessed.AccessTime = time.UnixMicro(1), time.UnixMicro(3)
+			web_accessed.Create(db)
+			web_accessed_2 := NewWebsite(fmt.Sprintf(url, 4), user_uuid)
+			web_accessed_2.UpdateTime, web_accessed_2.AccessTime = time.UnixMicro(1), time.UnixMicro(2)
+			web_accessed_2.Create(db)
+
+			ws, err := FindAllUserWebsites(db, user_uuid)
+			if err != nil || len(ws) != 4 {
+				t.Errorf("incorrect length of result: %v", ws)
+			}
+			for i := range ws {
+				if ws[i].URL != fmt.Sprintf(url, i + 1) {
+					t.Errorf("invalid url at %v - get: %v, expected: %v", i, ws[i].URL, fmt.Sprintf(url, i+1))
+				}
 			}
 		})
 	})
