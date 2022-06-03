@@ -208,9 +208,13 @@ func WebsitesToWebsiteGroups(websites []Website) []WebsiteGroup {
 	}
 	result := make([]WebsiteGroup, len(websiteGroupMap))
 	i := 0
-	for _, item := range websiteGroupMap {
-		result[i] = item
-		i++
+	for _, web := range websites {
+		item, exist := websiteGroupMap[web.GroupName]
+		if exist {
+			delete(websiteGroupMap, web.GroupName)
+			result[i] = item
+			i++
+		}
 	}
 	return result
 }
