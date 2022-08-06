@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      initialRoute: '/',
+      initialRoute: "${FE_ROUTE_PREFIX}/",
       onGenerateRoute: (settings) {
         var uri = Uri.parse(settings.name??"");
         String authToken = _localStorage['web_history_token'] ?? "";
