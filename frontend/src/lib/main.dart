@@ -36,8 +36,8 @@ void main() async {
   runApp(MyApp());
 }
 
-// const String host = String.fromEnvironment("WEB_WATCHER_API_HOST");
-String host = "localhost";
+const String host = String.fromEnvironment("WEB_WATCHER_API_HOST");
+// String host = "localhost";
 final Storage _localStorage = window.localStorage;
 const String FE_ROUTE_PREFIX = String.fromEnvironment("WEB_WATCHER_FE_ROUTE_PREFIX", defaultValue: "/web-watcher");
 
