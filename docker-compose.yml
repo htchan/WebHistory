@@ -17,6 +17,7 @@ services:
             - web
         env_file:
             - ./backend/assets/.env.backend
+            - ./.env
         command: sh -c "./backend"
 
     batch:
