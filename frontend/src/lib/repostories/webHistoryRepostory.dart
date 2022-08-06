@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'package:webhistory/models/all_models.dart';
 import 'package:http/http.dart' as http;
 
+const String api_prefix = String.fromEnvironment("WEB_WATCHER_API_ROUTE_PREFIX", defaultValue: "/api/web-watcher");
+
 class WebHistoryRepostory {
   String host, authToken;
   final String protocol = "http";
 
   WebHistoryRepostory(this.host, this.authToken);
-
-  String api_prefix = String.fromEnvironment("WEB_WATCHER_API_ROUTE_PREFIX", defaultValue: "/api/web-watcher");
 
   String get url { return "${protocol}://${host}${api_prefix}"; }
 

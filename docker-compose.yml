@@ -5,6 +5,7 @@ services:
         build: 
             context: ./backend
             dockerfile: ./build/Dockerfile.backend
+        hostname: webhistory_backend
         volumes:
             - ./bin/database:/database
             - ./backend/assets/api_parser:/api_parser
@@ -54,7 +55,7 @@ services:
             - web
         env_file:
             - ./.env
-        command: sh -c "flutter --version ; flutter pub get ; flutter build web  --base-href $WEB_WATCHER_FE_ROUTE_PREFIX"
+        command: sh -c "flutter --version ; flutter pub get ; flutter build web  --base-href $WEB_WATCHER_FE_ROUTE_PREFIX/"
 
 volumes:
     frontend_volume:

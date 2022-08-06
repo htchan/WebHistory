@@ -36,10 +36,10 @@ void main() async {
   runApp(MyApp());
 }
 
-String host = String.fromEnvironment("WEB_WATCHER_API_HOST");
-// String host = "localhost";
+// const String host = String.fromEnvironment("WEB_WATCHER_API_HOST");
+String host = "localhost";
 final Storage _localStorage = window.localStorage;
-final String FE_ROUTE_PREFIX = String.fromEnvironment("WEB_WATCHER_FE_ROUTE_PREFIX", defaultValue: "/web-watcher");
+const String FE_ROUTE_PREFIX = String.fromEnvironment("WEB_WATCHER_FE_ROUTE_PREFIX", defaultValue: "/web-watcher");
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
