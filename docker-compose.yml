@@ -52,7 +52,9 @@ services:
             - all
             - frontend
             - web
-        command: sh -c "flutter --version ; flutter pub get ; flutter build web"
+        env_file:
+            - ./.env
+        command: sh -c "flutter --version ; flutter pub get ; flutter build web  --base-href $WEB_WATCHER_FE_ROUTE_PREFIX"
 
 volumes:
     frontend_volume:

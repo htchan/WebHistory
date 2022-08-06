@@ -9,7 +9,9 @@ class WebHistoryRepostory {
 
   WebHistoryRepostory(this.host, this.authToken);
 
-  String get url { return "${protocol}://${host}/api/web-history"; }
+  String api_prefix = String.fromEnvironment("WEB_WATCHER_API_ROUTE_PREFIX", defaultValue: "/api/web-watcher");
+
+  String get url { return "${protocol}://${host}${api_prefix}"; }
 
   Future<List<WebGroup>> getWebGroups() {
     return http.get(Uri.parse("${this.url}/websites/groups"), headers: {'Authorization': this.authToken})

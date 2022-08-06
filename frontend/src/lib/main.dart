@@ -36,9 +36,10 @@ void main() async {
   runApp(MyApp());
 }
 
-String host = "192.168.128.146";
+String host = String.fromEnvironment("WEB_WATCHER_API_HOST");
 // String host = "localhost";
 final Storage _localStorage = window.localStorage;
+final String FE_ROUTE_PREFIX = String.fromEnvironment("WEB_WATCHER_FE_ROUTE_PREFIX", defaultValue: "/web-watcher");
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -77,7 +78,7 @@ class MyApp extends StatelessWidget {
             builder: (context) => DetailsScreen(client: client, groupName: groupName),
             settings: settings
           );
-        } else if (uri.path.startsWith('/web-history/user-service/login')) {
+        } else if (uri.path.startsWith('${FE_ROUTE_PREFIX}/user-service/login')) {
           return MaterialPageRoute(
             builder: (context) => LoginScreen(queryParams: uri.queryParameters),
             settings: settings

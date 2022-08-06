@@ -227,11 +227,11 @@ func changeWebsiteGroup(db *sql.DB) http.HandlerFunc {
 }
 
 func AddWebsiteRoutes(router chi.Router, db *sql.DB) {
-	api_route_prefix := os.Getenv("API_ROUTE_PREFIX")
+	api_route_prefix := os.Getenv("WEB_WATCHER_API_ROUTE_PREFIX")
 	if api_route_prefix == "" {
 		api_route_prefix = "/api/web-watcher"
 	}
-	router.Route("/api/web-history", func (router chi.Router) {
+	router.Route(api_route_prefix, func (router chi.Router) {
 		router.Route("/websites", func (router chi.Router) {
 			router.Use(
 				cors.Handler(
