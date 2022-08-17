@@ -17,7 +17,10 @@ frontend:
 
 ## backend: deploy backend container
 backend:
-	docker-compose --profile backend up -d
+	docker-compose --profile backend up -d --force-recreate
+
+migrate:
+	migrate -database 'postgres://${USER}:${PASSWORD}@${HOST}:${PORT}/${DB}?sslmode=disable' -path ./backend/migrations up
 
 ## batch: deploy batch container
 batch:
