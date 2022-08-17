@@ -9,13 +9,17 @@ services:
         volumes:
             - ./bin/database:/database
             - ./backend/assets/api_parser:/api_parser
+            - ./backend/migrations:/migrations
             - /etc/timezone:/etc/timezone/ro
         networks:
             - router
+            - database
         profiles:
             - all
             - backend
             - web
+        ports:
+            - 9105:9105
         env_file:
             - ./backend/assets/.env.backend
             - ./.env
@@ -33,12 +37,15 @@ services:
             - ./bin/database:/database
             - ./bin/logs:/logs
             - ./backend/assets/api_parser:/api_parser
+            - ./backend/migrations:/migrations
             - /etc/timezone:/etc/timezone:ro
         networks:
-            - router
+            - database
         profiles:
             - all
             - batch
+        env_file:
+            - ./.env
         command: sh -c "crond && tail -f /dev/null"
 
 
@@ -71,3 +78,6 @@ networks:
     router:
         driver: bridge
         name: router
+    database:
+        name: database
+        external: true
