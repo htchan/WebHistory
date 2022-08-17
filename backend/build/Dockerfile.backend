@@ -9,7 +9,7 @@ RUN apk add gcc musl-dev libc-dev
 RUN go mod download
 
 COPY ./internal ./internal
-COPY ./pkg ./pkg
+# COPY ./pkg ./pkg
 COPY ./cmd/backend ./cmd/backend
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
@@ -23,7 +23,5 @@ WORKDIR /usr/src/app
 RUN apk add tzdata
 
 COPY --from=builder /go/src/github.com/htchan/WebHistory/backend .
-
-ENV database_volume="/database/websites.db"
 
 CMD ['./main']

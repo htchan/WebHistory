@@ -9,7 +9,7 @@ RUN apk add gcc musl-dev libc-dev
 RUN go mod download
 
 COPY ./internal ./internal
-COPY ./pkg ./pkg
+# COPY ./pkg ./pkg
 COPY ./cmd/batch ./cmd/batch
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
@@ -25,7 +25,6 @@ RUN apk add tzdata
 COPY --from=builder /go/src/github.com/htchan/WebHistory/batch .
 COPY ./assets/cron_job /etc/cron.d/cron_job
 
-ENV database_volume="/database/websites.db"
 ENV log_location="/logs/batch.log"
 ENV TZ="Asia/Hong_Kong"
 
