@@ -12,6 +12,8 @@ import (
 	"github.com/htchan/WebHistory/internal/utils"
 )
 
+const INTERVAL = 5
+
 func generateHostChannels(websites []model.Website) chan chan model.Website {
 	hostChannels := make(chan chan model.Website)
 	hostChannelMap := make(map[string]chan model.Website)
@@ -62,7 +64,7 @@ func regularUpdateWebsites(r repo.Repostory) {
 				log.Println(web.URL, "start", nil)
 				service.Update(r, &web)
 				log.Println(web.URL, "finish", nil)
-				time.Sleep(1 * time.Second)
+				time.Sleep(INTERVAL * time.Second)
 			}
 			wg.Done()
 		}(hostChannel)
