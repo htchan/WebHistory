@@ -1,22 +1,21 @@
 package main
 
 import (
-	"os"
-	"database/sql"
 	"log"
 	"sync"
 	"time"
 
-	"github.com/htchan/WebHistory/pkg/website"
-	"github.com/htchan/WebHistory/internal/utils"
-
 	"github.com/htchan/ApiParser"
+	"github.com/htchan/WebHistory/internal/model"
+	"github.com/htchan/WebHistory/internal/repo"
+	"github.com/htchan/WebHistory/internal/service"
+	"github.com/htchan/WebHistory/internal/utils"
 )
 
-func generateHostChannels(websites []website.Website) chan chan website.Website {
-	hostChannels := make(chan chan website.Website)
-	hostChannelMap := make(map[string]chan website.Website)
-	go func(hostChannels chan chan website.Website) {
+func generateHostChannels(websites []model.Website) chan chan model.Website {
+	hostChannels := make(chan chan model.Website)
+	hostChannelMap := make(map[string]chan model.Website)
+	go func(hostChannels chan chan model.Website) {
 		var wg sync.WaitGroup
 		for _, web := range websites {
 			if web.Host() == "" {
@@ -25,18 +24,18 @@ func generateHostChannels(websites []website.Website) chan chan website.Website 
 			wg.Add(1)
 			hostChannel, ok := hostChannelMap[web.Host()]
 			if !ok {
-				newChannel := make(chan website.Website)
+				newChannel := make(chan model.Website)
 				hostChannelMap[web.Host()] = newChannel
-				go func(newChannel chan website.Website, web website.Website) {
+				go func(newChannel chan model.Website, web model.Website) {
 					defer wg.Done()
 					hostChannels <- newChannel
 					newChannel <- web
-				} (newChannel, web)
+				}(newChannel, web)
 			} else {
-				go func(web website.Website) {
+				go func(web model.Website) {
 					defer wg.Done()
 					hostChannel <- web
-				} (web)
+				}(web)
 			}
 		}
 		wg.Wait()
@@ -44,26 +43,24 @@ func generateHostChannels(websites []website.Website) chan chan website.Website 
 			close(hostChannelMap[key])
 		}
 		close(hostChannels)
-	} (hostChannels)
+	}(hostChannels)
 	return hostChannels
 }
 
-func regularUpdateWebsites(db *sql.DB) {
+func regularUpdateWebsites(r repo.Repostory) {
 	log.Println("start")
-	websites, err := website.FindAllWebsites(db)
+	webs, err := r.FindWebsites()
 	if err != nil {
 		log.Println("fail to fetch websites in DB:", err)
 		return
 	}
 	var wg sync.WaitGroup
-	for hostChannel := range generateHostChannels(websites) {
+	for hostChannel := range generateHostChannels(webs) {
 		wg.Add(1)
-		go func(hostChannel chan website.Website) {
+		go func(hostChannel chan model.Website) {
 			for web := range hostChannel {
 				log.Println(web.URL, "start", nil)
-				web.Update()
-				log.Println(web.URL, "info", web.Map())
-				web.Save(db)
+				service.Update(r, &web)
 				log.Println(web.URL, "finish", nil)
 				time.Sleep(1 * time.Second)
 			}
@@ -76,11 +73,20 @@ func regularUpdateWebsites(db *sql.DB) {
 }
 
 func main() {
+	err := utils.Migrate()
+	if err != nil {
+		panic(err)
+	}
 	ApiParser.SetDefault(ApiParser.FromDirectory("/api_parser"))
-	db, err := utils.OpenDatabase(os.Getenv("database_volume"))
+	db, err := utils.OpenDatabase()
 	if err != nil {
 		log.Println("open database failed:", err)
 	}
 	defer db.Close()
-	regularUpdateWebsites(db)		
+	err = utils.Backup(db)
+	if err != nil {
+		log.Println("backup database failed:", err)
+	}
+	r := repo.NewPsqlRepo(db)
+	regularUpdateWebsites(r)
 }

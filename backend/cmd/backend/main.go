@@ -1,29 +1,32 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"log"
-	"os"
+	"net/http"
 
-	"github.com/htchan/WebHistory/pkg/router"
+	"github.com/htchan/WebHistory/internal/repo"
+	"github.com/htchan/WebHistory/internal/router"
 	"github.com/htchan/WebHistory/internal/utils"
 
-	"github.com/htchan/ApiParser"
 	"github.com/go-chi/chi/v5"
+	"github.com/htchan/ApiParser"
 )
 
 func main() {
-	ApiParser.SetDefault(ApiParser.FromDirectory("/api_parser"))
-	fmt.Println("hello")
-	db, err := utils.OpenDatabase(os.Getenv("database_volume"))
+	err := utils.Migrate()
 	if err != nil {
-		log.Println("faile to open database", os.Getenv("database_volume"))
+		panic(err)
+	}
+	ApiParser.SetDefault(ApiParser.FromDirectory("/api_parser"))
+	db, err := utils.OpenDatabase()
+	if err != nil {
+		log.Println("faile to open database", err)
 		return
 	}
 	defer db.Close()
+	rpo := repo.NewPsqlRepo(db)
 	r := chi.NewRouter()
-	router.AddWebsiteRoutes(r, db)
+	router.AddWebsiteRoutes(r, rpo)
 
 	log.Fatal(http.ListenAndServe(":9105", r))
 }
