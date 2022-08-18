@@ -1,4 +1,4 @@
-package router
+package website
 
 import (
 	"bytes"
@@ -19,7 +19,7 @@ import (
 	"github.com/htchan/WebHistory/internal/repo"
 )
 
-func Test_getAllWebsiteGroups(t *testing.T) {
+func Test_getAllWebsiteGroupsHandler(t *testing.T) {
 	tests := []struct {
 		name         string
 		r            repo.Repostory
@@ -89,7 +89,7 @@ func Test_getAllWebsiteGroups(t *testing.T) {
 			ctx = context.WithValue(ctx, "userUUID", test.userUUID)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
-			getAllWebsiteGroups(test.r).ServeHTTP(rr, req)
+			getAllWebsiteGroupsHandler(test.r).ServeHTTP(rr, req)
 
 			if rr.Code != test.expectStatus {
 				t.Error("got different code as expect")
@@ -106,7 +106,7 @@ func Test_getAllWebsiteGroups(t *testing.T) {
 	}
 }
 
-func Test_getWebsiteGroup(t *testing.T) {
+func Test_getWebsiteGroupHandler(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
@@ -180,7 +180,7 @@ func Test_getWebsiteGroup(t *testing.T) {
 			ctx = context.WithValue(ctx, "userUUID", test.userUUID)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
-			getWebsiteGroup(test.r).ServeHTTP(rr, req)
+			getWebsiteGroupHandler(test.r).ServeHTTP(rr, req)
 
 			if rr.Code != test.expectStatus {
 				t.Error("got different code as expect")
@@ -197,7 +197,7 @@ func Test_getWebsiteGroup(t *testing.T) {
 	}
 }
 
-func Test_createWebsite(t *testing.T) {
+func Test_createWebsiteHandler(t *testing.T) {
 	uuid.SetClockSequence(1)
 	uuid.SetRand(io.NopCloser(bytes.NewReader([]byte(
 		"000000000000000000000000000000000000000000000000000000000000000000000000000000",
@@ -260,7 +260,7 @@ func Test_createWebsite(t *testing.T) {
 			ctx = context.WithValue(ctx, "webURL", test.url)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
-			createWebsite(test.r).ServeHTTP(rr, req)
+			createWebsiteHandler(test.r).ServeHTTP(rr, req)
 
 			if rr.Code != test.expectStatus {
 				t.Error("got different code as expect")
@@ -283,7 +283,7 @@ func Test_createWebsite(t *testing.T) {
 	}
 }
 
-func Test_getWebsite(t *testing.T) {
+func Test_getWebsiteHandler(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
@@ -325,7 +325,7 @@ func Test_getWebsite(t *testing.T) {
 			ctx = context.WithValue(ctx, "website", test.web)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
-			getWebsite(test.r).ServeHTTP(rr, req)
+			getWebsiteHandler(test.r).ServeHTTP(rr, req)
 
 			if rr.Code != test.expectStatus {
 				t.Error("got different code as expect")
@@ -342,7 +342,7 @@ func Test_getWebsite(t *testing.T) {
 	}
 }
 
-func Test_refreshWebsite(t *testing.T) {
+func Test_refreshWebsiteHandler(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
@@ -418,7 +418,7 @@ func Test_refreshWebsite(t *testing.T) {
 			ctx = context.WithValue(ctx, "website", test.web)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
-			refreshWebsite(test.r).ServeHTTP(rr, req)
+			refreshWebsiteHandler(test.r).ServeHTTP(rr, req)
 
 			if rr.Code != test.expectStatus {
 				t.Error("got different code as expect")
@@ -447,7 +447,7 @@ func Test_refreshWebsite(t *testing.T) {
 	}
 }
 
-func Test_deleteWebsite(t *testing.T) {
+func Test_deleteWebsiteHandler(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
@@ -512,7 +512,7 @@ func Test_deleteWebsite(t *testing.T) {
 			ctx = context.WithValue(ctx, "website", test.web)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
-			deleteWebsite(test.r).ServeHTTP(rr, req)
+			deleteWebsiteHandler(test.r).ServeHTTP(rr, req)
 
 			if rr.Code != test.expectStatus {
 				t.Error("got different code as expect")
@@ -535,7 +535,7 @@ func Test_deleteWebsite(t *testing.T) {
 	}
 }
 
-func Test_changeWebsiteGroup(t *testing.T) {
+func Test_changeWebsiteGroupHandler(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
@@ -616,7 +616,7 @@ func Test_changeWebsiteGroup(t *testing.T) {
 			ctx = context.WithValue(ctx, "group", test.group)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
-			changeWebsiteGroup(test.r).ServeHTTP(rr, req)
+			changeWebsiteGroupHandler(test.r).ServeHTTP(rr, req)
 
 			if rr.Code != test.expectStatus {
 				t.Error("got different code as expect")

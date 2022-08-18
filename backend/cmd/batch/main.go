@@ -50,10 +50,10 @@ func generateHostChannels(websites []model.Website) chan chan model.Website {
 }
 
 func regularUpdateWebsites(r repo.Repostory) {
-	log.Println("start")
+	log.Println("start batch update")
 	webs, err := r.FindWebsites()
 	if err != nil {
-		log.Println("fail to fetch websites in DB:", err)
+		log.Println("fail to fetch websites from DB:", err)
 		return
 	}
 	var wg sync.WaitGroup
@@ -61,9 +61,7 @@ func regularUpdateWebsites(r repo.Repostory) {
 		wg.Add(1)
 		go func(hostChannel chan model.Website) {
 			for web := range hostChannel {
-				log.Println(web.URL, "start", nil)
 				service.Update(r, &web)
-				log.Println(web.URL, "finish", nil)
 				time.Sleep(INTERVAL * time.Second)
 			}
 			wg.Done()
@@ -71,23 +69,26 @@ func regularUpdateWebsites(r repo.Repostory) {
 	}
 	wg.Wait()
 
-	log.Println("complete")
+	log.Println("complete batch update")
 }
 
 func main() {
 	err := utils.Migrate()
 	if err != nil {
-		panic(err)
+		log.Println("migration failed:", err)
+		return
 	}
 	ApiParser.SetDefault(ApiParser.FromDirectory("/api_parser"))
 	db, err := utils.OpenDatabase()
 	if err != nil {
 		log.Println("open database failed:", err)
+		return
 	}
 	defer db.Close()
 	err = utils.Backup(db)
 	if err != nil {
 		log.Println("backup database failed:", err)
+		return
 	}
 	r := repo.NewPsqlRepo(db)
 	regularUpdateWebsites(r)

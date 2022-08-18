@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"log"
 
 	"database/sql"
 
@@ -33,7 +34,7 @@ func Migrate() error {
 	}
 	err = m.Up()
 	if err != nil {
-		fmt.Printf("migration: %s", err)
+		log.Printf("migration: %s", err)
 	}
 	defer m.Close()
 	return nil

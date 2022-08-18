@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -78,11 +79,13 @@ func pruneResponse(resp *http.Response) string {
 }
 
 func Update(r repo.Repostory, web *model.Website) error {
+	log.Printf("url: %s, start", web.URL)
 	resp, err := client.Get(web.URL)
 	if err != nil {
 		if web.Title == "" {
 			web.Title = "unknown"
 		}
+		log.Printf("url: %s; fail to fetch website; error: %s", web.URL, err)
 		return fmt.Errorf("fail to fetch website response: %s", web.URL)
 	}
 	content := pruneResponse(resp)
@@ -105,6 +108,7 @@ func Update(r repo.Repostory, web *model.Website) error {
 	if isContentUpdated(web, dates) {
 		contentUpdated = true
 		web.RawContent = strings.Join(dates, model.SEP)
+		log.Printf("url: %s; content updated; new content: %s", web.URL, web.RawContent)
 	}
 
 	if isTitleUpdated(web, title) {
@@ -112,16 +116,18 @@ func Update(r repo.Repostory, web *model.Website) error {
 		if web.Title == "" || web.Title == "unknown" {
 			web.Title = title
 		}
+		log.Printf("url: %s; title updated; new title: %s", web.URL, web.Title)
 	}
 
 	if titleUpdated || contentUpdated {
 		err := r.UpdateWebsite(web)
 		if err != nil {
-			//log sth
+			log.Printf("url: %s; website update failed; error: %s", web.URL, err)
 		} else {
-			//log sth
+			log.Printf("url: %s; website updated", web.URL)
 		}
 	}
 
+	log.Printf("url: %s, finish", web.URL)
 	return nil
 }

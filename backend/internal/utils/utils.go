@@ -1,15 +1,18 @@
 package utils
 
 import (
-	"strings"
-	"os"
 	"context"
+	"log"
+	"os"
+	"strings"
+
 	"github.com/htchan/UserService/backend/pkg/grpc"
-	"fmt"
 )
 
 func IsSubSet(s1 string, s2 string) bool {
-	if len(s1) < len(s2) { return false }
+	if len(s1) < len(s2) {
+		return false
+	}
 	for _, char := range strings.Split(s2, "") {
 		if !strings.Contains(s1, char) {
 			return false
@@ -29,9 +32,9 @@ func FindUserByToken(token string) string {
 	tokenPermission := grpc.NewAuthenticateParams(token, serviceToken, "")
 	result, err := client.Authenticate(ctx, tokenPermission)
 	if err != nil {
-		fmt.Println(err)
+		log.Printf("fail to authenticate: %s", err)
 		return ""
 	}
-	fmt.Println(result)
+	log.Println("authenticate result: ", result)
 	return *result.Result
 }
