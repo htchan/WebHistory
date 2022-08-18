@@ -3,12 +3,11 @@ package utils
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-
-	"github.com/htchan/WebHistory/internal/logging"
 )
 
 const (
@@ -39,7 +38,7 @@ func openSqliteDatabase() (*sql.DB, error) {
 	}
 	database.SetMaxIdleConns(5)
 	database.SetMaxOpenConns(50)
-	logging.Log("database.open", database)
+	log.Printf("database.open; %s", database)
 	return database, err
 }
 
@@ -56,7 +55,7 @@ func openPostgresDatabase() (*sql.DB, error) {
 	}
 	database.SetMaxIdleConns(5)
 	database.SetMaxOpenConns(10)
-	logging.Log("database.open postgres", database)
+	log.Printf("postgres_database.open; %s", database)
 	return database, err
 }
 
