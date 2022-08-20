@@ -70,7 +70,7 @@ func QueryWebsite(r repo.Repostory) func(http.Handler) http.Handler {
 					writeError(res, http.StatusBadRequest, err)
 					return
 				}
-				ctx := context.WithValue(req.Context(), "website", web)
+				ctx := context.WithValue(req.Context(), "website", *web)
 				next.ServeHTTP(res, req.WithContext(ctx))
 			},
 		)

@@ -63,13 +63,14 @@ services:
             - web
         env_file:
             - ./.env
-        command: sh -c "
-            flutter --version ; 
-            flutter pub get ; 
-            flutter build web  --base-href $WEB_WATCHER_FE_ROUTE_PREFIX/ \
-            --dart-define=WEB_WATCHER_API_HOST=$WEB_WATCHER_API_HOST \
-            --dart-define=WEB_WATCHER_API_ROUTE_PREFIX=$WEB_WATCHER_API_ROUTE_PREFIX \
-            --dart-define=WEB_WATCHER_FE_ROUTE_PREFIX=$WEB_WATCHER_FE_ROUTE_PREFIX"
+        # command: sh -c "
+        #     flutter --version ; 
+        #     flutter pub get ; 
+        #     flutter build web  --base-href $WEB_WATCHER_FE_ROUTE_PREFIX/ \
+        #     --dart-define=WEB_WATCHER_API_HOST=$WEB_WATCHER_API_HOST \
+        #     --dart-define=WEB_WATCHER_API_ROUTE_PREFIX=$WEB_WATCHER_API_ROUTE_PREFIX \
+        #     --dart-define=WEB_WATCHER_FE_ROUTE_PREFIX=$WEB_WATCHER_FE_ROUTE_PREFIX"
+        command: sh -c "flutter --version ; flutter pub get ; flutter build web --base-href $WEB_WATCHER_FE_ROUTE_PREFIX/ --dart-define=WEB_WATCHER_API_HOST=$WEB_WATCHER_API_HOST --dart-define=WEB_WATCHER_API_ROUTE_PREFIX=$WEB_WATCHER_API_ROUTE_PREFIX --dart-define=WEB_WATCHER_FE_ROUTE_PREFIX=$WEB_WATCHER_FE_ROUTE_PREFIX"
 
 volumes:
     frontend_volume:
