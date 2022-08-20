@@ -259,8 +259,8 @@ func Test_Update(t *testing.T) {
 				"<title>title</title>",
 			)))},
 			mockErr:    nil,
-			expectRepo: repo.NewInMemRepo([]model.Website{{UUID: "uuid", Title: "title"}}, nil, nil),
-			expectWeb:  model.Website{UUID: "uuid", Title: "title"},
+			expectRepo: repo.NewInMemRepo([]model.Website{{UUID: "uuid", Title: "title", UpdateTime: time.Now()}}, nil, nil),
+			expectWeb:  model.Website{UUID: "uuid", Title: "title", UpdateTime: time.Now()},
 		},
 		{
 			name: "updated content",
@@ -270,8 +270,8 @@ func Test_Update(t *testing.T) {
 				"2222-2-2<a>33-3-3<a>44-4-4<a>",
 			)))},
 			mockErr:    nil,
-			expectRepo: repo.NewInMemRepo([]model.Website{{UUID: "uuid", RawContent: "2222-2-2,33-3-3"}}, nil, nil),
-			expectWeb:  model.Website{UUID: "uuid", RawContent: "2222-2-2,33-3-3"},
+			expectRepo: repo.NewInMemRepo([]model.Website{{UUID: "uuid", RawContent: "2222-2-2,33-3-3", UpdateTime: time.Now()}}, nil, nil),
+			expectWeb:  model.Website{UUID: "uuid", RawContent: "2222-2-2,33-3-3", UpdateTime: time.Now()},
 		},
 		{
 			name: "not updated content",

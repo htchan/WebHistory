@@ -375,7 +375,7 @@ func Test_refreshWebsiteHandler(t *testing.T) {
 				WebsiteUUID: "web_uuid",
 				UserUUID:    "user_uuid",
 				GroupName:   "name",
-				AccessTime:  time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+				AccessTime:  time.Now(),
 				Website: model.Website{
 					UUID:       "web_uuid",
 					Title:      "title",
@@ -426,7 +426,7 @@ func Test_refreshWebsiteHandler(t *testing.T) {
 				t.Error(test.expectStatus)
 			}
 
-			test.web.AccessTime = time.Now()
+			// test.web.AccessTime = time.Now()
 
 			expectResp, err := json.Marshal(map[string]model.UserWebsite{
 				"website": test.web,
