@@ -46,6 +46,7 @@ services:
             - batch
         env_file:
             - ./.env
+            - ./backend/assets/.env.batch
         command: sh -c "crond && tail -f /dev/null"
 
 

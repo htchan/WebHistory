@@ -108,6 +108,7 @@ func Update(r repo.Repostory, web *model.Website) error {
 	if isContentUpdated(web, dates) {
 		contentUpdated = true
 		web.RawContent = strings.Join(dates, model.SEP)
+		web.UpdateTime = time.Now()
 		log.Printf("url: %s; content updated; new content: %s", web.URL, web.RawContent)
 	}
 
@@ -115,6 +116,7 @@ func Update(r repo.Repostory, web *model.Website) error {
 		titleUpdated = true
 		if web.Title == "" || web.Title == "unknown" {
 			web.Title = title
+			web.UpdateTime = time.Now()
 		}
 		log.Printf("url: %s; title updated; new title: %s", web.URL, web.Title)
 	}
