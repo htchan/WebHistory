@@ -60,5 +60,6 @@ func AddRoutes(router chi.Router, r repo.Repostory) {
 				router.With(GroupNameParams).Put("/change-group", changeWebsiteGroupHandler(r))
 			})
 		})
+		router.Get("/db-stats", dbStatsHandler(r))
 	})
 }

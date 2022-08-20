@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+	"database/sql"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/htchan/WebHistory/internal/model"
@@ -141,4 +142,8 @@ func (r *InMemRepo) FindUserWebsite(userUUID, websiteUUID string) (*model.UserWe
 func (r InMemRepo) Equal(compare InMemRepo) bool {
 	return cmp.Equal(r.webs, compare.webs) &&
 		cmp.Equal(r.userWebs, compare.userWebs)
+}
+
+func (r InMemRepo) Stats() (sql.DBStats) {
+	return sql.DBStats{}
 }

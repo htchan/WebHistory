@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -55,6 +56,8 @@ func openPostgresDatabase() (*sql.DB, error) {
 	}
 	database.SetMaxIdleConns(5)
 	database.SetMaxOpenConns(10)
+	database.SetConnMaxIdleTime(5 * time.Second)
+	database.SetConnMaxLifetime(5 * time.Second)
 	log.Printf("postgres_database.open; %s", database)
 	return database, err
 }

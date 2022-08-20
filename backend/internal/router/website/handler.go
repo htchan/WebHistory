@@ -151,3 +151,9 @@ func changeWebsiteGroupHandler(r repo.Repostory) http.HandlerFunc {
 		})
 	}
 }
+
+func dbStatsHandler(r repo.Repostory) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		json.NewEncoder(res).Encode(r.Stats())
+	}
+}

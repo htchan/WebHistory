@@ -20,6 +20,7 @@ func NewPsqlRepo(db *sql.DB) *PsqlRepo {
 func (r *PsqlRepo) CreateWebsite(web *model.Website) error {
 	// return web if url exist
 	rows, err := r.db.Query("select uuid, url, title, content, update_time from websites where url=$1;", web.URL)
+	defer rows.Close()
 	if err == nil && rows.Next() {
 		err = rows.Scan(&web.UUID, &web.URL, &web.Title, &web.RawContent, &web.UpdateTime)
 		if err == nil {
@@ -62,6 +63,7 @@ func (r *PsqlRepo) FindWebsites() ([]model.Website, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to fetch websites: %w", err)
 	}
+	defer rows.Close()
 
 	var webs []model.Website
 
@@ -82,6 +84,7 @@ func (r *PsqlRepo) FindWebsite(uuid string) (*model.Website, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to fetch website: %w", err)
 	}
+	defer rows.Close()
 
 	if rows.Next() {
 		web := new(model.Website)
@@ -104,6 +107,7 @@ func (r *PsqlRepo) CreateUserWebsite(web *model.UserWebsite) error {
 		where user_uuid=$1 and website_uuid=$2;`,
 		web.UserUUID, web.WebsiteUUID,
 	)
+	defer rows.Close()
 	if err == nil && rows.Next() {
 		err = rows.Scan(
 			&web.UserUUID, &web.WebsiteUUID, &web.AccessTime, &web.GroupName,
@@ -169,6 +173,7 @@ func (r *PsqlRepo) FindUserWebsites(userUUID string) (model.UserWebsites, error)
 	if err != nil {
 		return nil, fmt.Errorf("fail to fetch user websites: %w", err)
 	}
+	defer rows.Close()
 
 	var webs model.UserWebsites
 
@@ -201,6 +206,7 @@ func (r *PsqlRepo) FindUserWebsitesByGroup(userUUID, group string) (model.Websit
 	if err != nil {
 		return nil, fmt.Errorf("fail to fetch user websites: %w", err)
 	}
+	defer rows.Close()
 
 	var webs model.WebsiteGroup
 
@@ -233,6 +239,7 @@ func (r *PsqlRepo) FindUserWebsite(userUUID, websiteUUID string) (*model.UserWeb
 	if err != nil {
 		return nil, fmt.Errorf("fail to fetch user website: %w", err)
 	}
+	defer rows.Close()
 
 	if rows.Next() {
 		web := new(model.UserWebsite)
@@ -249,4 +256,8 @@ func (r *PsqlRepo) FindUserWebsite(userUUID, websiteUUID string) (*model.UserWeb
 	}
 
 	return nil, fmt.Errorf("fail to find user website")
+}
+
+func (r *PsqlRepo) Stats() (sql.DBStats) {
+	return r.db.Stats()
 }
