@@ -136,7 +136,7 @@ func (r *PsqlRepo) UpdateUserWebsite(web *model.UserWebsite) error {
 	_, err := r.db.Exec(
 		`update user_websites 
 		set access_time=$3, group_name=$4 
-		where user_uuid=$2 and website_uuid=$1`,
+		where user_uuid=$1 and website_uuid=$2`,
 		web.UserUUID, web.WebsiteUUID, web.AccessTime, web.GroupName,
 	)
 	if err != nil {
@@ -147,8 +147,8 @@ func (r *PsqlRepo) UpdateUserWebsite(web *model.UserWebsite) error {
 
 func (r *PsqlRepo) DeleteUserWebsite(web *model.UserWebsite) error {
 	_, err := r.db.Exec(
-		"delete from user_websites where website_uuid=$1 and user_uuid=$2",
-		web.WebsiteUUID, web.UserUUID,
+		"delete from user_websites where user_uuid=$1 and website_uuid=$2",
+		web.UserUUID, web.WebsiteUUID,
 	)
 	if err != nil {
 		return fmt.Errorf("fail to delete user website: %w", err)
