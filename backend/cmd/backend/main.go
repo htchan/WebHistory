@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/htchan/WebHistory/internal/repo"
 	"github.com/htchan/WebHistory/internal/router/website"
@@ -29,6 +33,28 @@ func main() {
 	r := chi.NewRouter()
 	website.AddRoutes(r, rpo)
 
-	log.Println("start http server")
-	log.Fatal(http.ListenAndServe(":9105", r))
+	server := http.Server{
+		Addr:         ":9105",
+		Handler:      r,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+		IdleTimeout:  5 * time.Second,
+	}
+	go func() {
+		log.Println("start http server")
+
+		if err := server.ListenAndServe(); err != nil {
+			log.Fatalf("backend stopped: %v", err)
+		}
+	}()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
+	<-sigChan
+	log.Println("received interrupt signal")
+
+	// Setup graceful shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	server.Shutdown(ctx)
 }
