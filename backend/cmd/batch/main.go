@@ -85,6 +85,7 @@ func main() {
 		return
 	}
 	defer db.Close()
+	service.AggregateBackup("/backup")
 	err = utils.Backup(db)
 	if err != nil {
 		log.Println("backup database failed:", err)

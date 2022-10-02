@@ -38,6 +38,7 @@ services:
             - ./bin/logs:/logs
             - ./backend/assets/api_parser:/api_parser
             - ./backend/migrations:/migrations
+            - ./bin/backup:/backup
             - /etc/timezone:/etc/timezone:ro
         networks:
             - database
