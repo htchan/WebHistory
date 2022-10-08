@@ -5,6 +5,10 @@ services:
         build: 
             context: ./backend
             dockerfile: ./build/Dockerfile.backend
+        deploy:
+            resources:
+                limits:
+                memory: '100M'
         hostname: webhistory_backend
         volumes:
             - ./bin/database:/database
@@ -29,6 +33,10 @@ services:
         build:
             context: ./backend
             dockerfile: ./build/Dockerfile.batch
+        deploy:
+            resources:
+                limits:
+                memory: '200M'
         deploy:
             resources:
                 limits:
