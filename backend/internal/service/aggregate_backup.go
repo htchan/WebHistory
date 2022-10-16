@@ -113,9 +113,9 @@ func saveBackup(dir, table string, versions, content []string) error {
 }
 
 func deleteBackups(dir, table string, versions []string) error {
-	// for _, version := range versions {
-	// 	os.Remove(filepath.Join(dir, fmt.Sprintf("%s_%s", table, version)))
-	// }
+	for _, version := range versions {
+		os.Remove(filepath.Join(dir, fmt.Sprintf("%s_%s", table, version)))
+	}
 	return nil
 }
 
