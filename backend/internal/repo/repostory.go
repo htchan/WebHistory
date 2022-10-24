@@ -1,8 +1,9 @@
 package repo
 
 import (
-	"github.com/htchan/WebHistory/internal/model"
 	"database/sql"
+
+	"github.com/htchan/WebHistory/internal/model"
 )
 
 type Repostory interface {
@@ -21,5 +22,8 @@ type Repostory interface {
 	FindUserWebsitesByGroup(userUUID, group string) (model.WebsiteGroup, error)
 	FindUserWebsite(userUUID, websiteUUID string) (*model.UserWebsite, error)
 
-	Stats() (sql.DBStats)
+	FindWebsiteSettings() ([]model.WebsiteSetting, error)
+	FindWebsiteSetting(host string) (*model.WebsiteSetting, error)
+
+	Stats() sql.DBStats
 }

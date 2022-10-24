@@ -1,26 +1,28 @@
 package repo
 
 import (
-	"fmt"
 	"database/sql"
+	"fmt"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/htchan/WebHistory/internal/model"
 )
 
 type InMemRepo struct {
-	webs     []model.Website
-	userWebs []model.UserWebsite
-	err      error
+	webs        []model.Website
+	userWebs    []model.UserWebsite
+	webSettings []model.WebsiteSetting
+	err         error
 }
 
 var _ Repostory = &InMemRepo{}
 
-func NewInMemRepo(webs []model.Website, userWebs []model.UserWebsite, err error) *InMemRepo {
+func NewInMemRepo(webs []model.Website, userWebs []model.UserWebsite, webSettings []model.WebsiteSetting, err error) *InMemRepo {
 	return &InMemRepo{
-		webs:     webs,
-		userWebs: userWebs,
-		err:      err,
+		webs:        webs,
+		userWebs:    userWebs,
+		webSettings: webSettings,
+		err:         err,
 	}
 }
 
@@ -139,11 +141,24 @@ func (r *InMemRepo) FindUserWebsite(userUUID, websiteUUID string) (*model.UserWe
 	return nil, fmt.Errorf("user website not found")
 }
 
+func (r *InMemRepo) FindWebsiteSettings() ([]model.WebsiteSetting, error) {
+	return r.webSettings, nil
+}
+
+func (r *InMemRepo) FindWebsiteSetting(domain string) (*model.WebsiteSetting, error) {
+	for _, setting := range r.webSettings {
+		if setting.Domain == domain {
+			return &setting, nil
+		}
+	}
+	return nil, fmt.Errorf("setting not found")
+}
+
 func (r InMemRepo) Equal(compare InMemRepo) bool {
 	return cmp.Equal(r.webs, compare.webs) &&
 		cmp.Equal(r.userWebs, compare.userWebs)
 }
 
-func (r InMemRepo) Stats() (sql.DBStats) {
+func (r InMemRepo) Stats() sql.DBStats {
 	return sql.DBStats{}
 }

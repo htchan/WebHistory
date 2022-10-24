@@ -258,6 +258,67 @@ func (r *PsqlRepo) FindUserWebsite(userUUID, websiteUUID string) (*model.UserWeb
 	return nil, fmt.Errorf("fail to find user website")
 }
 
-func (r *PsqlRepo) Stats() (sql.DBStats) {
+func (r *PsqlRepo) FindWebsiteSettings() ([]model.WebsiteSetting, error) {
+	rows, err := r.db.Query(
+		`select 
+		domain, title_regex, content_regex, focus_index_from, focus_index_to 
+		from website_settings`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("fail to fetch user websites: %w", err)
+	}
+	defer rows.Close()
+
+	var settings []model.WebsiteSetting
+
+	for rows.Next() {
+		var setting model.WebsiteSetting
+
+		err := rows.Scan(
+			&setting.Domain, &setting.TitleRegex, &setting.ContentRegex,
+			&setting.FocusIndexFrom, &setting.FocusIndexTo,
+		)
+		if err != nil {
+			return settings, fmt.Errorf("fail to read user websites: %w", err)
+		}
+
+		settings = append(settings, setting)
+	}
+
+	return settings, nil
+}
+
+func (r *PsqlRepo) FindWebsiteSetting(domain string) (*model.WebsiteSetting, error) {
+	rows, err := r.db.Query(
+		`select 
+		domain, title_regex, content_regex, focus_index_from, focus_index_to 
+		from website_settings 
+		where domain=$1`,
+		domain,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("fail to fetch website settings: %w", err)
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		setting := new(model.WebsiteSetting)
+
+		err := rows.Scan(
+			&setting.Domain, &setting.TitleRegex, &setting.ContentRegex,
+			&setting.FocusIndexFrom, &setting.FocusIndexTo,
+		)
+		if err != nil {
+			return setting, fmt.Errorf("fail to read website settings: %w", err)
+		}
+
+		return setting, nil
+	}
+
+	return nil, fmt.Errorf("fail to find website settings")
+}
+
+func (r *PsqlRepo) Stats() sql.DBStats {
 	return r.db.Stats()
 }

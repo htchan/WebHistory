@@ -49,6 +49,20 @@ func generateHostChannels(websites []model.Website) chan chan model.Website {
 	return hostChannels
 }
 
+func loadSettings(r repo.Repostory) {
+	settings, err := r.FindWebsiteSettings()
+	if err != nil {
+		return
+	}
+	for _, setting := range settings {
+		ApiParser.AddFormatSet(ApiParser.NewFormatSet(
+			setting.Domain,
+			setting.ContentRegex,
+			setting.TitleRegex,
+		))
+	}
+}
+
 func regularUpdateWebsites(r repo.Repostory) {
 	log.Println("start batch update")
 	webs, err := r.FindWebsites()
@@ -92,5 +106,6 @@ func main() {
 		return
 	}
 	r := repo.NewPsqlRepo(db)
+	loadSettings(r)
 	regularUpdateWebsites(r)
 }

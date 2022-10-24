@@ -133,6 +133,11 @@ func TestWebsite_Host(t *testing.T) {
 			web:    Website{URL: "http://example.com"},
 			expect: "example.com",
 		},
+		{
+			name:   "fail flow",
+			web:    Website{URL: ""},
+			expect: "",
+		},
 	}
 
 	for _, test := range tests {

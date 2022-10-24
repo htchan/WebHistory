@@ -64,8 +64,7 @@ func (web Website) Host() string {
 	if err != nil || web.URL == "" {
 		return ""
 	}
-	host := u.Host
-	splitedHost := strings.Split(host, ".")
+	splitedHost := strings.Split(u.Hostname(), ".")
 	return strings.Join(splitedHost[len(splitedHost)-2:], ".")
 }
 
