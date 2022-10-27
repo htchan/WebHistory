@@ -643,6 +643,8 @@ github.com/hashicorp/serf v0.8.2/go.mod h1:6hOLApaqBFA1NXqRQAsxw9QxuDEvNxSQRwA/J
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/htchan/ApiParser v0.0.3 h1:WBAhW2lEvKfNIOTdFV3TgCl27ljUU1/EhV2GE5qbe48=
 github.com/htchan/ApiParser v0.0.3/go.mod h1:EwC9oKVQOQDRiVYGHi+uSXSJg+RrTMQtPEWePrkQ49I=
+github.com/htchan/ApiParser v0.0.5 h1:1MG71aF80j4ifP9cwpJP7cFyrbg+vlmkTUOJyUUmFcE=
+github.com/htchan/ApiParser v0.0.5/go.mod h1:EwC9oKVQOQDRiVYGHi+uSXSJg+RrTMQtPEWePrkQ49I=
 github.com/htchan/UserService v0.0.0-20220101064522-c9d57069f9df h1:gG++WNyG89kcVQJeKQb2Pj5N4XV6ppJ6QpQd4DtHamc=
 github.com/htchan/UserService v0.0.0-20220101064522-c9d57069f9df/go.mod h1:yXUGOcNXjVXzn5BPfDTcMnOnkqn/xeYZR6hetHgqjaQ=
 github.com/iancoleman/strcase v0.2.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
