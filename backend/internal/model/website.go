@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const (
@@ -78,4 +79,11 @@ func (web Website) Equal(compare Website) bool {
 		web.Title == compare.Title &&
 		web.RawContent == compare.RawContent &&
 		web.UpdateTime.Unix()/1000 == compare.UpdateTime.Unix()/1000
+}
+
+func (web Website) OtelAttributes() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String("url", web.URL),
+		attribute.String("title", web.Title),
+	}
 }

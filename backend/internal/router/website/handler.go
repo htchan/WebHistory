@@ -1,6 +1,7 @@
 package website
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -57,7 +58,7 @@ func createWebsiteHandler(r repo.Repostory) http.HandlerFunc {
 		url := req.Context().Value("webURL").(string)
 
 		web := model.NewWebsite(url)
-		service.Update(r, &web)
+		service.Update(context.Background(), r, &web)
 
 		err := r.CreateWebsite(&web)
 		if err != nil {

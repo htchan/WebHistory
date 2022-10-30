@@ -14,3 +14,12 @@ test:
 apply_db_schema: ./assets/schema.sql
 	rm -f ./assets/template.db
 	cat ./assets/schema.sql | sqlite3 ./assets/template.db
+
+create_migrate:
+	migrate create -ext sql -dir migrations $(NAME)
+
+coverage:
+	# go clean --testcache
+	go test -v $(PKG) -coverprofile profile.txt ; go tool cover -html=profile.txt -o coverage.html
+	rm profile.txt
+	# google-chrome ./coverage.html &

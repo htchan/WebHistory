@@ -1,9 +1,9 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -13,6 +13,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/htchan/WebHistory/internal/model"
 	"github.com/htchan/WebHistory/internal/repo"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type HTTPClient interface {
@@ -65,22 +67,39 @@ func parseAPI(r repo.Repostory, web *model.Website, resp string) (string, []stri
 	return setting.Parse(resp)
 }
 
-func fetchWebsite(web *model.Website) (string, error) {
+func fetchWebsite(ctx context.Context, web *model.Website) (string, error) {
+	tr := otel.Tracer("update")
+	ctx, span := tr.Start(ctx, "Fetch Web")
+	defer span.End()
+
 	resp, err := client.Get(web.URL)
 	if err != nil {
+		span.SetAttributes(attribute.String("error", err.Error()))
 		if web.Title == "" {
 			web.Title = "unknown"
 		}
-		log.Printf("url: %s; fail to fetch website; error: %s", web.URL, err)
 		return "", fmt.Errorf("fail to fetch website response: %s", web.URL)
 	}
-	return pruneResponse(resp), nil
+
+	body := pruneResponse(resp)
+	span.SetAttributes(attribute.String("raw response", body))
+	return body, nil
 }
-func checkTimeUpdated(web *model.Website, timeStr string) bool {
+
+func checkTimeUpdated(ctx context.Context, web *model.Website, timeStr string) bool {
+	tr := otel.Tracer("update")
+	ctx, span := tr.Start(ctx, "Check Time")
+	defer span.End()
+
+	layout := "Mon, 2 Jan 2006 15:04:05 GMT"
+	span.SetAttributes(
+		attribute.String("old time", web.UpdateTime.Format(layout)),
+		attribute.String("new time", timeStr),
+	)
+
 	if timeStr == "" {
 		return false
 	}
-	layout := "Mon, 2 Jan 2006 15:04:05 GMT"
 	t, err := time.Parse(layout, timeStr)
 	if err == nil && t.After(web.UpdateTime) {
 		return true
@@ -88,48 +107,78 @@ func checkTimeUpdated(web *model.Website, timeStr string) bool {
 	return false
 }
 
-func checkContentUpdated(web *model.Website, content []string) bool {
+func checkContentUpdated(ctx context.Context, web *model.Website, content []string) bool {
+	tr := otel.Tracer("update")
+	ctx, span := tr.Start(ctx, "Check Content")
+	defer span.End()
+	span.SetAttributes(
+		attribute.StringSlice("old content", web.Content()),
+		attribute.StringSlice("new content", content),
+	)
+
 	if len(content) > 0 && !cmp.Equal(web.Content(), content) {
 		web.RawContent = strings.Join(content, model.SEP)
 		web.UpdateTime = time.Now()
-		// log.Printf("url: %s; content updated; new content: %s", web.URL, web.RawContent)
 		return true
 	}
 	return false
 }
 
-func checkTitleUpdated(web *model.Website, title string) bool {
+func checkTitleUpdated(ctx context.Context, web *model.Website, title string) bool {
+	tr := otel.Tracer("update")
+	ctx, span := tr.Start(ctx, "Check Title")
+	defer span.End()
+	span.SetAttributes(
+		attribute.String("old title", web.Title),
+		attribute.String("new title", title),
+	)
+
 	if web.Title != title {
 		if web.Title == "" || web.Title == "unknown" {
 			web.Title = title
 			web.UpdateTime = time.Now()
+			return true
 		}
-		// log.Printf("url: %s; title updated; new title: %s", web.URL, web.Title)
-		return true
 	}
 	return false
 }
 
-func Update(r repo.Repostory, web *model.Website) error {
-	// log.Printf("url: %s, start", web.URL)
-	content, err := fetchWebsite(web)
+func checkWeb(ctx context.Context, r repo.Repostory, web *model.Website, title string, content []string) {
+	tr := otel.Tracer("update")
+	ctx, span := tr.Start(ctx, "Checking")
+	defer span.End()
+
+	titleUpdated := checkTitleUpdated(ctx, web, title)
+	contentUpadted := checkContentUpdated(ctx, web, content)
+	span.SetAttributes(
+		attribute.Bool("title updated", titleUpdated),
+		attribute.Bool("content updated", contentUpadted),
+	)
+
+	if titleUpdated || contentUpadted {
+		ctx, span = tr.Start(ctx, "Updated")
+		defer span.End()
+
+		err := r.UpdateWebsite(web)
+		if err != nil {
+			span.SetAttributes(attribute.String("error", err.Error()))
+		}
+	}
+}
+
+func Update(ctx context.Context, r repo.Repostory, web *model.Website) error {
+	tr := otel.Tracer("update")
+	ctx, span := tr.Start(ctx, "Update")
+	defer span.End()
+	span.SetAttributes(web.OtelAttributes()...)
+
+	content, err := fetchWebsite(ctx, web)
 	if err != nil {
 		return err
 	}
 
 	title, dates := parseAPI(r, web, content)
-	titleUpdated := checkTitleUpdated(web, title)
-	contentUpadted := checkContentUpdated(web, dates)
+	checkWeb(ctx, r, web, title, dates)
 
-	if titleUpdated || contentUpadted {
-		err := r.UpdateWebsite(web)
-		if err != nil {
-			// log.Printf("url: %s; website update failed; error: %s", web.URL, err)
-		} else {
-			// log.Printf("url: %s; website updated", web.URL)
-		}
-	}
-
-	log.Printf("url: %s, finish", web.URL)
 	return nil
 }

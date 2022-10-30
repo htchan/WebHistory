@@ -8,7 +8,7 @@ services:
         deploy:
             resources:
                 limits:
-                memory: '100M'
+                    memory: '100M'
         hostname: webhistory_backend
         volumes:
             - ./bin/database:/database
@@ -36,7 +36,7 @@ services:
         deploy:
             resources:
                 limits:
-                memory: '200M'
+                    memory: '200M'
         deploy:
             resources:
                 limits:
@@ -50,6 +50,7 @@ services:
             - /etc/timezone:/etc/timezone:ro
         networks:
             - database
+            - trace
         profiles:
             - all
             - batch
@@ -91,4 +92,7 @@ networks:
         name: router
     database:
         name: database
+        external: true
+    trace:
+        name: trace
         external: true
