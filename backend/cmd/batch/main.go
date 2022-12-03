@@ -24,43 +24,31 @@ const (
 	SERVICE_NAME = "web-watcher"
 )
 
-func generateHostChannels(websites []model.Website) chan chan model.Website {
-	hostChannels := make(chan chan model.Website)
+func websiteChannelGroupedByHost(websites []model.Website) map[string]chan model.Website {
+	hostWebsitesMap := make(map[string][]model.Website)
+
+	// group websites by Host, channel blocking will only affect its iteration
+	for _, website := range websites {
+		host := website.Host()
+		hostWebsitesMap[host] = append(hostWebsitesMap[host], website)
+	}
+
 	hostChannelMap := make(map[string]chan model.Website)
 
-	go func(hostChannels chan chan model.Website) {
-		var wg sync.WaitGroup
-		for _, web := range websites {
-			if web.Host() == "" {
-				continue
+	for host, groupedWebsites := range hostWebsitesMap {
+		host := host
+		groupedWebsites := groupedWebsites
+		hostChannelMap[host] = make(chan model.Website)
+
+		go func(host string, websites []model.Website) {
+			for _, website := range websites {
+				hostChannelMap[host] <- website
 			}
+			close(hostChannelMap[host])
+		}(host, groupedWebsites)
+	}
 
-			wg.Add(1)
-			hostChannel, ok := hostChannelMap[web.Host()]
-			if !ok {
-				newChannel := make(chan model.Website)
-				hostChannelMap[web.Host()] = newChannel
-				go func(newChannel chan model.Website, web model.Website) {
-					defer wg.Done()
-					hostChannels <- newChannel
-					newChannel <- web
-				}(newChannel, web)
-			} else {
-				go func(web model.Website) {
-					defer wg.Done()
-					hostChannel <- web
-				}(web)
-			}
-		}
-
-		wg.Wait()
-		for key := range hostChannelMap {
-			close(hostChannelMap[key])
-		}
-		close(hostChannels)
-	}(hostChannels)
-
-	return hostChannels
+	return hostChannelMap
 }
 
 func loadSettings(r repo.Repostory) {
@@ -90,16 +78,19 @@ func regularUpdateWebsites(r repo.Repostory) {
 	}
 
 	var wg sync.WaitGroup
-	for hostChannel := range generateHostChannels(webs) {
+	for host, channel := range websiteChannelGroupedByHost(webs) {
 		wg.Add(1)
 
-		go func(hostChannel chan model.Website) {
-			for web := range hostChannel {
+		go func(host string, website chan model.Website) {
+			ctx, span := tr.Start(ctx, host)
+			defer span.End()
+
+			for web := range website {
 				service.Update(ctx, r, &web)
 				time.Sleep(INTERVAL * time.Second)
 			}
 			wg.Done()
-		}(hostChannel)
+		}(host, channel)
 	}
 
 	wg.Wait()
