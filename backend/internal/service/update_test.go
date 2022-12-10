@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -212,7 +213,7 @@ func Test_fetchWebsite(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			client = test.client
 
-			resp, err := fetchWebsite(test.web)
+			resp, err := fetchWebsite(context.Background(), test.web)
 
 			if (err != nil) != test.expectErr {
 				t.Errorf("got error: %v; expect error: %v", err, test.expectErr)
@@ -258,7 +259,7 @@ func Test_checkTimeUpdated(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			result := checkTimeUpdated(&test.web, test.time)
+			result := checkTimeUpdated(context.Background(), &test.web, test.time)
 			if result != test.expect {
 				t.Errorf("got different result as expect")
 				t.Error(result)
@@ -315,7 +316,7 @@ func Test_checkContentUpdated(t *testing.T) {
 			// t.Parallel()
 			fmt.Println(test.name)
 			fmt.Println(test.dates)
-			result := checkContentUpdated(&test.web, test.dates)
+			result := checkContentUpdated(context.Background(), &test.web, test.dates)
 			if result != test.expect {
 				t.Errorf("got: %v; want: %v", result, test.expect)
 			}
@@ -333,10 +334,16 @@ func Test_checkTitleUpdated(t *testing.T) {
 		expect bool
 	}{
 		{
-			name:   "different title",
-			web:    model.Website{Title: "title"},
+			name:   "different title for new Website",
+			web:    model.Website{},
 			title:  "new title",
 			expect: true,
+		},
+		{
+			name:   "different title for existing Website",
+			web:    model.Website{Title: "title"},
+			title:  "new title",
+			expect: false,
 		},
 		{
 			name:   "exact same title",
@@ -350,7 +357,7 @@ func Test_checkTitleUpdated(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			result := checkTitleUpdated(&test.web, test.title)
+			result := checkTitleUpdated(context.Background(), &test.web, test.title)
 			if result != test.expect {
 				t.Errorf("got different result as expect")
 				t.Error(result)
@@ -454,7 +461,7 @@ func Test_Update(t *testing.T) {
 				ApiParser.AddFormatSet(ApiParser.NewFormatSet(setting.Domain, setting.ContentRegex, setting.TitleRegex))
 			}
 
-			err := Update(test.r, &test.web)
+			err := Update(context.Background(), test.r, &test.web)
 
 			if (err != nil) != test.expectErr {
 				t.Errorf("got error: %v; want error: %v", err, test.expectErr)

@@ -39,7 +39,7 @@ func openSqliteDatabase() (*sql.DB, error) {
 	}
 	database.SetMaxIdleConns(5)
 	database.SetMaxOpenConns(50)
-	log.Printf("database.open; %s", database)
+	log.Printf("database.open; %v", database)
 	return database, err
 }
 
@@ -58,7 +58,7 @@ func openPostgresDatabase() (*sql.DB, error) {
 	database.SetMaxOpenConns(10)
 	database.SetConnMaxIdleTime(5 * time.Second)
 	database.SetConnMaxLifetime(5 * time.Second)
-	log.Printf("postgres_database.open; %s", database)
+	log.Printf("postgres_database.open; %v", database)
 	return database, err
 }
 
