@@ -4,36 +4,17 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
+	"github.com/htchan/WebHistory/internal/config"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const (
-	KEY_SQLITE_VOLUME = "dataabse_volume"
-	KEY_PSQL_HOST     = "PSQL_HOST"
-	KEY_PSQL_PORT     = "PSQL_PORT"
-	KEY_PSQL_USER     = "PSQL_USER"
-	KEY_PSQL_PASSWORD = "PSQL_PASSWORD"
-	KEY_PSQL_NAME     = "PSQL_NAME"
-)
-
-var (
-	host   = os.Getenv(KEY_PSQL_HOST)
-	port   = os.Getenv(KEY_PSQL_PORT)
-	dbName = os.Getenv(KEY_PSQL_NAME)
-
-	user     = os.Getenv(KEY_PSQL_USER)
-	password = os.Getenv(KEY_PSQL_PASSWORD)
-)
-
 // open database for sqlite3
 
-func openSqliteDatabase() (*sql.DB, error) {
-	location := os.Getenv(KEY_SQLITE_VOLUME)
-	database, err := sql.Open("sqlite3", location)
+func openSqliteDatabase(conf *config.DatabaseConfig) (*sql.DB, error) {
+	database, err := sql.Open(conf.Driver, conf.Host)
 	if err != nil {
 		return database, err
 	}
@@ -44,13 +25,13 @@ func openSqliteDatabase() (*sql.DB, error) {
 }
 
 // open database for psql
-func openPostgresDatabase() (*sql.DB, error) {
+func openPostgresDatabase(conf *config.DatabaseConfig) (*sql.DB, error) {
 	conn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbName,
+		conf.Host, conf.Port, conf.User, conf.Password, conf.Database,
 	)
 
-	database, err := sql.Open("postgres", conn)
+	database, err := sql.Open(conf.Driver, conn)
 	if err != nil {
 		return database, err
 	}
@@ -62,6 +43,6 @@ func openPostgresDatabase() (*sql.DB, error) {
 	return database, err
 }
 
-func OpenDatabase() (*sql.DB, error) {
-	return openPostgresDatabase()
+func OpenDatabase(conf *config.DatabaseConfig) (*sql.DB, error) {
+	return openPostgresDatabase(conf)
 }

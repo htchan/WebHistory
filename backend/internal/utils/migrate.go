@@ -7,6 +7,7 @@ import (
 
 	"database/sql"
 
+	"github.com/htchan/WebHistory/internal/config"
 	_ "github.com/lib/pq"
 	"go.opentelemetry.io/otel"
 
@@ -15,17 +16,17 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func Migrate() error {
+func Migrate(conf *config.DatabaseConfig) error {
 	tr := otel.Tracer("process")
 	_, span := tr.Start(context.Background(), "migrate")
 	defer span.End()
 
 	connString := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		user, password, host, port, dbName,
+		conf.User, conf.Password, conf.Host, conf.Port, conf.Database,
 	)
 
-	db, err := sql.Open("postgres", connString)
+	db, err := sql.Open(conf.Driver, connString)
 	if err != nil {
 		return fmt.Errorf("migrate fail: %w", err)
 	}
@@ -35,7 +36,7 @@ func Migrate() error {
 		return fmt.Errorf("migrate fail: %w", err)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file:///migrations", "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance("file:///migrations", conf.Driver, driver)
 	if err != nil {
 		return fmt.Errorf("migrate fail: %w", err)
 	}

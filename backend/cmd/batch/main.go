@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/htchan/ApiParser"
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	"github.com/htchan/WebHistory/internal/repo"
 	"github.com/htchan/WebHistory/internal/service"
@@ -16,12 +17,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
-)
-
-const (
-	INTERVAL     = 5
-	TRACE_URL    = "http://monitoring:14268/api/traces"
-	SERVICE_NAME = "web-watcher"
 )
 
 func websiteChannelGroupedByHost(websites []model.Website) map[string]chan model.Website {
@@ -66,7 +61,7 @@ func loadSettings(r repo.Repostory) {
 	}
 }
 
-func regularUpdateWebsites(r repo.Repostory) {
+func regularUpdateWebsites(r repo.Repostory, conf config.BatchConfig) {
 	tr := otel.Tracer("process")
 	ctx, span := tr.Start(context.Background(), "batch")
 	defer span.End()
@@ -87,7 +82,7 @@ func regularUpdateWebsites(r repo.Repostory) {
 
 			for web := range website {
 				service.Update(ctx, r, &web)
-				time.Sleep(INTERVAL * time.Second)
+				time.Sleep(conf.SleepInterval)
 			}
 			wg.Done()
 		}(host, channel)
@@ -96,8 +91,8 @@ func regularUpdateWebsites(r repo.Repostory) {
 	wg.Wait()
 }
 
-func tracerProvider() (*tracesdk.TracerProvider, error) {
-	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(TRACE_URL)))
+func tracerProvider(conf config.TraceConfig) (*tracesdk.TracerProvider, error) {
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(conf.TraceURL)))
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +101,7 @@ func tracerProvider() (*tracesdk.TracerProvider, error) {
 		tracesdk.WithBatcher(exp),
 		tracesdk.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(SERVICE_NAME),
+			semconv.ServiceNameKey.String(conf.TraceServiceName),
 		)),
 	)
 
@@ -125,19 +120,24 @@ func closeTracer(tp *tracesdk.TracerProvider) {
 }
 
 func main() {
-	tp, err := tracerProvider()
+	conf, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalln("load config failed:", err)
+		return
+	}
+
+	tp, err := tracerProvider(conf.TraceConfig)
 	if err != nil {
 		log.Println("tracer error", err)
 	}
 	defer closeTracer(tp)
 
-	err = utils.Migrate()
-	if err != nil {
+	if err = utils.Migrate(&conf.DatabaseConfig); err != nil {
 		log.Fatalln("migration failed:", err)
 	}
 
 	ApiParser.SetDefault(ApiParser.FromDirectory("/api_parser"))
-	db, err := utils.OpenDatabase()
+	db, err := utils.OpenDatabase(&conf.DatabaseConfig)
 	if err != nil {
 		log.Fatalln("open database failed:", err)
 	}
@@ -153,5 +153,5 @@ func main() {
 
 	loadSettings(r)
 
-	regularUpdateWebsites(r)
+	regularUpdateWebsites(r, conf.BatchConfig)
 }
