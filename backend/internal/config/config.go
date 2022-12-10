@@ -12,10 +12,19 @@ type Config struct {
 	BatchConfig    BatchConfig
 	DatabaseConfig DatabaseConfig
 	TraceConfig    TraceConfig
+
+	ApiParserDirectory string `env:"API_PARSER_DIRECTORY,required"`
+	BackupDirectory    string `env:"BACKUP_DIRECTORY,required"`
+
+	Separator     string `env:"WEB_WATCHER_DATE_MAX_LENGTH" envDefault:"2"`
+	MaxDateLength int    `env:"WEB_WATCHER_SEPARATOR" envDefault:"\n"`
 }
 
 type APIConfig struct {
-	Addr string `env:"ADDR"`
+	Addr         string        `env:"ADDR"`
+	ReadTimeout  time.Duration `env:"API_READ_TIMEOUT" envDefault:"5s"`
+	WriteTimeout time.Duration `env:"API_WRITE_TIMEOUT" envDefault:"5s"`
+	IdleTimeout  time.Duration `env:"API_IDLE_TIMEOUT" envDefault:"5s"`
 }
 
 type BatchConfig struct {
@@ -40,6 +49,7 @@ func LoadConfig() (*Config, error) {
 	var conf Config
 
 	loadConfigFuncs := []func() error{
+		func() error { return env.Parse(&conf) },
 		func() error { return env.Parse(&conf.APIConfig) },
 		func() error { return env.Parse(&conf.BatchConfig) },
 		func() error { return env.Parse(&conf.DatabaseConfig) },

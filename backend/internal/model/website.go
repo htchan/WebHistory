@@ -3,22 +3,13 @@ package model
 import (
 	"encoding/json"
 	"net/url"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/htchan/WebHistory/internal/config"
 	"go.opentelemetry.io/otel/attribute"
 )
-
-const (
-	KEY_SEPARATOR       = "WEB_WATCHER_SEPARATOR"
-	KEY_DATE_MEX_LENGTH = "WEB_WATCHER_DATE_MAX_LENGTH"
-)
-
-var SEP = os.Getenv(KEY_SEPARATOR)
-var DateLength, _ = strconv.Atoi(os.Getenv(KEY_DATE_MEX_LENGTH))
 
 type Website struct {
 	UUID       string
@@ -26,13 +17,15 @@ type Website struct {
 	Title      string
 	RawContent string
 	UpdateTime time.Time
+	Conf       *config.Config
 }
 
-func NewWebsite(url string) Website {
+func NewWebsite(url string, conf *config.Config) Website {
 	web := Website{
 		UUID:       uuid.New().String(),
 		URL:        url,
 		UpdateTime: time.Now(),
+		Conf:       conf,
 	}
 	return web
 }
@@ -70,7 +63,7 @@ func (web Website) Host() string {
 }
 
 func (web Website) Content() []string {
-	return strings.Split(web.RawContent, SEP)
+	return strings.Split(web.RawContent, web.Conf.Separator)
 }
 
 func (web Website) Equal(compare Website) bool {

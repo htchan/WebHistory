@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	"github.com/htchan/WebHistory/internal/repo"
 )
@@ -205,6 +206,7 @@ func Test_createWebsiteHandler(t *testing.T) {
 	tests := []struct {
 		name         string
 		r            repo.Repostory
+		conf         *config.Config
 		userUUID     string
 		url          string
 		expectStatus int
@@ -214,6 +216,7 @@ func Test_createWebsiteHandler(t *testing.T) {
 		{
 			name:         "get user websites of existing user and group",
 			r:            repo.NewInMemRepo(nil, nil, nil, nil),
+			conf:         &config.Config{},
 			userUUID:     "abc",
 			url:          "https://example.com/",
 			expectStatus: 200,
@@ -240,6 +243,7 @@ func Test_createWebsiteHandler(t *testing.T) {
 		{
 			name:         "return error if repo return error",
 			r:            repo.NewInMemRepo(nil, nil, nil, errors.New("some error")),
+			conf:         &config.Config{},
 			userUUID:     "unknown",
 			url:          "https://example.com/",
 			expectStatus: 400,
@@ -260,7 +264,7 @@ func Test_createWebsiteHandler(t *testing.T) {
 			ctx = context.WithValue(ctx, "webURL", test.url)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
-			createWebsiteHandler(test.r).ServeHTTP(rr, req)
+			createWebsiteHandler(test.r, test.conf).ServeHTTP(rr, req)
 
 			if rr.Code != test.expectStatus {
 				t.Error("got different code as expect")

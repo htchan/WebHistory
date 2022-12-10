@@ -1,4 +1,4 @@
-.PHONY: backend frontend
+.PHONY: backend frontend local_test
 
 service ?= all
 
@@ -34,3 +34,6 @@ backend_local:
 
 frontend_local:
 	cd frontend/src; flutter run -d chrome
+
+local_test:
+	make -C ./backend test

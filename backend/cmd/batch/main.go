@@ -136,14 +136,14 @@ func main() {
 		log.Fatalln("migration failed:", err)
 	}
 
-	ApiParser.SetDefault(ApiParser.FromDirectory("/api_parser"))
+	ApiParser.SetDefault(ApiParser.FromDirectory(conf.ApiParserDirectory))
 	db, err := utils.OpenDatabase(&conf.DatabaseConfig)
 	if err != nil {
 		log.Fatalln("open database failed:", err)
 	}
 	defer db.Close()
 
-	service.AggregateBackup("/backup")
+	service.AggregateBackup(conf.BackupDirectory)
 	err = utils.Backup(db)
 	if err != nil {
 		log.Fatalln("backup database failed:", err)

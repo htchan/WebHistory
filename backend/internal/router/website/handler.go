@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	"github.com/htchan/WebHistory/internal/repo"
 	"github.com/htchan/WebHistory/internal/service"
@@ -51,13 +52,13 @@ func getWebsiteGroupHandler(r repo.Repostory) http.HandlerFunc {
 	}
 }
 
-func createWebsiteHandler(r repo.Repostory) http.HandlerFunc {
+func createWebsiteHandler(r repo.Repostory, conf *config.Config) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		// userUUID, err := UserUUID(req)
 		userUUID := req.Context().Value("userUUID").(string)
 		url := req.Context().Value("webURL").(string)
 
-		web := model.NewWebsite(url)
+		web := model.NewWebsite(url, conf)
 		service.Update(context.Background(), r, &web)
 
 		err := r.CreateWebsite(&web)

@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/repo"
 	"github.com/htchan/WebHistory/internal/router/website"
 	"github.com/htchan/WebHistory/internal/utils"
@@ -17,13 +18,18 @@ import (
 )
 
 func main() {
-	err := utils.Migrate()
+	conf, err := config.LoadConfig()
 	if err != nil {
+		log.Fatalln("load config failed:", err)
+		return
+	}
+
+	if err = utils.Migrate(&conf.DatabaseConfig); err != nil {
 		log.Println("failed to migrate", err)
 		return
 	}
-	ApiParser.SetDefault(ApiParser.FromDirectory("/api_parser"))
-	db, err := utils.OpenDatabase()
+	ApiParser.SetDefault(ApiParser.FromDirectory(conf.ApiParserDirectory))
+	db, err := utils.OpenDatabase(&conf.DatabaseConfig)
 	if err != nil {
 		log.Println("failed to open database", err)
 		return
@@ -34,12 +40,13 @@ func main() {
 	website.AddRoutes(r, rpo)
 
 	server := http.Server{
-		Addr:         ":9105",
+		Addr:         conf.APIConfig.Addr,
+		ReadTimeout:  conf.APIConfig.ReadTimeout,
+		WriteTimeout: conf.APIConfig.WriteTimeout,
+		IdleTimeout:  conf.APIConfig.IdleTimeout,
 		Handler:      r,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 5 * time.Second,
-		IdleTimeout:  5 * time.Second,
 	}
+
 	go func() {
 		log.Println("start http server")
 

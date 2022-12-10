@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/htchan/WebHistory/internal/config"
 )
 
 func Test_NewWebsite(t *testing.T) {
@@ -14,6 +15,7 @@ func Test_NewWebsite(t *testing.T) {
 	tests := []struct {
 		name               string
 		url                string
+		conf               *config.Config
 		expectedTitle      string
 		expectedRawContent string
 		expectedUpdateTime time.Time
@@ -31,7 +33,7 @@ func Test_NewWebsite(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			web := NewWebsite(test.url)
+			web := NewWebsite(test.url, test.conf)
 			if web.UUID == "" {
 				t.Errorf("empty uuid")
 			}
@@ -160,8 +162,11 @@ func TestWebsite_Content(t *testing.T) {
 		expect []string
 	}{
 		{
-			name:   "happy flow",
-			web:    Website{RawContent: strings.Join([]string{"1", "2", "3"}, SEP)},
+			name: "happy flow",
+			web: Website{
+				RawContent: strings.Join([]string{"1", "2", "3"}, "\n"),
+				Conf:       &config.Config{Separator: "\n"},
+			},
 			expect: []string{"1", "2", "3"},
 		},
 	}

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	"github.com/htchan/WebHistory/internal/repo"
 	"go.opentelemetry.io/otel"
@@ -23,7 +24,7 @@ type HTTPClient interface {
 
 var client HTTPClient = &http.Client{Timeout: 30 * time.Second}
 
-func pruneResponse(resp *http.Response) string {
+func pruneResponse(resp *http.Response, conf *config.Config) string {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return ""
@@ -38,14 +39,14 @@ func pruneResponse(resp *http.Response) string {
 	re = regexp.MustCompile("<(/?title.*?)>")
 	bodyStr = re.ReplaceAllString(bodyStr, "[$1]")
 	re = regexp.MustCompile("(<.*?>)+")
-	bodyStr = re.ReplaceAllString(bodyStr, model.SEP)
+	bodyStr = re.ReplaceAllString(bodyStr, conf.Separator)
 	re = regexp.MustCompile("\\[(/?title.*?)\\]")
 	bodyStr = re.ReplaceAllString(bodyStr, "<$1>")
-	if strings.HasPrefix(bodyStr, model.SEP) {
-		bodyStr = bodyStr[len(model.SEP):]
+	if strings.HasPrefix(bodyStr, conf.Separator) {
+		bodyStr = bodyStr[len(conf.Separator):]
 	}
-	if strings.HasSuffix(bodyStr, model.SEP) {
-		bodyStr = bodyStr[:len(bodyStr)-len(model.SEP)]
+	if strings.HasSuffix(bodyStr, conf.Separator) {
+		bodyStr = bodyStr[:len(bodyStr)-len(conf.Separator)]
 	}
 	return bodyStr
 }
@@ -81,7 +82,7 @@ func fetchWebsite(ctx context.Context, web *model.Website) (string, error) {
 		return "", fmt.Errorf("fail to fetch website response: %s", web.URL)
 	}
 
-	body := pruneResponse(resp)
+	body := pruneResponse(resp, web.Conf)
 	span.SetAttributes(attribute.String("raw response", body))
 	return body, nil
 }
@@ -117,7 +118,7 @@ func checkContentUpdated(ctx context.Context, web *model.Website, content []stri
 	)
 
 	if len(content) > 0 && !cmp.Equal(web.Content(), content) {
-		web.RawContent = strings.Join(content, model.SEP)
+		web.RawContent = strings.Join(content, web.Conf.Separator)
 		web.UpdateTime = time.Now()
 		return true
 	}

@@ -13,16 +13,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/htchan/ApiParser"
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	"github.com/htchan/WebHistory/internal/repo"
 )
 
 func Test_pruneResponse(t *testing.T) {
-	temp := model.SEP
-	model.SEP = ","
-	t.Cleanup(func() {
-		model.SEP = temp
-	})
+	conf := &config.Config{Separator: ","}
 
 	tests := []struct {
 		name   string
@@ -63,7 +60,7 @@ func Test_pruneResponse(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			result := pruneResponse(&test.resp)
+			result := pruneResponse(&test.resp, conf)
 			if result != test.expect {
 				t.Errorf("got different result as expect")
 				t.Error(result)
@@ -186,6 +183,7 @@ func Test_fetchWebsite(t *testing.T) {
 			return nil, errors.New("error")
 		},
 	}
+	conf := &config.Config{Separator: "\n", MaxDateLength: 2}
 	tests := []struct {
 		name      string
 		client    HTTPClient
@@ -196,14 +194,14 @@ func Test_fetchWebsite(t *testing.T) {
 		{
 			name:      "works",
 			client:    workingClient,
-			web:       &model.Website{URL: "http://hello.com"},
+			web:       &model.Website{URL: "http://hello.com", Conf: conf},
 			expect:    "response",
 			expectErr: false,
 		},
 		{
 			name:      "return error when fail",
 			client:    errorClient,
-			web:       &model.Website{URL: "http://hello.com"},
+			web:       &model.Website{URL: "http://hello.com", Conf: conf},
 			expect:    "",
 			expectErr: true,
 		},
@@ -270,7 +268,7 @@ func Test_checkTimeUpdated(t *testing.T) {
 }
 
 func Test_checkContentUpdated(t *testing.T) {
-	model.SEP = ","
+	conf := &config.Config{Separator: ","}
 
 	tests := []struct {
 		name   string
@@ -280,31 +278,31 @@ func Test_checkContentUpdated(t *testing.T) {
 	}{
 		{
 			name:   "different dates",
-			web:    model.Website{RawContent: "1,2,3,4,5"},
+			web:    model.Website{RawContent: "1,2,3,4,5", Conf: conf},
 			dates:  []string{"0", "1", "2", "3", "4", "5"},
 			expect: true,
 		},
 		{
 			name:   "exact same dates",
-			web:    model.Website{RawContent: "1,2,3,4,5"},
+			web:    model.Website{RawContent: "1,2,3,4,5", Conf: conf},
 			dates:  []string{"1", "2", "3", "4", "5"},
 			expect: false,
 		},
 		{
 			name:   "exact same date with length model.DateLength at the beginning",
-			web:    model.Website{RawContent: "1,2,3,4,5"},
+			web:    model.Website{RawContent: "1,2,3,4,5", Conf: conf},
 			dates:  []string{"1", "2", "3", "4", "999"},
 			expect: true,
 		},
 		{
 			name:   "shorter dates",
-			web:    model.Website{RawContent: "1,2,3,4,5"},
+			web:    model.Website{RawContent: "1,2,3,4,5", Conf: conf},
 			dates:  []string{"1"},
 			expect: true,
 		},
 		{
 			name:   "empty dates",
-			web:    model.Website{RawContent: "1,2,3,4,5"},
+			web:    model.Website{RawContent: "1,2,3,4,5", Conf: conf},
 			dates:  nil,
 			expect: false,
 		},
@@ -378,14 +376,7 @@ func (m MockClient) Get(url string) (*http.Response, error) {
 func Test_Update(t *testing.T) {
 	ApiParser.SetDefault(ApiParser.FromDirectory("../../assets/api_parser"))
 
-	tempSEP := model.SEP
-	tempDateLength := model.DateLength
-	model.SEP = ","
-	model.DateLength = 2
-	t.Cleanup(func() {
-		model.SEP = tempSEP
-		model.DateLength = tempDateLength
-	})
+	conf := &config.Config{Separator: ",", MaxDateLength: 2}
 
 	refArray := make([]string, 0, 100)
 	for i := 0; i < 100; i++ {
@@ -405,7 +396,7 @@ func Test_Update(t *testing.T) {
 		{
 			name: "not updated title of web already have title",
 			r:    repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain", Title: "title"}}, nil, []model.WebsiteSetting{{Domain: "domain", TitleRegex: "(?P<Title>title.*)"}}, nil),
-			web:  model.Website{UUID: "uuid", URL: "http://domain", Title: "title"},
+			web:  model.Website{UUID: "uuid", URL: "http://domain", Title: "title", Conf: conf},
 			mockResp: &http.Response{Body: io.NopCloser(bytes.NewReader([]byte(
 				"title2",
 			)))},
@@ -416,7 +407,7 @@ func Test_Update(t *testing.T) {
 		{
 			name: "updated title of web not having title",
 			r:    repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain"}}, nil, []model.WebsiteSetting{{Domain: "domain", TitleRegex: "(?P<Title>title.*)"}}, nil),
-			web:  model.Website{UUID: "uuid", URL: "http://domain"},
+			web:  model.Website{UUID: "uuid", URL: "http://domain", Conf: conf},
 			mockResp: &http.Response{Body: io.NopCloser(bytes.NewReader([]byte(
 				"title",
 			)))},
@@ -427,7 +418,7 @@ func Test_Update(t *testing.T) {
 		{
 			name: "updated content",
 			r:    repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain", RawContent: "11-1-1,22-2-2"}}, nil, []model.WebsiteSetting{{Domain: "domain", ContentRegex: "(?P<Content>\\d+-\\d+-\\d)"}}, nil),
-			web:  model.Website{UUID: "uuid", URL: "http://domain", RawContent: "11-1-1,22-2-2"},
+			web:  model.Website{UUID: "uuid", URL: "http://domain", RawContent: "11-1-1,22-2-2", Conf: conf},
 			mockResp: &http.Response{Body: io.NopCloser(bytes.NewReader([]byte(
 				"2222-2-2<a>33-3-3<a>",
 			)))},
@@ -438,7 +429,7 @@ func Test_Update(t *testing.T) {
 		{
 			name: "not updated content",
 			r:    repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain", RawContent: "11-1-1,22-2-2"}}, nil, []model.WebsiteSetting{{Domain: "domain", ContentRegex: "(?P<Content>\\d+-\\d+-\\d)"}}, nil),
-			web:  model.Website{URL: "http://domain", RawContent: "11-1-1,22-2-2"},
+			web:  model.Website{URL: "http://domain", RawContent: "11-1-1,22-2-2", Conf: conf},
 			mockResp: &http.Response{Body: io.NopCloser(bytes.NewReader([]byte(
 				"11-1-1<a>22-2-2<a>",
 			)))},

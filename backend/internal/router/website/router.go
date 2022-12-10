@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/repo"
 )
 
@@ -26,7 +27,7 @@ func redirectLogin(res http.ResponseWriter, req *http.Request) {
 	http.Redirect(res, req, fmt.Sprintf("%v?service=%v", loginURL, serviceUUID), 302)
 }
 
-func AddRoutes(router chi.Router, r repo.Repostory) {
+func AddRoutes(router chi.Router, r repo.Repostory, conf *config.Config) {
 	api_route_prefix := os.Getenv("WEB_WATCHER_API_ROUTE_PREFIX")
 	if api_route_prefix == "" {
 		api_route_prefix = "/api/web-watcher"
@@ -51,7 +52,7 @@ func AddRoutes(router chi.Router, r repo.Repostory) {
 				router.Get("/{groupName}", getWebsiteGroupHandler(r))
 			})
 
-			router.With(WebsiteParams).Post("/", createWebsiteHandler(r))
+			router.With(WebsiteParams).Post("/", createWebsiteHandler(r, conf))
 
 			router.With(QueryWebsite(r)).Route("/{webUUID}", func(router chi.Router) {
 				router.Get("/", getWebsiteHandler(r))
