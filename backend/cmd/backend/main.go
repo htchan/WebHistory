@@ -37,7 +37,7 @@ func main() {
 	defer db.Close()
 	rpo := repo.NewPsqlRepo(db)
 	r := chi.NewRouter()
-	website.AddRoutes(r, rpo)
+	website.AddRoutes(r, rpo, conf)
 
 	server := http.Server{
 		Addr:         conf.APIConfig.Addr,
