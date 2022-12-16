@@ -4,17 +4,19 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 )
 
 type PsqlRepo struct {
-	db *sql.DB
+	db   *sql.DB
+	conf *config.Config
 }
 
 var _ Repostory = &PsqlRepo{}
 
-func NewPsqlRepo(db *sql.DB) *PsqlRepo {
-	return &PsqlRepo{db: db}
+func NewPsqlRepo(db *sql.DB, conf *config.Config) *PsqlRepo {
+	return &PsqlRepo{db: db, conf: conf}
 }
 
 func (r *PsqlRepo) CreateWebsite(web *model.Website) error {
@@ -69,6 +71,7 @@ func (r *PsqlRepo) FindWebsites() ([]model.Website, error) {
 
 	for rows.Next() {
 		var web model.Website
+		web.Conf = r.conf
 		err := rows.Scan(&web.UUID, &web.URL, &web.Title, &web.RawContent, &web.UpdateTime)
 		if err != nil {
 			return webs, fmt.Errorf("fail to read websites: %w", err)
@@ -88,6 +91,7 @@ func (r *PsqlRepo) FindWebsite(uuid string) (*model.Website, error) {
 
 	if rows.Next() {
 		web := new(model.Website)
+		web.Conf = r.conf
 		err := rows.Scan(&web.UUID, &web.URL, &web.Title, &web.RawContent, &web.UpdateTime)
 		if err != nil {
 			return nil, fmt.Errorf("fail to read websites: %w", err)
@@ -179,6 +183,7 @@ func (r *PsqlRepo) FindUserWebsites(userUUID string) (model.UserWebsites, error)
 
 	for rows.Next() {
 		var web model.UserWebsite
+		web.Website.Conf = r.conf
 
 		err := rows.Scan(
 			&web.WebsiteUUID, &web.UserUUID, &web.AccessTime, &web.GroupName,

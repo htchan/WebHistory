@@ -76,11 +76,11 @@ func regularUpdateWebsites(r repo.Repostory, conf config.BatchConfig) {
 	for host, channel := range websiteChannelGroupedByHost(webs) {
 		wg.Add(1)
 
-		go func(host string, website chan model.Website) {
+		go func(host string, websites chan model.Website) {
 			ctx, span := tr.Start(ctx, host)
 			defer span.End()
 
-			for web := range website {
+			for web := range websites {
 				service.Update(ctx, r, &web)
 				time.Sleep(conf.SleepInterval)
 			}
@@ -149,7 +149,7 @@ func main() {
 		log.Fatalln("backup database failed:", err)
 	}
 
-	r := repo.NewPsqlRepo(db)
+	r := repo.NewPsqlRepo(db, conf)
 
 	loadSettings(r)
 

@@ -35,7 +35,7 @@ func main() {
 		return
 	}
 	defer db.Close()
-	rpo := repo.NewPsqlRepo(db)
+	rpo := repo.NewPsqlRepo(db, conf)
 	r := chi.NewRouter()
 	website.AddRoutes(r, rpo, conf)
 

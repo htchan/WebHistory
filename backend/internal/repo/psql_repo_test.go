@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	_ "github.com/lib/pq"
 )
@@ -48,7 +49,7 @@ func TestNewPsqlRepo(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			repo := NewPsqlRepo(test.db)
+			repo := NewPsqlRepo(test.db, &config.Config{})
 			if repo.db != test.db {
 				t.Errorf("db in repo is different from when provided")
 				t.Error(repo.db)
@@ -60,7 +61,7 @@ func TestNewPsqlRepo(t *testing.T) {
 
 func TestPsqlRepo_CreateWebsite(t *testing.T) {
 	db := openPsql(t)
-	r := NewPsqlRepo(db)
+	r := NewPsqlRepo(db, &config.Config{})
 	t.Cleanup(func() {
 		db.Exec("delete from websites")
 		db.Exec("delete from user_websites")
@@ -128,7 +129,7 @@ func TestPsqlRepo_CreateWebsite(t *testing.T) {
 
 func TestPsqlRepo_UpdateWebsite(t *testing.T) {
 	db := openPsql(t)
-	r := NewPsqlRepo(db)
+	r := NewPsqlRepo(db, &config.Config{})
 	populateData(db)
 
 	t.Cleanup(func() {
@@ -194,7 +195,7 @@ func TestPsqlRepo_UpdateWebsite(t *testing.T) {
 
 func TestPsqlRepo_DeleteWebsite(t *testing.T) {
 	db := openPsql(t)
-	r := NewPsqlRepo(db)
+	r := NewPsqlRepo(db, &config.Config{})
 	populateData(db)
 	t.Cleanup(func() {
 		db.Exec("delete from websites")
@@ -237,7 +238,7 @@ func TestPsqlRepo_DeleteWebsite(t *testing.T) {
 
 func TestPsqlRepo_FindWebsites(t *testing.T) {
 	db := openPsql(t)
-	r := NewPsqlRepo(db)
+	r := NewPsqlRepo(db, &config.Config{})
 	populateData(db)
 	t.Cleanup(func() {
 		db.Exec("delete from websites")
@@ -283,7 +284,7 @@ func TestPsqlRepo_FindWebsites(t *testing.T) {
 
 func TestPsqlRepo_FindWebsite(t *testing.T) {
 	db := openPsql(t)
-	r := NewPsqlRepo(db)
+	r := NewPsqlRepo(db, &config.Config{})
 	populateData(db)
 	t.Cleanup(func() {
 		db.Exec("delete from websites")
@@ -335,7 +336,7 @@ func TestPsqlRepo_FindWebsite(t *testing.T) {
 
 func TestPsqlRepo_CreateUserWebsite(t *testing.T) {
 	db := openPsql(t)
-	r := NewPsqlRepo(db)
+	r := NewPsqlRepo(db, &config.Config{})
 	populateData(db)
 	t.Cleanup(func() {
 		db.Exec("delete from websites")
@@ -426,7 +427,7 @@ func TestPsqlRepo_CreateUserWebsite(t *testing.T) {
 
 func TestPsqlRepo_UpdteUserWebsite(t *testing.T) {
 	db := openPsql(t)
-	r := NewPsqlRepo(db)
+	r := NewPsqlRepo(db, &config.Config{})
 	populateData(db)
 	t.Cleanup(func() {
 		db.Exec("delete from websites")
@@ -466,7 +467,7 @@ func TestPsqlRepo_UpdteUserWebsite(t *testing.T) {
 
 func TestPsqlRepo_DeleteUserWebsite(t *testing.T) {
 	db := openPsql(t)
-	r := NewPsqlRepo(db)
+	r := NewPsqlRepo(db, &config.Config{})
 	populateData(db)
 	t.Cleanup(func() {
 		db.Exec("delete from websites")
@@ -515,7 +516,7 @@ func TestPsqlRepo_DeleteUserWebsite(t *testing.T) {
 
 func TestPsqlRepo_FindUserWebsites(t *testing.T) {
 	db := openPsql(t)
-	r := NewPsqlRepo(db)
+	r := NewPsqlRepo(db, &config.Config{})
 	populateData(db)
 	t.Cleanup(func() {
 		db.Exec("delete from websites")
@@ -575,7 +576,7 @@ func TestPsqlRepo_FindUserWebsites(t *testing.T) {
 
 func TestPsqlRepo_FindUserWebsitesByGroup(t *testing.T) {
 	db := openPsql(t)
-	r := NewPsqlRepo(db)
+	r := NewPsqlRepo(db, &config.Config{})
 	populateData(db)
 	t.Cleanup(func() {
 		db.Exec("delete from websites")
@@ -645,7 +646,7 @@ func TestPsqlRepo_FindUserWebsitesByGroup(t *testing.T) {
 
 func TestPsqlRepo_FindUserWebsite(t *testing.T) {
 	db := openPsql(t)
-	r := NewPsqlRepo(db)
+	r := NewPsqlRepo(db, &config.Config{})
 	populateData(db)
 	t.Cleanup(func() {
 		db.Exec("delete from websites")
