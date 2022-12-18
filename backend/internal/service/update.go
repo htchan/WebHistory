@@ -82,7 +82,9 @@ func fetchWebsite(ctx context.Context, web *model.Website) (string, error) {
 		return "", fmt.Errorf("fail to fetch website response: %s", web.URL)
 	}
 
-	body := pruneResponse(resp, web.Conf)
+	// body := pruneResponse(resp, web.Conf)
+	data, _ := io.ReadAll(resp.Body)
+	body := string(data)
 	span.SetAttributes(attribute.String("raw response", body))
 	return body, nil
 }

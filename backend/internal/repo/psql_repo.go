@@ -266,7 +266,9 @@ func (r *PsqlRepo) FindUserWebsite(userUUID, websiteUUID string) (*model.UserWeb
 func (r *PsqlRepo) FindWebsiteSettings() ([]model.WebsiteSetting, error) {
 	rows, err := r.db.Query(
 		`select 
-		domain, title_regex, content_regex, focus_index_from, focus_index_to 
+		domain, title_regex, content_regex, 
+		title_goquery_selector, date_goquery_selector, 
+		focus_index_from, focus_index_to 
 		from website_settings`,
 	)
 	if err != nil {
@@ -280,7 +282,9 @@ func (r *PsqlRepo) FindWebsiteSettings() ([]model.WebsiteSetting, error) {
 		var setting model.WebsiteSetting
 
 		err := rows.Scan(
-			&setting.Domain, &setting.TitleRegex, &setting.ContentRegex,
+			&setting.Domain,
+			&setting.TitleRegex, &setting.ContentRegex,
+			&setting.TitleGoquerySelector, &setting.DatesGoquerySelector,
 			&setting.FocusIndexFrom, &setting.FocusIndexTo,
 		)
 		if err != nil {
@@ -296,7 +300,9 @@ func (r *PsqlRepo) FindWebsiteSettings() ([]model.WebsiteSetting, error) {
 func (r *PsqlRepo) FindWebsiteSetting(domain string) (*model.WebsiteSetting, error) {
 	rows, err := r.db.Query(
 		`select 
-		domain, title_regex, content_regex, focus_index_from, focus_index_to 
+		domain, title_regex, content_regex, 
+		title_goquery_selector, date_goquery_selector,
+		focus_index_from, focus_index_to 
 		from website_settings 
 		where domain=$1`,
 		domain,
@@ -312,6 +318,7 @@ func (r *PsqlRepo) FindWebsiteSetting(domain string) (*model.WebsiteSetting, err
 
 		err := rows.Scan(
 			&setting.Domain, &setting.TitleRegex, &setting.ContentRegex,
+			&setting.TitleGoquerySelector, &setting.DatesGoquerySelector,
 			&setting.FocusIndexFrom, &setting.FocusIndexTo,
 		)
 		if err != nil {
