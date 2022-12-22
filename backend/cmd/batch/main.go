@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"runtime"
 	"sync"
 	"time"
 
-	"github.com/htchan/ApiParser"
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	"github.com/htchan/WebHistory/internal/repo"
@@ -44,21 +45,6 @@ func websiteChannelGroupedByHost(websites []model.Website) map[string]chan model
 	}
 
 	return hostChannelMap
-}
-
-func loadSettings(r repo.Repostory) {
-	settings, err := r.FindWebsiteSettings()
-	if err != nil {
-		return
-	}
-
-	for _, setting := range settings {
-		ApiParser.AddFormatSet(ApiParser.NewFormatSet(
-			setting.Domain,
-			setting.ContentRegex,
-			setting.TitleRegex,
-		))
-	}
 }
 
 func regularUpdateWebsites(r repo.Repostory, conf config.BatchConfig) {
@@ -119,7 +105,22 @@ func closeTracer(tp *tracesdk.TracerProvider) {
 	}
 }
 
+func PrintMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+	fmt.Printf("Alloc = %v MiB", bToMb(m.Alloc))
+	fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
+	fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
+	fmt.Printf("\tNumGC = %v\n", m.NumGC)
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
+}
+
 func main() {
+	PrintMemUsage()
 	conf, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalln("load config failed:", err)
@@ -136,7 +137,6 @@ func main() {
 		log.Fatalln("migration failed:", err)
 	}
 
-	ApiParser.SetDefault(ApiParser.FromDirectory(conf.ApiParserDirectory))
 	db, err := utils.OpenDatabase(&conf.DatabaseConfig)
 	if err != nil {
 		log.Fatalln("open database failed:", err)
@@ -151,7 +151,6 @@ func main() {
 
 	r := repo.NewPsqlRepo(db, conf)
 
-	loadSettings(r)
-
 	regularUpdateWebsites(r, conf.BatchConfig)
+	PrintMemUsage()
 }

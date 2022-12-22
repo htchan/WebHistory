@@ -14,7 +14,6 @@ import (
 	"github.com/htchan/WebHistory/internal/utils"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/htchan/ApiParser"
 )
 
 func main() {
@@ -28,7 +27,6 @@ func main() {
 		log.Println("failed to migrate", err)
 		return
 	}
-	ApiParser.SetDefault(ApiParser.FromDirectory(conf.ApiParserDirectory))
 	db, err := utils.OpenDatabase(&conf.DatabaseConfig)
 	if err != nil {
 		log.Println("failed to open database", err)

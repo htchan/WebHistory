@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/htchan/ApiParser"
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	"github.com/htchan/WebHistory/internal/repo"
@@ -131,9 +130,7 @@ func Test_getWebsiteSetting(t *testing.T) {
 
 func Test_parseAPI(t *testing.T) {
 	t.Parallel()
-	// setting := model.WebsiteSetting{Domain: "hello", TitleRegex: "(?P<Title>title-\\d)", ContentRegex: "(?P<Content>date-\\d)"}
 	setting := model.WebsiteSetting{Domain: "hello", TitleGoquerySelector: "head>title", DatesGoquerySelector: "dates>date"}
-	ApiParser.SetDefault(ApiParser.NewFormatSet(setting.Domain, setting.ContentRegex, setting.TitleRegex))
 
 	tests := []struct {
 		name          string
@@ -143,16 +140,6 @@ func Test_parseAPI(t *testing.T) {
 		expectTitle   string
 		expectContent []string
 	}{
-		// {
-		// 	name: "works",
-		// 	r: repo.NewInMemRepo(nil, nil, []model.WebsiteSetting{
-		// 		setting,
-		// 	}, nil),
-		// 	web:           &model.Website{URL: "http://hello/data"},
-		// 	resp:          "title-1 date-1 date-2 date-3 date-4",
-		// 	expectTitle:   "title-1",
-		// 	expectContent: []string{"date-1", "date-2", "date-3", "date-4"},
-		// },
 		{
 			name: "works with selector",
 			r: repo.NewInMemRepo(nil, nil, []model.WebsiteSetting{
@@ -389,8 +376,6 @@ func (m MockClient) Get(url string) (*http.Response, error) {
 }
 
 func Test_Update(t *testing.T) {
-	ApiParser.SetDefault(ApiParser.FromDirectory("../../assets/api_parser"))
-
 	conf := &config.Config{Separator: ",", MaxDateLength: 2}
 
 	refArray := make([]string, 0, 100)

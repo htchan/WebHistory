@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/htchan/ApiParser"
 )
 
 type WebsiteSetting struct {
@@ -56,37 +55,4 @@ func (setting *WebsiteSetting) Parse(response string) (string, []string) {
 	}
 
 	return title, dates
-}
-
-func (setting *WebsiteSetting) ParseOld(response string) (string, []string) {
-	responseApi := ApiParser.Parse(setting.Domain, response)
-	title := responseApi.Data["Title"]
-	contents := make([]string, len(responseApi.Items))
-	for i := range responseApi.Items {
-		contents[i] = responseApi.Items[i]["Content"]
-	}
-
-	fromN, toN := setting.FocusIndexFrom, setting.FocusIndexTo
-	if fromN < 0 {
-		fromN = len(contents) + fromN
-		if fromN < 0 {
-			fromN = 0
-		}
-	} else if fromN > len(contents) {
-		fromN = len(contents) - 1
-	}
-
-	if toN <= 0 {
-		toN = len(contents) + toN
-		if toN < 0 {
-			toN = len(contents)
-		}
-	} else if toN > len(contents) {
-		toN = len(contents)
-	}
-	if fromN <= toN {
-		contents = contents[fromN:toN]
-	}
-
-	return title, contents
 }

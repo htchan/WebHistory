@@ -13,8 +13,7 @@ type Config struct {
 	DatabaseConfig DatabaseConfig
 	TraceConfig    TraceConfig
 
-	ApiParserDirectory string `env:"API_PARSER_DIRECTORY,required"`
-	BackupDirectory    string `env:"BACKUP_DIRECTORY,required"`
+	BackupDirectory string `env:"BACKUP_DIRECTORY,required"`
 
 	Separator     string `env:"WEB_WATCHER_SEPARATOR" envDefault:"2"`
 	MaxDateLength int    `env:"WEB_WATCHER_DATE_MAX_LENGTH" envDefault:"\n"`
