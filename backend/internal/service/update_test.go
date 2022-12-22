@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -130,7 +131,8 @@ func Test_getWebsiteSetting(t *testing.T) {
 
 func Test_parseAPI(t *testing.T) {
 	t.Parallel()
-	setting := model.WebsiteSetting{Domain: "hello", TitleRegex: "(?P<Title>title-\\d)", ContentRegex: "(?P<Content>date-\\d)"}
+	// setting := model.WebsiteSetting{Domain: "hello", TitleRegex: "(?P<Title>title-\\d)", ContentRegex: "(?P<Content>date-\\d)"}
+	setting := model.WebsiteSetting{Domain: "hello", TitleGoquerySelector: "head>title", DatesGoquerySelector: "dates>date"}
 	ApiParser.SetDefault(ApiParser.NewFormatSet(setting.Domain, setting.ContentRegex, setting.TitleRegex))
 
 	tests := []struct {
@@ -141,13 +143,26 @@ func Test_parseAPI(t *testing.T) {
 		expectTitle   string
 		expectContent []string
 	}{
+		// {
+		// 	name: "works",
+		// 	r: repo.NewInMemRepo(nil, nil, []model.WebsiteSetting{
+		// 		setting,
+		// 	}, nil),
+		// 	web:           &model.Website{URL: "http://hello/data"},
+		// 	resp:          "title-1 date-1 date-2 date-3 date-4",
+		// 	expectTitle:   "title-1",
+		// 	expectContent: []string{"date-1", "date-2", "date-3", "date-4"},
+		// },
 		{
-			name: "works",
+			name: "works with selector",
 			r: repo.NewInMemRepo(nil, nil, []model.WebsiteSetting{
 				setting,
 			}, nil),
-			web:           &model.Website{URL: "http://hello/data"},
-			resp:          "title-1 date-1 date-2 date-3 date-4",
+			web: &model.Website{URL: "http://hello/data"},
+			resp: `<html><head>
+			<title>title-1</title>
+			<dates><date>date-1</date><date>date-2</date><date>date-3</date><date>date-4</date></dates>
+			</head></html>`,
 			expectTitle:   "title-1",
 			expectContent: []string{"date-1", "date-2", "date-3", "date-4"},
 		},
@@ -383,85 +398,99 @@ func Test_Update(t *testing.T) {
 		refArray = append(refArray, strconv.Itoa(i))
 	}
 
+	mockRespWithoutDates := `<html><head>
+	<title>new title</title>
+	</head></html>`
+	mockRespWithDates := `<html><head>
+	<title>new title</title>
+	<dates><date>date-1</date><date>date-2</date>
+	<date>date-3</date><date>date-4</date></dates>
+	</head></html>`
+	mockSetting := model.WebsiteSetting{Domain: "domain", TitleGoquerySelector: "head>title", DatesGoquerySelector: "dates>date"}
+
 	tests := []struct {
 		name       string
 		r          repo.Repostory
 		web        model.Website
-		mockResp   *http.Response
-		mockErr    error
-		expectRepo repo.Repostory
+		mockClient MockClient
 		expectWeb  model.Website
 		expectErr  bool
 	}{
 		{
 			name: "not updated title of web already have title",
-			r:    repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain", Title: "title"}}, nil, []model.WebsiteSetting{{Domain: "domain", TitleRegex: "(?P<Title>title.*)"}}, nil),
-			web:  model.Website{UUID: "uuid", URL: "http://domain", Title: "title", Conf: conf},
-			mockResp: &http.Response{Body: io.NopCloser(bytes.NewReader([]byte(
-				"title2",
-			)))},
-			mockErr:    nil,
-			expectRepo: repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain", Title: "title"}}, nil, nil, nil),
-			expectWeb:  model.Website{UUID: "uuid", URL: "http://domain", Title: "title"},
+			r: repo.NewInMemRepo(
+				[]model.Website{{UUID: "uuid", URL: "http://domain", Title: "original title"}},
+				nil,
+				[]model.WebsiteSetting{mockSetting},
+				nil,
+			),
+			web: model.Website{UUID: "uuid", URL: "http://domain", Title: "original title", Conf: conf},
+			mockClient: MockClient{get: func(s string) (*http.Response, error) {
+				return &http.Response{Body: io.NopCloser(strings.NewReader(mockRespWithoutDates))}, nil
+			}},
+			expectWeb: model.Website{UUID: "uuid", URL: "http://domain", Title: "original title"},
 		},
 		{
 			name: "updated title of web not having title",
-			r:    repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain"}}, nil, []model.WebsiteSetting{{Domain: "domain", TitleRegex: "(?P<Title>title.*)"}}, nil),
-			web:  model.Website{UUID: "uuid", URL: "http://domain", Conf: conf},
-			mockResp: &http.Response{Body: io.NopCloser(bytes.NewReader([]byte(
-				"title",
-			)))},
-			mockErr:    nil,
-			expectRepo: repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain", Title: "title", UpdateTime: time.Now()}}, nil, nil, nil),
-			expectWeb:  model.Website{UUID: "uuid", URL: "http://domain", Title: "title", UpdateTime: time.Now()},
+			r: repo.NewInMemRepo(
+				[]model.Website{{UUID: "uuid", URL: "http://domain"}},
+				nil,
+				[]model.WebsiteSetting{mockSetting},
+				nil,
+			),
+			web: model.Website{UUID: "uuid", URL: "http://domain", Conf: conf},
+			mockClient: MockClient{get: func(s string) (*http.Response, error) {
+				return &http.Response{Body: io.NopCloser(strings.NewReader(mockRespWithoutDates))}, nil
+			}},
+			expectWeb: model.Website{UUID: "uuid", URL: "http://domain", Title: "new title", UpdateTime: time.Now()},
 		},
 		{
 			name: "updated content",
-			r:    repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain", RawContent: "11-1-1,22-2-2"}}, nil, []model.WebsiteSetting{{Domain: "domain", ContentRegex: "(?P<Content>\\d+-\\d+-\\d)"}}, nil),
-			web:  model.Website{UUID: "uuid", URL: "http://domain", RawContent: "11-1-1,22-2-2", Conf: conf},
-			mockResp: &http.Response{Body: io.NopCloser(bytes.NewReader([]byte(
-				"2222-2-2<a>33-3-3<a>",
-			)))},
-			mockErr:    nil,
-			expectRepo: repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain", RawContent: "2222-2-2,33-3-3", UpdateTime: time.Now()}}, nil, nil, nil),
-			expectWeb:  model.Website{UUID: "uuid", URL: "http://domain", RawContent: "2222-2-2,33-3-3", UpdateTime: time.Now()},
+			r: repo.NewInMemRepo(
+				[]model.Website{{UUID: "uuid", URL: "http://domain", RawContent: "date-1,date-2"}},
+				nil,
+				[]model.WebsiteSetting{mockSetting},
+				nil,
+			),
+			web: model.Website{UUID: "uuid", URL: "http://domain", RawContent: "date-1,date-2", Conf: conf},
+			mockClient: MockClient{get: func(s string) (*http.Response, error) {
+				return &http.Response{Body: io.NopCloser(strings.NewReader(mockRespWithDates))}, nil
+			}},
+			expectWeb: model.Website{UUID: "uuid", URL: "http://domain", Title: "new title", RawContent: "date-1,date-2,date-3,date-4", UpdateTime: time.Now()},
 		},
 		{
 			name: "not updated content",
-			r:    repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain", RawContent: "11-1-1,22-2-2"}}, nil, []model.WebsiteSetting{{Domain: "domain", ContentRegex: "(?P<Content>\\d+-\\d+-\\d)"}}, nil),
-			web:  model.Website{URL: "http://domain", RawContent: "11-1-1,22-2-2", Conf: conf},
-			mockResp: &http.Response{Body: io.NopCloser(bytes.NewReader([]byte(
-				"11-1-1<a>22-2-2<a>",
-			)))},
-			mockErr:    nil,
-			expectRepo: repo.NewInMemRepo([]model.Website{{UUID: "uuid", URL: "http://domain", RawContent: "11-1-1,22-2-2"}}, nil, nil, nil),
-			expectWeb:  model.Website{URL: "http://domain", RawContent: "11-1-1,22-2-2"},
+			r: repo.NewInMemRepo(
+				[]model.Website{{UUID: "uuid", URL: "http://domain", Title: "new title", RawContent: "date-1,date-2,date-3,date-4"}},
+				nil,
+				[]model.WebsiteSetting{mockSetting},
+				nil,
+			),
+			web: model.Website{UUID: "uuid", URL: "http://domain", RawContent: "11-1-1,22-2-2", Conf: conf},
+			mockClient: MockClient{get: func(s string) (*http.Response, error) {
+				return &http.Response{Body: io.NopCloser(strings.NewReader(mockRespWithDates))}, nil
+			}},
+			expectWeb: model.Website{UUID: "uuid", URL: "http://domain", Title: "new title", RawContent: "date-1,date-2,date-3,date-4", UpdateTime: time.Now()},
 		},
 	}
 
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			client = MockClient{get: func(url string) (*http.Response, error) {
-				return test.mockResp, test.mockErr
-			}}
-
-			settings, _ := test.r.FindWebsiteSettings()
-
-			for _, setting := range settings {
-				ApiParser.AddFormatSet(ApiParser.NewFormatSet(setting.Domain, setting.ContentRegex, setting.TitleRegex))
-			}
-
+			client = test.mockClient
 			err := Update(context.Background(), test.r, &test.web)
 
 			if (err != nil) != test.expectErr {
 				t.Errorf("got error: %v; want error: %v", err, test.expectErr)
 			}
 
-			if !cmp.Equal(test.r, test.expectRepo) {
-				t.Error("got different repo")
-				t.Error(test.r)
-				t.Error(test.expectRepo)
+			web, err := test.r.FindWebsite(test.expectWeb.UUID)
+			if err != nil {
+				t.Errorf("find website got error: %v", err)
+			} else if !cmp.Equal(*web, test.expectWeb) {
+				t.Error("got different repo result")
+				t.Error(web)
+				t.Error(test.expectWeb)
 			}
 
 			if !cmp.Equal(test.web, test.expectWeb) {

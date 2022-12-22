@@ -18,7 +18,7 @@ type WebsiteSetting struct {
 	FocusIndexTo         int
 }
 
-func (setting WebsiteSetting) Parse(response string) (string, []string) {
+func (setting *WebsiteSetting) Parse(response string) (string, []string) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(response))
 	if err != nil {
 		fmt.Println("fail to parse error", err)
@@ -33,22 +33,26 @@ func (setting WebsiteSetting) Parse(response string) (string, []string) {
 		dates = append(dates, s.Text())
 	})
 
-	if len(dates) > 0 && setting.FocusIndexFrom < 0 {
-		setting.FocusIndexFrom = (setting.FocusIndexFrom + len(dates)) % len(dates)
-	} else if setting.FocusIndexFrom > len(dates) {
-		setting.FocusIndexFrom = 0
+	fromN, toN := setting.FocusIndexFrom, setting.FocusIndexTo
+	if fromN < 0 {
+		fromN = len(dates) + fromN
+		if fromN < 0 {
+			fromN = 0
+		}
+	} else if fromN > len(dates) {
+		fromN = len(dates) - 1
 	}
 
-	if setting.FocusIndexTo == 0 {
-		setting.FocusIndexTo = len(dates)
-	} else if len(dates) > 0 && setting.FocusIndexTo < 0 {
-		setting.FocusIndexTo = (setting.FocusIndexTo + len(dates)) % len(dates)
-	} else if setting.FocusIndexTo > len(dates) {
-		setting.FocusIndexTo = len(dates)
+	if toN <= 0 {
+		toN = len(dates) + toN
+		if toN < 0 {
+			toN = len(dates)
+		}
+	} else if toN > len(dates) {
+		toN = len(dates)
 	}
-
-	if len(dates) > 0 && setting.FocusIndexFrom <= setting.FocusIndexTo {
-		dates = dates[setting.FocusIndexFrom:setting.FocusIndexTo]
+	if fromN <= toN {
+		dates = dates[fromN:toN]
 	}
 
 	return title, dates
@@ -62,22 +66,26 @@ func (setting *WebsiteSetting) ParseOld(response string) (string, []string) {
 		contents[i] = responseApi.Items[i]["Content"]
 	}
 
-	if len(contents) > 0 && setting.FocusIndexFrom < 0 {
-		setting.FocusIndexFrom = (setting.FocusIndexFrom + len(contents)) % len(contents)
-	} else if setting.FocusIndexFrom > len(contents) {
-		setting.FocusIndexFrom = 0
+	fromN, toN := setting.FocusIndexFrom, setting.FocusIndexTo
+	if fromN < 0 {
+		fromN = len(contents) + fromN
+		if fromN < 0 {
+			fromN = 0
+		}
+	} else if fromN > len(contents) {
+		fromN = len(contents) - 1
 	}
 
-	if setting.FocusIndexTo == 0 {
-		setting.FocusIndexTo = len(contents)
-	} else if len(contents) > 0 && setting.FocusIndexTo < 0 {
-		setting.FocusIndexTo = (setting.FocusIndexTo + len(contents)) % len(contents)
-	} else if setting.FocusIndexTo > len(contents) {
-		setting.FocusIndexTo = len(contents)
+	if toN <= 0 {
+		toN = len(contents) + toN
+		if toN < 0 {
+			toN = len(contents)
+		}
+	} else if toN > len(contents) {
+		toN = len(contents)
 	}
-
-	if len(contents) > 0 && setting.FocusIndexFrom <= setting.FocusIndexTo {
-		contents = contents[setting.FocusIndexFrom:setting.FocusIndexTo]
+	if fromN <= toN {
+		contents = contents[fromN:toN]
 	}
 
 	return title, contents
