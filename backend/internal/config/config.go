@@ -4,26 +4,28 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/caarlos0/env"
+	"github.com/caarlos0/env/v6"
 )
 
 type Config struct {
-	APIConfig      APIConfig
-	BatchConfig    BatchConfig
-	DatabaseConfig DatabaseConfig
-	TraceConfig    TraceConfig
+	APIConfig         APIConfig
+	BatchConfig       BatchConfig
+	DatabaseConfig    DatabaseConfig
+	TraceConfig       TraceConfig
+	UserServiceConfig UserServiceConfig
 
 	BackupDirectory string `env:"BACKUP_DIRECTORY,required"`
 
-	Separator     string `env:"WEB_WATCHER_SEPARATOR" envDefault:"2"`
-	MaxDateLength int    `env:"WEB_WATCHER_DATE_MAX_LENGTH" envDefault:"\n"`
+	Separator     string `env:"WEB_WATCHER_SEPARATOR" envDefault:"\n"`
+	MaxDateLength int    `env:"WEB_WATCHER_DATE_MAX_LENGTH" envDefault:"2"`
 }
 
 type APIConfig struct {
-	Addr         string        `env:"ADDR"`
-	ReadTimeout  time.Duration `env:"API_READ_TIMEOUT" envDefault:"5s"`
-	WriteTimeout time.Duration `env:"API_WRITE_TIMEOUT" envDefault:"5s"`
-	IdleTimeout  time.Duration `env:"API_IDLE_TIMEOUT" envDefault:"5s"`
+	Addr           string        `env:"ADDR"`
+	ReadTimeout    time.Duration `env:"API_READ_TIMEOUT" envDefault:"5s"`
+	WriteTimeout   time.Duration `env:"API_WRITE_TIMEOUT" envDefault:"5s"`
+	IdleTimeout    time.Duration `env:"API_IDLE_TIMEOUT" envDefault:"5s"`
+	APIRoutePrefix string        `env:"WEB_WATCHER_API_ROUTE_PREFIX" envDefault:"/api/web-watcher"`
 }
 
 type BatchConfig struct {
@@ -44,6 +46,11 @@ type DatabaseConfig struct {
 	Database string `env:"PSQL_NAME,required"`
 }
 
+type UserServiceConfig struct {
+	Addr  string `env:"USER_SERVICE_ADDR,required"`
+	Token string `env:"USER_SERVICE_TOKEN,required"`
+}
+
 func LoadConfig() (*Config, error) {
 	var conf Config
 
@@ -53,6 +60,7 @@ func LoadConfig() (*Config, error) {
 		func() error { return env.Parse(&conf.BatchConfig) },
 		func() error { return env.Parse(&conf.DatabaseConfig) },
 		func() error { return env.Parse(&conf.TraceConfig) },
+		func() error { return env.Parse(&conf.UserServiceConfig) },
 	}
 
 	for _, f := range loadConfigFuncs {
@@ -60,10 +68,6 @@ func LoadConfig() (*Config, error) {
 			return nil, fmt.Errorf("parse config: %w", err)
 		}
 	}
-
-	// data, err := json.Marshal(conf)
-	// fmt.Println(string(data), err)
-	// return
 
 	return &conf, nil
 }
