@@ -4,18 +4,15 @@ WORKDIR /go/src/github.com/htchan/WebHistory
 
 COPY ./go.mod ./go.sum .
 
-RUN --mount=type=cache,target=$GOPATH/pkg \
-    go mod download
+RUN --mount=type=cache,target=$GOPATH \
+    go mod download -x
 
 
-FROM golang:1.19.2-alpine3.16 as builder
+FROM setup as builder
 
 WORKDIR /go/src/github.com/htchan/WebHistory
 
 RUN apk add gcc musl-dev libc-dev
-
-COPY --from=setup /go/src/github.com/htchan/WebHistory/ .
-COPY --from=setup $GOPATH/pkg $GOPATH/pkg
 
 COPY ./internal ./internal
 COPY ./cmd/backend ./cmd/backend
