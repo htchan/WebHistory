@@ -3,10 +3,10 @@ package utils
 import (
 	"context"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/htchan/UserService/backend/pkg/grpc"
+	"github.com/htchan/WebHistory/internal/config"
 )
 
 func IsSubSet(s1 string, s2 string) bool {
@@ -24,12 +24,11 @@ func IsSubSet(s1 string, s2 string) bool {
 var client grpc.Client
 var ctx context.Context = context.Background()
 
-func FindUserByToken(token string) string {
+func FindUserByToken(token string, conf *config.UserServiceConfig) string {
 	if client == nil {
-		client = grpc.NewClient(os.Getenv("USER_SERVICE_ADDR"))
+		client = grpc.NewClient(conf.Addr)
 	}
-	serviceToken := os.Getenv("SERVICE_TOKEN")
-	tokenPermission := grpc.NewAuthenticateParams(token, serviceToken, "")
+	tokenPermission := grpc.NewAuthenticateParams(token, conf.Token, "")
 	result, err := client.Authenticate(ctx, tokenPermission)
 	if err != nil {
 		log.Printf("fail to authenticate: %s", err)

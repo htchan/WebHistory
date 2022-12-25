@@ -10,7 +10,7 @@ test:
 	# go test github.com/htchan/WebHistory/pkg/website
 	# go test github.com/htchan/WebHistory/cmd/backend
 	# go test github.com/htchan/WebHistory/cmd/batch
-	go test ./...
+	go test ./... --cover
 
 ## apply_db_schema: construct ./assets/template.db by sql writern in ./assets/schema/schema.sql
 apply_db_schema: ./assets/schema.sql
@@ -20,8 +20,10 @@ apply_db_schema: ./assets/schema.sql
 create_migrate:
 	migrate create -ext sql -dir migrations $(NAME)
 
+PKG ?= "./..."
+
 coverage:
 	# go clean --testcache
-	go test -v $(PKG) -coverprofile profile.txt ; go tool cover -html=profile.txt -o coverage.html
+	go test $(PKG) -coverprofile profile.txt ; go tool cover -html=profile.txt -o coverage.html
 	rm profile.txt
 	# google-chrome ./coverage.html &

@@ -6,30 +6,33 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/repo"
 	"github.com/htchan/WebHistory/internal/utils"
 )
 
-func Authenticate(next http.Handler) http.Handler {
-	return http.HandlerFunc(
-		func(res http.ResponseWriter, req *http.Request) {
-			if req.Method == http.MethodOptions {
-				next.ServeHTTP(res, req)
-				return
-			}
-			token := req.Header.Get("Authorization")
-			userUUID := ""
-			if token != "" {
-				userUUID = utils.FindUserByToken(token)
-			}
-			if userUUID == "" {
-				writeError(res, http.StatusUnauthorized, UnauthorizedError)
-				return
-			}
-			ctx := context.WithValue(req.Context(), "userUUID", userUUID)
-			next.ServeHTTP(res, req.WithContext(ctx))
-		},
-	)
+func AuthenticateMiddleware(conf *config.Config) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(
+			func(res http.ResponseWriter, req *http.Request) {
+				if req.Method == http.MethodOptions {
+					next.ServeHTTP(res, req)
+					return
+				}
+				token := req.Header.Get("Authorization")
+				userUUID := ""
+				if token != "" {
+					userUUID = utils.FindUserByToken(token, &conf.UserServiceConfig)
+				}
+				if userUUID == "" {
+					writeError(res, http.StatusUnauthorized, UnauthorizedError)
+					return
+				}
+				ctx := context.WithValue(req.Context(), "userUUID", userUUID)
+				next.ServeHTTP(res, req.WithContext(ctx))
+			},
+		)
+	}
 }
 func SetContentType(next http.Handler) http.Handler {
 	return http.HandlerFunc(

@@ -28,11 +28,7 @@ func redirectLogin(res http.ResponseWriter, req *http.Request) {
 }
 
 func AddRoutes(router chi.Router, r repo.Repostory, conf *config.Config) {
-	api_route_prefix := os.Getenv("WEB_WATCHER_API_ROUTE_PREFIX")
-	if api_route_prefix == "" {
-		api_route_prefix = "/api/web-watcher"
-	}
-	router.Route(api_route_prefix, func(router chi.Router) {
+	router.Route(conf.APIConfig.APIRoutePrefix, func(router chi.Router) {
 		router.Route("/websites", func(router chi.Router) {
 			router.Use(
 				cors.Handler(
@@ -44,7 +40,7 @@ func AddRoutes(router chi.Router, r repo.Repostory, conf *config.Config) {
 					},
 				),
 			)
-			router.Use(Authenticate)
+			router.Use(AuthenticateMiddleware(conf))
 			router.Use(SetContentType)
 
 			router.Route("/groups", func(router chi.Router) {
