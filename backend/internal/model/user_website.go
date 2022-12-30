@@ -32,11 +32,11 @@ func (webs UserWebsites) WebsiteGroups() WebsiteGroups {
 		index, ok := indexMap[web.GroupName]
 		if !ok {
 			index = len(groups)
-			groups = append(groups, WebsiteGroup{})
+			groups = append(groups, WebsiteGroup{web})
 			indexMap[web.GroupName] = index
+		} else {
+			groups[index] = append(groups[index], web)
 		}
-		group := groups[index]
-		groups[index] = append(group, web)
 	}
 
 	return groups
