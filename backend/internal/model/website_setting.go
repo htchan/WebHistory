@@ -9,8 +9,6 @@ import (
 
 type WebsiteSetting struct {
 	Domain               string
-	TitleRegex           string
-	ContentRegex         string
 	TitleGoquerySelector string
 	DatesGoquerySelector string
 	FocusIndexFrom       int
