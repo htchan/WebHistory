@@ -27,7 +27,7 @@ func (setting *WebsiteSetting) Parse(response string) (string, []string) {
 
 	var dates []string
 	doc.Find(setting.DatesGoquerySelector).Each(func(i int, s *goquery.Selection) {
-		dates = append(dates, s.Text())
+		dates = append(dates, strings.TrimSpace(s.Text()))
 	})
 
 	fromN, toN := setting.FocusIndexFrom, setting.FocusIndexTo

@@ -27,6 +27,16 @@ func TestWebsiteSetting_Parse(t *testing.T) {
 			expectDates: []string{"1", "2"},
 		},
 		{
+			name: "happy flow that remove leading and trilling space",
+			setting: &WebsiteSetting{
+				TitleGoquerySelector: "head>title",
+				DatesGoquerySelector: "ul>li",
+			},
+			resp:        "<html><head><title>test</title></head><body><ul><li> \n \t 1\r \n \t </li><li>2 3</li></ul></body></html>",
+			expectTitle: "test",
+			expectDates: []string{"1", "2 3"},
+		},
+		{
 			name: "fail parse resp to doc",
 			setting: &WebsiteSetting{
 				TitleGoquerySelector: "head>title",
