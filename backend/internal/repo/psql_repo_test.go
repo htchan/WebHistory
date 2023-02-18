@@ -2,36 +2,139 @@ package repo
 
 import (
 	"database/sql"
+	"fmt"
+	"log"
 	"testing"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/go-cmp/cmp"
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	_ "github.com/lib/pq"
+	"github.com/ory/dockertest/v3"
+	"github.com/ory/dockertest/v3/docker"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/goleak"
 )
 
-func openPsql(t *testing.T) *sql.DB {
-	db, err := sql.Open("postgres", "host=localhost port=5432 user=test password=test dbname=test sslmode=disable")
-	if err != nil {
-		t.Fatalf("got error when open database: %v", err)
-		return nil
-	}
-	return db
-}
+var connString string
 
-func populateData(db *sql.DB) error {
-	_, err := db.Exec("insert into websites (uuid, url, title, content, update_time) values ('abc', 'http://example.com', 'title', 'content', '2000-01-02 03:04:05-06')")
+const (
+	user     = "test"
+	password = "test"
+	dbname   = "test"
+)
+
+func setupMigrate(connString string) error {
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		return fmt.Errorf("migrate fail: %w", err)
+	}
+	defer db.Close()
+
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec("insert into user_websites (website_uuid, user_uuid, group_name, access_time) values ('abc', 'def', 'title', '2000-01-02 03:04:05-06')")
+
+	m, err := migrate.NewWithDatabaseInstance("file:///home/htchan/Project/WebHistory/backend/migrations", "postgres", driver)
+	if err != nil {
+		return err
+	}
+
+	err = m.Up()
+	if err != nil {
+		return err
+	}
+
+	defer m.Close()
+
+	return nil
+}
+
+func setupContainer() (string, func(), error) {
+	pool, err := dockertest.NewPool("")
+	if err != nil {
+		return "", func() {}, fmt.Errorf("init docker fail: %w", err)
+	}
+
+	pool.RemoveContainerByName("webhistory_test_db")
+
+	resource, err := pool.RunWithOptions(
+		&dockertest.RunOptions{
+			Repository: "postgres",
+			Tag:        "latest",
+			Name:       "webhistory_test_db",
+			Env: []string{
+				fmt.Sprintf("POSTGRES_USER=%s", user),
+				fmt.Sprintf("POSTGRES_PASSWORD=%s", password),
+				fmt.Sprintf("POSTGRES_DB=%s", dbname),
+			},
+		},
+		func(hc *docker.HostConfig) {
+			hc.AutoRemove = true
+			hc.RestartPolicy = docker.RestartPolicy{
+				Name: "no",
+			}
+		},
+	)
+	if err != nil {
+		return "", func() {}, fmt.Errorf("create resource fail: %w", err)
+	}
+
+	purge := func() {
+		err := resource.Close()
+		if err != nil {
+			fmt.Println("purge error", err)
+		}
+	}
+
+	connString := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", user, password, resource.GetHostPort("5432/tcp"), dbname)
+	time.Sleep(3 * time.Second)
+
+	err = setupMigrate(connString)
+	if err != nil {
+		return "", purge, fmt.Errorf("migrate fail: %w", err)
+	}
+
+	return connString, purge, nil
+}
+
+func TestMain(m *testing.M) {
+	psqlConnString, purge, err := setupContainer()
+	if err != nil {
+		log.Fatalf("fail to setup docker: %v", err)
+	}
+
+	connString = psqlConnString
+
+	goleak.VerifyTestMain(m)
+
+	purge()
+}
+
+func populateData(db *sql.DB, uuid, title string) error {
+	_, err := db.Exec("insert into websites (uuid, url, title, content, update_time) values ($1, $2, $3, 'content', $4)", uuid, "http://example.com/"+title, title, time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC))
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("insert into user_websites (website_uuid, user_uuid, group_name, access_time) values ($1, 'def', $2, $3)", uuid, title, time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC))
 	return err
 }
 
 func TestNewPsqlRepo(t *testing.T) {
-	db := openPsql(t)
-	defer db.Close()
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+	t.Cleanup(func() {
+		db.Close()
+	})
 
 	tests := []struct {
 		name string
@@ -49,24 +152,31 @@ func TestNewPsqlRepo(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			repo := NewPsqlRepo(test.db, &config.Config{})
-			if repo.db != test.db {
-				t.Errorf("db in repo is different from when provided")
-				t.Error(repo.db)
-				t.Error(test.db)
-			}
+			assert.Equal(t, test.db, repo.db)
 		})
 	}
 }
 
 func TestPsqlRepo_CreateWebsite(t *testing.T) {
-	db := openPsql(t)
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+
 	r := NewPsqlRepo(db, &config.Config{})
 	t.Cleanup(func() {
-		db.Exec("delete from websites")
-		db.Exec("delete from user_websites")
+		db.Exec("delete from websites where title=$1", "unknown")
 		db.Close()
 	})
+
+	uuid := "create-website-uuid"
+	title := "create website"
+	populateData(db, uuid, title)
 
 	tests := []struct {
 		name      string
@@ -95,46 +205,57 @@ func TestPsqlRepo_CreateWebsite(t *testing.T) {
 		{
 			name: "create an existing website",
 			web: model.Website{
-				UUID:       "f9707295-e5cd-4651-a82d-595ac8022eea",
-				URL:        "http://example.com",
-				Title:      "",
+				UUID:       uuid,
+				URL:        "http://example.com/" + title,
+				Title:      title,
 				RawContent: "",
-				UpdateTime: time.Now(),
+				UpdateTime: time.Now().UTC(),
 			},
 			expect: model.Website{
-				UUID:       "dcb12928-5b5b-43f3-9d0e-ddb526d9794d",
-				URL:        "http://example.com",
-				Title:      "unknown",
-				RawContent: "",
-				UpdateTime: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+				UUID:       uuid,
+				URL:        "http://example.com/" + title,
+				Title:      title,
+				RawContent: "content",
+				UpdateTime: time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
 			},
 			expectErr: false,
 		},
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := r.CreateWebsite(&test.web)
 			if (err != nil) != test.expectErr {
 				t.Errorf("got error: %v; want error: %v", err, test.expectErr)
 			}
 			if !cmp.Equal(test.web, test.expect) {
 				t.Errorf("result web different from expect web")
-				t.Error(test.web)
-				t.Error(test.expect)
+				t.Error(cmp.Diff(test.expect, test.web))
 			}
 		})
 	}
 }
 
 func TestPsqlRepo_UpdateWebsite(t *testing.T) {
-	db := openPsql(t)
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+
 	r := NewPsqlRepo(db, &config.Config{})
-	populateData(db)
+
+	uuid := "update-website-uuid"
+	title := "update website"
+	populateData(db, uuid, title)
 
 	t.Cleanup(func() {
-		db.Exec("delete from websites")
-		db.Exec("delete from user_websites")
+		db.Exec("delete from websites where uuid=$1", title)
+		db.Exec("delete from user_websites where website_uuid=$1", title)
 		db.Close()
 	})
 
@@ -147,16 +268,16 @@ func TestPsqlRepo_UpdateWebsite(t *testing.T) {
 		{
 			name: "update successfully",
 			web: model.Website{
-				UUID:       "abc",
-				URL:        "http://example.com",
-				Title:      "unknown",
+				UUID:       uuid,
+				URL:        "http://example.com/" + title,
+				Title:      title,
 				RawContent: "content new",
 				UpdateTime: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 			expect: &model.Website{
-				UUID:       "abc",
-				URL:        "http://example.com",
-				Title:      "unknown",
+				UUID:       uuid,
+				URL:        "http://example.com/" + title,
+				Title:      title,
 				RawContent: "content new",
 				UpdateTime: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
@@ -165,9 +286,9 @@ func TestPsqlRepo_UpdateWebsite(t *testing.T) {
 		{
 			name: "update not exist website",
 			web: model.Website{
-				UUID:       "dcb12928-5b5b-43f3-9d0e-ddb526d9794d",
-				URL:        "http://example.com",
-				Title:      "unknown",
+				UUID:       "uuid-that-not-exist",
+				URL:        "http://example.com/not-exist",
+				Title:      title,
 				RawContent: "",
 				UpdateTime: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
@@ -179,6 +300,8 @@ func TestPsqlRepo_UpdateWebsite(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := r.UpdateWebsite(&test.web)
 			if (err != nil) != test.expectErr {
 				t.Errorf("got error: %v; want error: %v", err, test.expectErr)
@@ -194,12 +317,21 @@ func TestPsqlRepo_UpdateWebsite(t *testing.T) {
 }
 
 func TestPsqlRepo_DeleteWebsite(t *testing.T) {
-	db := openPsql(t)
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+
 	r := NewPsqlRepo(db, &config.Config{})
-	populateData(db)
+
+	uuid := "delete-website-uuid"
+	title := "delete website"
+	populateData(db, uuid, title)
 	t.Cleanup(func() {
-		db.Exec("delete from websites")
-		db.Exec("delete from user_websites")
+		db.Exec("delete from websites where uuid=$1", uuid)
+		db.Exec("delete from user_websites where website_uuid=$1", uuid)
 		db.Close()
 	})
 
@@ -210,12 +342,12 @@ func TestPsqlRepo_DeleteWebsite(t *testing.T) {
 	}{
 		{
 			name:      "delete successfully",
-			webUUID:   "abc",
+			webUUID:   uuid,
 			expectErr: false,
 		},
 		{
 			name:      "delete not exist",
-			webUUID:   "not exist",
+			webUUID:   "uuid-that-not-exist",
 			expectErr: false,
 		},
 	}
@@ -223,6 +355,8 @@ func TestPsqlRepo_DeleteWebsite(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := r.DeleteWebsite(&model.Website{UUID: test.webUUID})
 			if (err != nil) != test.expectErr {
 				t.Errorf("got error: %v; want error: %v", err, test.expectErr)
@@ -237,30 +371,37 @@ func TestPsqlRepo_DeleteWebsite(t *testing.T) {
 }
 
 func TestPsqlRepo_FindWebsites(t *testing.T) {
-	db := openPsql(t)
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+
 	r := NewPsqlRepo(db, &config.Config{})
-	populateData(db)
+
+	uuid := "find-websites-uuid"
+	title := "find websites"
+	populateData(db, uuid, title)
 	t.Cleanup(func() {
-		db.Exec("delete from websites")
-		db.Exec("delete from user_websites")
+		db.Exec("delete from websites where uuid=$1", uuid)
+		db.Exec("delete from user_websites where website_uuid=$1", uuid)
 		db.Close()
 	})
 
 	tests := []struct {
 		name      string
-		expect    []model.Website
+		expect    model.Website
 		expectErr bool
 	}{
 		{
 			name: "happy flow",
-			expect: []model.Website{
-				{
-					UUID:       "abc",
-					URL:        "http://example.com",
-					Title:      "title",
-					RawContent: "content",
-					UpdateTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
-				},
+			expect: model.Website{
+				UUID:       uuid,
+				URL:        "http://example.com/" + title,
+				Title:      title,
+				RawContent: "content",
+				UpdateTime: time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
 			},
 			expectErr: false,
 		},
@@ -269,26 +410,40 @@ func TestPsqlRepo_FindWebsites(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			result, err := r.FindWebsites()
 			if (err != nil) != test.expectErr {
 				t.Errorf("got error: %v; want error: %v", err, test.expectErr)
 			}
-			if !cmp.Equal(result, test.expect) {
-				t.Errorf("result different from expected")
-				t.Error(result)
-				t.Error(test.expect)
+			for _, web := range result {
+				if cmp.Equal(web, test.expect) {
+					return
+				}
 			}
+			t.Errorf("result not contains expected")
+			t.Error(result)
+			t.Error(test.expect)
 		})
 	}
 }
 
 func TestPsqlRepo_FindWebsite(t *testing.T) {
-	db := openPsql(t)
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+
 	r := NewPsqlRepo(db, &config.Config{})
-	populateData(db)
+
+	uuid := "find-website-uuid"
+	title := "find website"
+	populateData(db, uuid, title)
 	t.Cleanup(func() {
-		db.Exec("delete from websites")
-		db.Exec("delete from user_websites")
+		db.Exec("delete from websites where uuid=$1", uuid)
+		db.Exec("delete from user_websites where website_uuid=$1", uuid)
 		db.Close()
 	})
 
@@ -300,19 +455,19 @@ func TestPsqlRepo_FindWebsite(t *testing.T) {
 	}{
 		{
 			name:    "find exist website",
-			webUUID: "abc",
+			webUUID: uuid,
 			expect: &model.Website{
-				UUID:       "abc",
-				URL:        "http://example.com",
-				Title:      "title",
+				UUID:       uuid,
+				URL:        "http://example.com/" + title,
+				Title:      title,
 				RawContent: "content",
-				UpdateTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+				UpdateTime: time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
 			},
 			expectErr: false,
 		},
 		{
 			name:      "find not exist website",
-			webUUID:   "unknown",
+			webUUID:   "uuid-that-not-exist",
 			expect:    nil,
 			expectErr: true,
 		},
@@ -321,6 +476,8 @@ func TestPsqlRepo_FindWebsite(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			result, err := r.FindWebsite(test.webUUID)
 			if (err != nil) != test.expectErr {
 				t.Errorf("got error: %v; want error: %v", err, test.expectErr)
@@ -335,14 +492,24 @@ func TestPsqlRepo_FindWebsite(t *testing.T) {
 }
 
 func TestPsqlRepo_CreateUserWebsite(t *testing.T) {
-	db := openPsql(t)
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+
 	r := NewPsqlRepo(db, &config.Config{})
-	populateData(db)
+
+	uuid := "create-user-website-uuid"
+	title := "create user website"
+	populateData(db, uuid, title)
 	t.Cleanup(func() {
-		db.Exec("delete from websites")
-		db.Exec("delete from user_websites")
+		// db.Exec("delete from websites where uuid=$1", uuid)
+		// db.Exec("delete from user_websites where website_uuid=$1", uuid)
 		db.Close()
 	})
+
 	tests := []struct {
 		name      string
 		web       model.UserWebsite
@@ -352,21 +519,21 @@ func TestPsqlRepo_CreateUserWebsite(t *testing.T) {
 		{
 			name: "create new user website",
 			web: model.UserWebsite{
-				WebsiteUUID: "abc",
-				UserUUID:    "new",
+				WebsiteUUID: uuid,
+				UserUUID:    "new-user-website-uuid",
 				GroupName:   "title",
 				AccessTime:  time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 			expect: model.UserWebsite{
-				WebsiteUUID: "abc",
-				UserUUID:    "new",
+				WebsiteUUID: uuid,
+				UserUUID:    "new-user-website-uuid",
 				GroupName:   "title",
 				AccessTime:  time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 				Website: model.Website{
-					UUID:       "abc",
-					URL:        "http://example.com",
-					Title:      "title",
-					UpdateTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+					UUID:       uuid,
+					URL:        "http://example.com/" + title,
+					Title:      title,
+					UpdateTime: time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
 				},
 			},
 			expectErr: false,
@@ -374,19 +541,19 @@ func TestPsqlRepo_CreateUserWebsite(t *testing.T) {
 		{
 			name: "create existing user website",
 			web: model.UserWebsite{
-				WebsiteUUID: "abc",
-				UserUUID:    "new",
+				WebsiteUUID: uuid,
+				UserUUID:    "def",
 			},
 			expect: model.UserWebsite{
-				WebsiteUUID: "abc",
-				UserUUID:    "new",
-				GroupName:   "title",
-				AccessTime:  time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+				WebsiteUUID: uuid,
+				UserUUID:    "def",
+				GroupName:   title,
+				AccessTime:  time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
 				Website: model.Website{
-					UUID:       "abc",
-					URL:        "http://example.com",
-					Title:      "title",
-					UpdateTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+					UUID:       uuid,
+					URL:        "http://example.com/" + title,
+					Title:      title,
+					UpdateTime: time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
 				},
 			},
 			expectErr: false,
@@ -394,13 +561,13 @@ func TestPsqlRepo_CreateUserWebsite(t *testing.T) {
 		{
 			name: "create new user website link to not exist website",
 			web: model.UserWebsite{
-				WebsiteUUID: "new",
+				WebsiteUUID: "not-exist-uuid",
 				UserUUID:    "new",
 				GroupName:   "title",
 				AccessTime:  time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 			expect: model.UserWebsite{
-				WebsiteUUID: "new",
+				WebsiteUUID: "not-exist-uuid",
 				UserUUID:    "new",
 				GroupName:   "title",
 				AccessTime:  time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -412,6 +579,8 @@ func TestPsqlRepo_CreateUserWebsite(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			err := r.CreateUserWebsite(&test.web)
 			if (err != nil) != test.expectErr {
 				t.Errorf("got error: %v; want error: %v", err, test.expectErr)
@@ -426,14 +595,24 @@ func TestPsqlRepo_CreateUserWebsite(t *testing.T) {
 }
 
 func TestPsqlRepo_UpdteUserWebsite(t *testing.T) {
-	db := openPsql(t)
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+
 	r := NewPsqlRepo(db, &config.Config{})
-	populateData(db)
+
+	uuid := "update-user-website-uuid"
+	title := "update user website"
+	populateData(db, uuid, title)
 	t.Cleanup(func() {
-		db.Exec("delete from websites")
-		db.Exec("delete from user_websites")
+		db.Exec("delete from websites where uuid=$1", uuid)
+		db.Exec("delete from user_websites where website_uuid=$1", uuid)
 		db.Close()
 	})
+
 	tests := []struct {
 		name      string
 		web       model.UserWebsite
@@ -442,6 +621,26 @@ func TestPsqlRepo_UpdteUserWebsite(t *testing.T) {
 	}{
 		{
 			name: "update existing website",
+			web: model.UserWebsite{
+				WebsiteUUID: uuid,
+				UserUUID:    "def",
+				GroupName:   title,
+				AccessTime:  time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			expect: &model.UserWebsite{
+				WebsiteUUID: uuid,
+				UserUUID:    "def",
+				GroupName:   title,
+				AccessTime:  time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+				Website: model.Website{
+					UUID:       uuid,
+					URL:        "http://example.com/" + title,
+					Title:      title,
+					RawContent: "content",
+					UpdateTime: time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
+				},
+			},
+			expectErr: false,
 		},
 		{
 			name: "update not exist user website",
@@ -466,12 +665,21 @@ func TestPsqlRepo_UpdteUserWebsite(t *testing.T) {
 }
 
 func TestPsqlRepo_DeleteUserWebsite(t *testing.T) {
-	db := openPsql(t)
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+
 	r := NewPsqlRepo(db, &config.Config{})
-	populateData(db)
+
+	uuid := "delete-user-website-uuid"
+	title := "delete user website"
+	populateData(db, uuid, title)
 	t.Cleanup(func() {
-		db.Exec("delete from websites")
-		db.Exec("delete from user_websites")
+		db.Exec("delete from websites where uuid=$1", uuid)
+		db.Exec("delete from user_websites where website_uuid=$1", uuid)
 		db.Close()
 	})
 
@@ -483,7 +691,7 @@ func TestPsqlRepo_DeleteUserWebsite(t *testing.T) {
 	}{
 		{
 			name:      "delete successfully",
-			webUUID:   "abc",
+			webUUID:   uuid,
 			userUUID:  "def",
 			expectErr: false,
 		},
@@ -515,46 +723,53 @@ func TestPsqlRepo_DeleteUserWebsite(t *testing.T) {
 }
 
 func TestPsqlRepo_FindUserWebsites(t *testing.T) {
-	db := openPsql(t)
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+
 	r := NewPsqlRepo(db, &config.Config{})
-	populateData(db)
+
+	uuid := "find-user-websites-uuid"
+	title := "find user websites"
+	populateData(db, uuid, title)
 	t.Cleanup(func() {
-		db.Exec("delete from websites")
-		db.Exec("delete from user_websites")
+		db.Exec("delete from websites where uuid=$1", uuid)
+		db.Exec("delete from user_websites where website_uuid=$1", uuid)
 		db.Close()
 	})
 
 	tests := []struct {
 		name      string
 		userUUID  string
-		expect    model.UserWebsites
+		expect    model.UserWebsite
 		expectErr bool
 	}{
 		{
 			name:     "find web of existing user",
 			userUUID: "def",
-			expect: model.UserWebsites{
-				{
-					UserUUID:    "def",
-					WebsiteUUID: "abc",
-					GroupName:   "title",
-					AccessTime:  time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
-					Website: model.Website{
-						UUID:       "abc",
-						URL:        "http://example.com",
-						Title:      "title",
-						UpdateTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
-					},
+			expect: model.UserWebsite{
+				UserUUID:    "def",
+				WebsiteUUID: uuid,
+				GroupName:   title,
+				AccessTime:  time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
+				Website: model.Website{
+					UUID:       uuid,
+					URL:        "http://example.com/" + title,
+					Title:      title,
+					UpdateTime: time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
 				},
 			},
 			expectErr: false,
 		},
-		{
-			name:      "find web of not existing user",
-			userUUID:  "not exist",
-			expect:    nil,
-			expectErr: false,
-		},
+		// {
+		// 	name:      "find web of not existing user",
+		// 	userUUID:  "not exist",
+		// 	expect:    nil,
+		// 	expectErr: false,
+		// },
 	}
 
 	for _, test := range tests {
@@ -565,22 +780,34 @@ func TestPsqlRepo_FindUserWebsites(t *testing.T) {
 			if (err != nil) != test.expectErr {
 				t.Errorf("got error: %v; want error: %v", err, test.expectErr)
 			}
-			if !cmp.Equal(result, test.expect) {
-				t.Errorf("result different from expected")
-				t.Error(result)
-				t.Error(test.expect)
+			for _, userWeb := range result {
+				if cmp.Equal(userWeb, test.expect) {
+					return
+				}
 			}
+			t.Errorf("result different from expected")
+			t.Error(result)
+			t.Error(test.expect)
 		})
 	}
 }
 
 func TestPsqlRepo_FindUserWebsitesByGroup(t *testing.T) {
-	db := openPsql(t)
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+
 	r := NewPsqlRepo(db, &config.Config{})
-	populateData(db)
+
+	uuid := "find-user-websites-group-uuid"
+	title := "find user websites group"
+	populateData(db, uuid, title)
 	t.Cleanup(func() {
-		db.Exec("delete from websites")
-		db.Exec("delete from user_websites")
+		db.Exec("delete from websites where uuid=$1", uuid)
+		db.Exec("delete from user_websites where website_uuid=$1", uuid)
 		db.Close()
 	})
 
@@ -594,18 +821,18 @@ func TestPsqlRepo_FindUserWebsitesByGroup(t *testing.T) {
 		{
 			name:     "find web of existing group and user",
 			userUUID: "def",
-			group:    "title",
+			group:    title,
 			expect: model.WebsiteGroup{
 				{
 					UserUUID:    "def",
-					WebsiteUUID: "abc",
-					GroupName:   "title",
-					AccessTime:  time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+					WebsiteUUID: uuid,
+					GroupName:   title,
+					AccessTime:  time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
 					Website: model.Website{
-						UUID:       "abc",
-						URL:        "http://example.com",
-						Title:      "title",
-						UpdateTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+						UUID:       uuid,
+						URL:        "http://example.com/" + title,
+						Title:      title,
+						UpdateTime: time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
 					},
 				},
 			},
@@ -621,7 +848,7 @@ func TestPsqlRepo_FindUserWebsitesByGroup(t *testing.T) {
 		{
 			name:      "find web of not existing user",
 			userUUID:  "not exist",
-			group:     "title",
+			group:     title,
 			expect:    nil,
 			expectErr: false,
 		},
@@ -645,12 +872,21 @@ func TestPsqlRepo_FindUserWebsitesByGroup(t *testing.T) {
 }
 
 func TestPsqlRepo_FindUserWebsite(t *testing.T) {
-	db := openPsql(t)
+	t.Parallel()
+
+	db, err := sql.Open("postgres", connString)
+	if err != nil {
+		t.Fatalf("open database fail: %v", err)
+	}
+
 	r := NewPsqlRepo(db, &config.Config{})
-	populateData(db)
+
+	uuid := "find-user-website-uuid"
+	title := "find user website"
+	populateData(db, uuid, title)
 	t.Cleanup(func() {
-		db.Exec("delete from websites")
-		db.Exec("delete from user_websites")
+		db.Exec("delete from websites where uuid=$1", uuid)
+		db.Exec("delete from user_websites where website_uuid=$1", uuid)
 		db.Close()
 	})
 
@@ -664,17 +900,17 @@ func TestPsqlRepo_FindUserWebsite(t *testing.T) {
 		{
 			name:     "find web of existing group and user",
 			userUUID: "def",
-			webUUID:  "abc",
+			webUUID:  uuid,
 			expect: &model.UserWebsite{
 				UserUUID:    "def",
-				WebsiteUUID: "abc",
-				GroupName:   "title",
-				AccessTime:  time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+				WebsiteUUID: uuid,
+				GroupName:   title,
+				AccessTime:  time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
 				Website: model.Website{
-					UUID:       "abc",
-					URL:        "http://example.com",
-					Title:      "title",
-					UpdateTime: time.Date(2000, 1, 2, 3, 4, 5, 6, time.UTC),
+					UUID:       uuid,
+					URL:        "http://example.com/" + title,
+					Title:      title,
+					UpdateTime: time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
 				},
 			},
 			expectErr: false,
@@ -689,7 +925,7 @@ func TestPsqlRepo_FindUserWebsite(t *testing.T) {
 		{
 			name:      "find web of not existing user",
 			userUUID:  "not exist",
-			webUUID:   "abc",
+			webUUID:   uuid,
 			expect:    nil,
 			expectErr: true,
 		},

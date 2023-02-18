@@ -5,12 +5,7 @@ help:
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' | sed  -e 's/^/ /'
 
 test:
-	# go test github.com/htchan/WebHistory/internal/utils
-	# go test github.com/htchan/WebHistory/internal/logging
-	# go test github.com/htchan/WebHistory/pkg/website
-	# go test github.com/htchan/WebHistory/cmd/backend
-	# go test github.com/htchan/WebHistory/cmd/batch
-	go test ./... --cover
+	go test ./... --cover -race
 
 ## apply_db_schema: construct ./assets/template.db by sql writern in ./assets/schema/schema.sql
 apply_db_schema: ./assets/schema.sql

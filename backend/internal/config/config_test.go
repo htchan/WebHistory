@@ -6,7 +6,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"go.uber.org/goleak"
 )
+
+func TestMain(m *testing.M) {
+	goleak.VerifyTestMain(m)
+}
 
 func Test_LoadConfig(t *testing.T) {
 	t.Parallel()
