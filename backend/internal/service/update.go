@@ -22,7 +22,12 @@ type HTTPClient interface {
 	Get(string) (*http.Response, error)
 }
 
-var client HTTPClient = &http.Client{Timeout: 30 * time.Second}
+var client HTTPClient = &http.Client{
+	Timeout: 30 * time.Second,
+	Transport: &http.Transport{
+		DisableKeepAlives: true,
+	},
+}
 
 func pruneResponse(resp *http.Response, conf *config.Config) string {
 	body, err := io.ReadAll(resp.Body)
