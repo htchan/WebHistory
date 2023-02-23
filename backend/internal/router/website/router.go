@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/htchan/WebHistory/internal/config"
-	"github.com/htchan/WebHistory/internal/repo"
+	"github.com/htchan/WebHistory/internal/repository"
 )
 
 var UnauthorizedError = errors.New("unauthorized")
@@ -27,7 +27,7 @@ func redirectLogin(res http.ResponseWriter, req *http.Request) {
 	http.Redirect(res, req, fmt.Sprintf("%v?service=%v", loginURL, serviceUUID), 302)
 }
 
-func AddRoutes(router chi.Router, r repo.Repostory, conf *config.Config) {
+func AddRoutes(router chi.Router, r repository.Repostory, conf *config.Config) {
 	router.Route(conf.APIConfig.APIRoutePrefix, func(router chi.Router) {
 		router.Route("/websites", func(router chi.Router) {
 			router.Use(

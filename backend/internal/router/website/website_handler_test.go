@@ -17,20 +17,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
-	"github.com/htchan/WebHistory/internal/repo"
+	"github.com/htchan/WebHistory/internal/repository"
 )
 
 func Test_getAllWebsiteGroupsHandler(t *testing.T) {
 	tests := []struct {
 		name         string
-		r            repo.Repostory
+		r            repository.Repostory
 		userUUID     string
 		expectStatus int
 		expectRes    string
 	}{
 		{
 			name: "get all user websites of specific user in group array format",
-			r: repo.NewInMemRepo(nil, []model.UserWebsite{
+			r: repository.NewInMemRepo(nil, []model.UserWebsite{
 				{
 					UserUUID:    "abc",
 					WebsiteUUID: "1",
@@ -71,7 +71,7 @@ func Test_getAllWebsiteGroupsHandler(t *testing.T) {
 		},
 		{
 			name:         "return error if findUserWebsites return error",
-			r:            repo.NewInMemRepo(nil, nil, nil, errors.New("some error")),
+			r:            repository.NewInMemRepo(nil, nil, nil, errors.New("some error")),
 			userUUID:     "unknown",
 			expectStatus: 400,
 			expectRes:    `{ "error": "record not found" }`,
@@ -111,7 +111,7 @@ func Test_getWebsiteGroupHandler(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
-		r            repo.Repostory
+		r            repository.Repostory
 		userUUID     string
 		group        string
 		expectStatus int
@@ -119,7 +119,7 @@ func Test_getWebsiteGroupHandler(t *testing.T) {
 	}{
 		{
 			name: "get user websites of existing user and group",
-			r: repo.NewInMemRepo(nil, []model.UserWebsite{
+			r: repository.NewInMemRepo(nil, []model.UserWebsite{
 				{
 					UserUUID:    "abc",
 					WebsiteUUID: "1",
@@ -150,7 +150,7 @@ func Test_getWebsiteGroupHandler(t *testing.T) {
 		},
 		{
 			name:         "return error if user not exist",
-			r:            repo.NewInMemRepo(nil, nil, nil, errors.New("some error")),
+			r:            repository.NewInMemRepo(nil, nil, nil, errors.New("some error")),
 			userUUID:     "unknown",
 			group:        "group 1",
 			expectStatus: 400,
@@ -158,7 +158,7 @@ func Test_getWebsiteGroupHandler(t *testing.T) {
 		},
 		{
 			name:         "return error if group not exist",
-			r:            repo.NewInMemRepo(nil, nil, nil, errors.New("some error")),
+			r:            repository.NewInMemRepo(nil, nil, nil, errors.New("some error")),
 			userUUID:     "abc",
 			group:        "group not exist",
 			expectStatus: 400,
@@ -205,23 +205,23 @@ func Test_createWebsiteHandler(t *testing.T) {
 	))))
 	tests := []struct {
 		name         string
-		r            repo.Repostory
+		r            repository.Repostory
 		conf         *config.Config
 		userUUID     string
 		url          string
 		expectStatus int
 		expectRes    string
-		expectRepo   repo.Repostory
+		expectRepo   repository.Repostory
 	}{
 		{
 			name:         "get user websites of existing user and group",
-			r:            repo.NewInMemRepo(nil, nil, nil, nil),
+			r:            repository.NewInMemRepo(nil, nil, nil, nil),
 			conf:         &config.Config{},
 			userUUID:     "abc",
 			url:          "https://example.com/",
 			expectStatus: 200,
 			expectRes:    `{"message":"website \u003c\u003e inserted"}`,
-			expectRepo: repo.NewInMemRepo(
+			expectRepo: repository.NewInMemRepo(
 				[]model.Website{
 					{UUID: "30303030-3030-4030-b030-303030303030", URL: "https://example.com/", UpdateTime: time.Now()},
 				},
@@ -242,13 +242,13 @@ func Test_createWebsiteHandler(t *testing.T) {
 		},
 		{
 			name:         "return error if repo return error",
-			r:            repo.NewInMemRepo(nil, nil, nil, errors.New("some error")),
+			r:            repository.NewInMemRepo(nil, nil, nil, errors.New("some error")),
 			conf:         &config.Config{},
 			userUUID:     "unknown",
 			url:          "https://example.com/",
 			expectStatus: 400,
 			expectRes:    `{ "error": "some error" }`,
-			expectRepo:   repo.NewInMemRepo(nil, nil, nil, errors.New("some error")),
+			expectRepo:   repository.NewInMemRepo(nil, nil, nil, errors.New("some error")),
 		},
 	}
 
@@ -291,7 +291,7 @@ func Test_getWebsiteHandler(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
-		r            repo.Repostory
+		r            repository.Repostory
 		web          model.UserWebsite
 		expectStatus int
 		expectRes    string
@@ -350,14 +350,14 @@ func Test_refreshWebsiteHandler(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
-		r            repo.Repostory
+		r            repository.Repostory
 		web          model.UserWebsite
-		expectRepo   repo.Repostory
+		expectRepo   repository.Repostory
 		expectStatus int
 	}{
 		{
 			name: "return website with updated AccessTime",
-			r: repo.NewInMemRepo(
+			r: repository.NewInMemRepo(
 				nil,
 				[]model.UserWebsite{
 					{
@@ -387,7 +387,7 @@ func Test_refreshWebsiteHandler(t *testing.T) {
 					UpdateTime: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
 				},
 			},
-			expectRepo: repo.NewInMemRepo(
+			expectRepo: repository.NewInMemRepo(
 				nil,
 				[]model.UserWebsite{
 					{
@@ -455,15 +455,15 @@ func Test_deleteWebsiteHandler(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
-		r            repo.Repostory
+		r            repository.Repostory
 		web          model.UserWebsite
-		expectRepo   repo.Repostory
+		expectRepo   repository.Repostory
 		expectStatus int
 		expectResp   string
 	}{
 		{
 			name: "return website of deleted content",
-			r: repo.NewInMemRepo(
+			r: repository.NewInMemRepo(
 				nil,
 				[]model.UserWebsite{
 					{
@@ -493,7 +493,7 @@ func Test_deleteWebsiteHandler(t *testing.T) {
 					UpdateTime: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
 				},
 			},
-			expectRepo: repo.NewInMemRepo(
+			expectRepo: repository.NewInMemRepo(
 				nil,
 				nil,
 				nil, nil,
@@ -543,16 +543,16 @@ func Test_changeWebsiteGroupHandler(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
-		r            repo.Repostory
+		r            repository.Repostory
 		web          model.UserWebsite
 		group        string
-		expectRepo   repo.Repostory
+		expectRepo   repository.Repostory
 		expectStatus int
 		expectResp   string
 	}{
 		{
 			name: "return website of deleted content",
-			r: repo.NewInMemRepo(
+			r: repository.NewInMemRepo(
 				nil,
 				[]model.UserWebsite{
 					{
@@ -583,7 +583,7 @@ func Test_changeWebsiteGroupHandler(t *testing.T) {
 				},
 			},
 			group: "group_name",
-			expectRepo: repo.NewInMemRepo(
+			expectRepo: repository.NewInMemRepo(
 				nil,
 				[]model.UserWebsite{
 					{

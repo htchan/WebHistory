@@ -15,7 +15,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
-	"github.com/htchan/WebHistory/internal/repo"
+	"github.com/htchan/WebHistory/internal/repository"
 )
 
 func Test_pruneResponse(t *testing.T) {
@@ -74,14 +74,14 @@ func Test_getWebsiteSetting(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name      string
-		r         repo.Repostory
+		r         repository.Repostory
 		web       *model.Website
 		expect    *model.WebsiteSetting
 		expectErr bool
 	}{
 		{
 			name: "works",
-			r: repo.NewInMemRepo(
+			r: repository.NewInMemRepo(
 				nil, nil,
 				[]model.WebsiteSetting{{Domain: "hello"}}, nil,
 			),
@@ -91,7 +91,7 @@ func Test_getWebsiteSetting(t *testing.T) {
 		},
 		{
 			name: "works with fallback default domain",
-			r: repo.NewInMemRepo(
+			r: repository.NewInMemRepo(
 				nil, nil,
 				[]model.WebsiteSetting{{Domain: "default"}}, nil,
 			),
@@ -101,7 +101,7 @@ func Test_getWebsiteSetting(t *testing.T) {
 		},
 		{
 			name: "return error if no setting found",
-			r: repo.NewInMemRepo(
+			r: repository.NewInMemRepo(
 				nil, nil, nil, nil,
 			),
 			web:       &model.Website{URL: "https://hello/data"},
@@ -134,7 +134,7 @@ func Test_parseAPI(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		r             repo.Repostory
+		r             repository.Repostory
 		web           *model.Website
 		resp          string
 		expectTitle   string
@@ -142,7 +142,7 @@ func Test_parseAPI(t *testing.T) {
 	}{
 		{
 			name: "works with selector",
-			r: repo.NewInMemRepo(nil, nil, []model.WebsiteSetting{
+			r: repository.NewInMemRepo(nil, nil, []model.WebsiteSetting{
 				setting,
 			}, nil),
 			web: &model.Website{URL: "http://hello/data"},
@@ -395,7 +395,7 @@ func Test_Update(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		r          repo.Repostory
+		r          repository.Repostory
 		web        model.Website
 		mockClient MockClient
 		expectWeb  model.Website
@@ -403,7 +403,7 @@ func Test_Update(t *testing.T) {
 	}{
 		{
 			name: "not updated title of web already have title",
-			r: repo.NewInMemRepo(
+			r: repository.NewInMemRepo(
 				[]model.Website{{UUID: "uuid", URL: "http://domain", Title: "original title"}},
 				nil,
 				[]model.WebsiteSetting{mockSetting},
@@ -417,7 +417,7 @@ func Test_Update(t *testing.T) {
 		},
 		{
 			name: "updated title of web not having title",
-			r: repo.NewInMemRepo(
+			r: repository.NewInMemRepo(
 				[]model.Website{{UUID: "uuid", URL: "http://domain"}},
 				nil,
 				[]model.WebsiteSetting{mockSetting},
@@ -431,7 +431,7 @@ func Test_Update(t *testing.T) {
 		},
 		{
 			name: "updated content",
-			r: repo.NewInMemRepo(
+			r: repository.NewInMemRepo(
 				[]model.Website{{UUID: "uuid", URL: "http://domain", RawContent: "date-1,date-2"}},
 				nil,
 				[]model.WebsiteSetting{mockSetting},
@@ -445,7 +445,7 @@ func Test_Update(t *testing.T) {
 		},
 		{
 			name: "not updated content",
-			r: repo.NewInMemRepo(
+			r: repository.NewInMemRepo(
 				[]model.Website{{UUID: "uuid", URL: "http://domain", Title: "new title", RawContent: "date-1,date-2,date-3,date-4"}},
 				nil,
 				[]model.WebsiteSetting{mockSetting},

@@ -1,4 +1,4 @@
-package repo
+package psql
 
 import (
 	"database/sql"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
+	"github.com/htchan/WebHistory/internal/repository"
 )
 
 type PsqlRepo struct {
@@ -13,9 +14,9 @@ type PsqlRepo struct {
 	conf *config.Config
 }
 
-var _ Repostory = &PsqlRepo{}
+var _ repository.Repostory = &PsqlRepo{}
 
-func NewPsqlRepo(db *sql.DB, conf *config.Config) *PsqlRepo {
+func NewRepo(db *sql.DB, conf *config.Config) *PsqlRepo {
 	return &PsqlRepo{db: db, conf: conf}
 }
 

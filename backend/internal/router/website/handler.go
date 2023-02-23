@@ -13,11 +13,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
-	"github.com/htchan/WebHistory/internal/repo"
+	"github.com/htchan/WebHistory/internal/repository"
 	"github.com/htchan/WebHistory/internal/service"
 )
 
-func getAllWebsiteGroupsHandler(r repo.Repostory) http.HandlerFunc {
+func getAllWebsiteGroupsHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		userUUID := req.Context().Value("userUUID").(string)
 		webs, err := r.FindUserWebsites(userUUID)
@@ -34,7 +34,7 @@ func getAllWebsiteGroupsHandler(r repo.Repostory) http.HandlerFunc {
 	}
 }
 
-func getWebsiteGroupHandler(r repo.Repostory) http.HandlerFunc {
+func getWebsiteGroupHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		userUUID := req.Context().Value("userUUID").(string)
 		groupName := chi.URLParam(req, "groupName")
@@ -52,7 +52,7 @@ func getWebsiteGroupHandler(r repo.Repostory) http.HandlerFunc {
 	}
 }
 
-func createWebsiteHandler(r repo.Repostory, conf *config.Config) http.HandlerFunc {
+func createWebsiteHandler(r repository.Repostory, conf *config.Config) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		// userUUID, err := UserUUID(req)
 		userUUID := req.Context().Value("userUUID").(string)
@@ -83,7 +83,7 @@ func createWebsiteHandler(r repo.Repostory, conf *config.Config) http.HandlerFun
 	}
 }
 
-func getWebsiteHandler(r repo.Repostory) http.HandlerFunc {
+func getWebsiteHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		web := req.Context().Value("website").(model.UserWebsite)
 		log.Printf("path: %s; web_uuid: %s;", req.URL, web.WebsiteUUID)
@@ -93,7 +93,7 @@ func getWebsiteHandler(r repo.Repostory) http.HandlerFunc {
 	}
 }
 
-func refreshWebsiteHandler(r repo.Repostory) http.HandlerFunc {
+func refreshWebsiteHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		web := req.Context().Value("website").(model.UserWebsite)
 		log.Printf("path: %s; web_uuid: %s;", req.URL, web.WebsiteUUID)
@@ -109,7 +109,7 @@ func refreshWebsiteHandler(r repo.Repostory) http.HandlerFunc {
 	}
 }
 
-func deleteWebsiteHandler(r repo.Repostory) http.HandlerFunc {
+func deleteWebsiteHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		web := req.Context().Value("website").(model.UserWebsite)
 		err := r.DeleteUserWebsite(&web)
@@ -134,7 +134,7 @@ func validGroupName(web model.UserWebsite, groupName string) bool {
 	return false
 }
 
-func changeWebsiteGroupHandler(r repo.Repostory) http.HandlerFunc {
+func changeWebsiteGroupHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		web := req.Context().Value("website").(model.UserWebsite)
 		groupName := req.Context().Value("group").(string)
@@ -154,7 +154,7 @@ func changeWebsiteGroupHandler(r repo.Repostory) http.HandlerFunc {
 	}
 }
 
-func dbStatsHandler(r repo.Repostory) http.HandlerFunc {
+func dbStatsHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		json.NewEncoder(res).Encode(r.Stats())
 	}

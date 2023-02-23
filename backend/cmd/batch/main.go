@@ -10,7 +10,8 @@ import (
 
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
-	"github.com/htchan/WebHistory/internal/repo"
+	"github.com/htchan/WebHistory/internal/repository"
+	"github.com/htchan/WebHistory/internal/repository/psql"
 	"github.com/htchan/WebHistory/internal/service"
 	"github.com/htchan/WebHistory/internal/utils"
 	"go.opentelemetry.io/otel"
@@ -47,7 +48,7 @@ func websiteChannelGroupedByHost(websites []model.Website) map[string]chan model
 	return hostChannelMap
 }
 
-func regularUpdateWebsites(r repo.Repostory, conf config.BatchConfig) {
+func regularUpdateWebsites(r repository.Repostory, conf config.BatchConfig) {
 	tr := otel.Tracer("process")
 	ctx, span := tr.Start(context.Background(), "batch")
 	defer span.End()
@@ -149,7 +150,7 @@ func main() {
 		log.Fatalln("backup database failed:", err)
 	}
 
-	r := repo.NewPsqlRepo(db, conf)
+	r := psql.NewRepo(db, conf)
 
 	regularUpdateWebsites(r, conf.BatchConfig)
 	PrintMemUsage()

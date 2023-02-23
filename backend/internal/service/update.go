@@ -13,7 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
-	"github.com/htchan/WebHistory/internal/repo"
+	"github.com/htchan/WebHistory/internal/repository"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -56,7 +56,7 @@ func pruneResponse(resp *http.Response, conf *config.Config) string {
 	return bodyStr
 }
 
-func getWebsiteSetting(r repo.Repostory, web *model.Website) (*model.WebsiteSetting, error) {
+func getWebsiteSetting(r repository.Repostory, web *model.Website) (*model.WebsiteSetting, error) {
 	u, err := url.Parse(web.URL)
 	setting, err := r.FindWebsiteSetting(u.Hostname())
 	if err == nil {
@@ -65,7 +65,7 @@ func getWebsiteSetting(r repo.Repostory, web *model.Website) (*model.WebsiteSett
 	return r.FindWebsiteSetting("default")
 }
 
-func parseAPI(r repo.Repostory, web *model.Website, resp string) (string, []string) {
+func parseAPI(r repository.Repostory, web *model.Website, resp string) (string, []string) {
 	setting, err := getWebsiteSetting(r, web)
 	if err != nil {
 		return "", nil
@@ -151,7 +151,7 @@ func checkTitleUpdated(ctx context.Context, web *model.Website, title string) bo
 	return false
 }
 
-func checkWeb(ctx context.Context, r repo.Repostory, web *model.Website, title string, content []string) {
+func checkWeb(ctx context.Context, r repository.Repostory, web *model.Website, title string, content []string) {
 	tr := otel.Tracer("update")
 	ctx, span := tr.Start(ctx, "Checking")
 	defer span.End()
@@ -174,7 +174,7 @@ func checkWeb(ctx context.Context, r repo.Repostory, web *model.Website, title s
 	}
 }
 
-func Update(ctx context.Context, r repo.Repostory, web *model.Website) error {
+func Update(ctx context.Context, r repository.Repostory, web *model.Website) error {
 	tr := otel.Tracer("update")
 	ctx, span := tr.Start(ctx, "Update")
 	defer span.End()

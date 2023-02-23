@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/htchan/WebHistory/internal/config"
-	"github.com/htchan/WebHistory/internal/repo"
+	"github.com/htchan/WebHistory/internal/repository"
 	"github.com/htchan/WebHistory/internal/utils"
 )
 
@@ -62,7 +62,7 @@ func WebsiteParams(next http.Handler) http.Handler {
 	)
 }
 
-func QueryWebsite(r repo.Repostory) func(http.Handler) http.Handler {
+func QueryWebsite(r repository.Repostory) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(
 			func(res http.ResponseWriter, req *http.Request) {
