@@ -506,8 +506,8 @@ func TestPsqlRepo_CreateUserWebsite(t *testing.T) {
 	title := "create user website"
 	populateData(db, uuid, title)
 	t.Cleanup(func() {
-		// db.Exec("delete from websites where uuid=$1", uuid)
-		// db.Exec("delete from user_websites where website_uuid=$1", uuid)
+		db.Exec("delete from websites where uuid=$1", uuid)
+		db.Exec("delete from user_websites where website_uuid=$1", uuid)
 		db.Close()
 	})
 

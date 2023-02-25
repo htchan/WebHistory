@@ -101,9 +101,9 @@ func TestWebsite_MarshalJSON(t *testing.T) {
 				UUID:       "uuid",
 				URL:        "http://example.com",
 				Title:      "title",
-				UpdateTime: time.Date(2020, 1, 2, 0, 0, 0, 0, time.Local),
+				UpdateTime: time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC),
 			},
-			expect: `{"uuid":"uuid","url":"http://example.com","title":"title","update_time":"2020-01-02T00:00:00 HKT"}`,
+			expect: `{"uuid":"uuid","url":"http://example.com","title":"title","update_time":"2020-01-02T00:00:00 UTC"}`,
 		},
 	}
 

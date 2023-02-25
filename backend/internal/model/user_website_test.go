@@ -60,13 +60,13 @@ func TestUserWebsite_MarshalJSON(t *testing.T) {
 					UUID:       "uuid",
 					URL:        "http://example.com",
 					Title:      "title",
-					UpdateTime: time.Date(2020, 1, 2, 0, 0, 0, 0, time.Local),
+					UpdateTime: time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC),
 				},
 				UserUUID:   "user uuid",
 				GroupName:  "group",
-				AccessTime: time.Date(2020, 1, 2, 0, 0, 0, 0, time.Local),
+				AccessTime: time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC),
 			},
-			expect: `{"uuid":"","user_uuid":"user uuid","url":"http://example.com","title":"title","group_name":"group","update_time":"2020-01-02T00:00:00 HKT","access_time":"2020-01-02T00:00:00 HKT"}`,
+			expect: `{"uuid":"","user_uuid":"user uuid","url":"http://example.com","title":"title","group_name":"group","update_time":"2020-01-02T00:00:00 UTC","access_time":"2020-01-02T00:00:00 UTC"}`,
 		},
 	}
 
