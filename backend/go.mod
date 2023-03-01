@@ -33,4 +33,5 @@ require (
 	go.uber.org/goleak v1.1.12
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
+	gotest.tools v2.2.0+incompatible
 )
