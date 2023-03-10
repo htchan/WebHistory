@@ -4,7 +4,7 @@ WORKDIR /go/src/github.com/htchan/WebHistory
 
 COPY ./go.mod ./go.sum .
 
-RUN --mount=type=cache,target=$GOPATH \
+RUN --mount=type=cache,target=$GOPATH/pkg \
     go mod download -x
 
 
