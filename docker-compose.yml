@@ -59,6 +59,19 @@ services:
             - ./backend/assets/.env
         command: sh -c "crond && tail -f /dev/null"
 
+    backup:
+        build:
+            context: ./backup
+            dockerfile: ./Dockerfile
+        volumes:
+            - ./bin/database:/backup
+        networks:
+            - database
+        profiles:
+            - all
+            - backup
+        env_file:
+            - ./.env
 
     frontend:
         image: "flutter:latest"

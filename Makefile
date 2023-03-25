@@ -1,4 +1,4 @@
-.PHONY: backend frontend local_test
+.PHONY: backend frontend local_test backup
 
 service ?= all
 
@@ -10,6 +10,10 @@ help:
 ## build service=<service>: build docker image of specified service (default all)
 build:
 	DOCKER_BUILDKIT=1 docker-compose --profile ${service} build
+
+## backup the database content to ./bin/database
+backup:
+	docker-compose --profile backup up --build --force-recreate
 
 ## frontend: compile flutter frontend
 frontend:

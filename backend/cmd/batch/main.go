@@ -144,11 +144,7 @@ func main() {
 	}
 	defer db.Close()
 
-	service.AggregateBackup(conf.BackupDirectory)
-	err = utils.Backup(db)
-	if err != nil {
-		log.Fatalln("backup database failed:", err)
-	}
+	// service.AggregateBackup(conf.BackupDirectory)
 
 	r := psql.NewRepo(db, conf)
 
