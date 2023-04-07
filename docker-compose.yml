@@ -36,7 +36,7 @@ services:
         deploy:
             resources:
                 limits:
-                    memory: '20M'
+                    memory: '25M'
         volumes:
             - ./bin/database:/database
             - ./bin/logs:/logs

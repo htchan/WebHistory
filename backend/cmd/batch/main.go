@@ -11,7 +11,7 @@ import (
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	"github.com/htchan/WebHistory/internal/repository"
-	"github.com/htchan/WebHistory/internal/repository/psql"
+	"github.com/htchan/WebHistory/internal/repository/sqlc"
 	"github.com/htchan/WebHistory/internal/service"
 	"github.com/htchan/WebHistory/internal/utils"
 	"go.opentelemetry.io/otel"
@@ -146,7 +146,7 @@ func main() {
 
 	// service.AggregateBackup(conf.BackupDirectory)
 
-	r := psql.NewRepo(db, conf)
+	r := sqlc.NewRepo(db, conf)
 
 	regularUpdateWebsites(r, conf.BatchConfig)
 	PrintMemUsage()

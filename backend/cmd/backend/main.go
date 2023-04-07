@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/htchan/WebHistory/internal/config"
-	"github.com/htchan/WebHistory/internal/repository/psql"
+	"github.com/htchan/WebHistory/internal/repository/sqlc"
 	"github.com/htchan/WebHistory/internal/router/website"
 	"github.com/htchan/WebHistory/internal/utils"
 
@@ -33,7 +33,7 @@ func main() {
 		return
 	}
 	defer db.Close()
-	rpo := psql.NewRepo(db, conf)
+	rpo := sqlc.NewRepo(db, conf)
 	r := chi.NewRouter()
 	website.AddRoutes(r, rpo, conf)
 
