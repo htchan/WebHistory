@@ -1,8 +1,6 @@
 name: BE Testing
 run-name: ${{github.actor}} is running testcase for BE
-on: 
-  workflow_dispatch:
-
+on:
   pull_request:
     branches:
       - master
