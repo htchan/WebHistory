@@ -4,18 +4,70 @@ services:
     backend:
         build: 
             context: ./backend
-            dockerfile: ./build/Dockerfile
+            dockerfile: ./build/Dockerfile.backend
+        deploy:
+            resources:
+                limits:
+                    memory: '100M'
+        hostname: webhistory_backend
         volumes:
             - ./bin/database:/database
+            - ./backend/migrations:/migrations
+            - /etc/timezone:/etc/timezone/ro
         networks:
             - router
+            - database
         profiles:
             - all
             - backend
             - web
+        ports:
+            - 9105:9105
         env_file:
+            - ./backend/assets/.env.backend
             - ./backend/assets/.env
+            - ./.env
         command: sh -c "./backend"
+
+    batch:
+        build:
+            context: ./backend
+            dockerfile: ./build/Dockerfile.batch
+        deploy:
+            resources:
+                limits:
+                    memory: '25M'
+        volumes:
+            - ./bin/database:/database
+            - ./bin/logs:/logs
+            - ./backend/migrations:/migrations
+            - ./bin/backup:/backup
+            - /etc/timezone:/etc/timezone:ro
+        networks:
+            - database
+            - trace
+        profiles:
+            - all
+            - batch
+        env_file:
+            - ./.env
+            - ./backend/assets/.env.batch
+            - ./backend/assets/.env
+        command: sh -c "crond && tail -f /dev/null"
+
+    backup:
+        build:
+            context: ./backup
+            dockerfile: ./Dockerfile
+        volumes:
+            - ./bin/database:/backup
+        networks:
+            - database
+        profiles:
+            - all
+            - backup
+        env_file:
+            - ./.env
 
     frontend:
         image: "flutter:latest"
@@ -28,7 +80,16 @@ services:
             - all
             - frontend
             - web
-        command: sh -c "flutter --version ; flutter pub get ; flutter build web"
+        env_file:
+            - ./.env
+        # command: sh -c "
+        #     flutter --version ; 
+        #     flutter pub get ; 
+        #     flutter build web  --base-href $WEB_WATCHER_FE_ROUTE_PREFIX/ \
+        #     --dart-define=WEB_WATCHER_API_HOST=$WEB_WATCHER_API_HOST \
+        #     --dart-define=WEB_WATCHER_API_ROUTE_PREFIX=$WEB_WATCHER_API_ROUTE_PREFIX \
+        #     --dart-define=WEB_WATCHER_FE_ROUTE_PREFIX=$WEB_WATCHER_FE_ROUTE_PREFIX"
+        command: sh -c "flutter --version ; flutter pub get ; flutter build web --base-href $WEB_WATCHER_FE_ROUTE_PREFIX/ --dart-define=WEB_WATCHER_API_HOST=$WEB_WATCHER_API_HOST --dart-define=WEB_WATCHER_API_ROUTE_PREFIX=$WEB_WATCHER_API_ROUTE_PREFIX --dart-define=WEB_WATCHER_FE_ROUTE_PREFIX=$WEB_WATCHER_FE_ROUTE_PREFIX"
 
 volumes:
     frontend_volume:
@@ -38,3 +99,9 @@ networks:
     router:
         driver: bridge
         name: router
+    database:
+        name: database
+        external: true
+    trace:
+        name: trace
+        external: true

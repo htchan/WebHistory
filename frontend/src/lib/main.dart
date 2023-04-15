@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:webhistory/Page/detailsPage.dart';
+import 'package:webhistory/repostories/webHistoryRepostory.dart';
 import 'dart:html';
-import './Page/mainPage.dart';
-import './Page/insertPage.dart';
-import 'Page/loginPage.dart';
+import 'package:webhistory/screens/all_screen.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -38,13 +36,14 @@ void main() async {
   runApp(MyApp());
 }
 
-String host = "192.168.128.146";
-// String host = "localhost:9105";
+const String host = String.fromEnvironment("WEB_WATCHER_API_HOST");
+// String host = "localhost";
 final Storage _localStorage = window.localStorage;
+const String FE_ROUTE_PREFIX = String.fromEnvironment("WEB_WATCHER_FE_ROUTE_PREFIX", defaultValue: "/web-watcher");
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
-  String url = 'http://${host}/api/web-history';
+  final WebHistoryRepostory client = WebHistoryRepostory(host, "");
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -56,26 +55,39 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      initialRoute: '/',
+      initialRoute: "${FE_ROUTE_PREFIX}/",
       onGenerateRoute: (settings) {
         var uri = Uri.parse(settings.name??"");
         String authToken = _localStorage['web_history_token'] ?? "";
         if (authToken == "") {
-          return MaterialPageRoute(builder: (context) => LoginPage(queryParams: uri.queryParameters), settings: settings);
+          return MaterialPageRoute(
+            builder: (context) => LoginScreen(queryParams: uri.queryParameters),
+            settings: settings
+          );
+        } else {
+          client.authToken = authToken;
         }
         if (uri.pathSegments.indexOf('add') == 0) {
-          return MaterialPageRoute(builder: (context) => InsertPage(url: url, token: authToken),
-            settings: settings);
+          return MaterialPageRoute(
+            builder: (context) => InsertScreen(client: client),
+            settings: settings
+          );
         } else if (uri.pathSegments.indexOf('details') == 0) {
           String groupName = uri.queryParameters["groupName"]??"";
-          print("going to ${groupName}");
-          return MaterialPageRoute(builder: (context) => DetailsPage(url: url, groupName: groupName, token: authToken),
-            settings: settings);
-        } else if (uri.path.startsWith('/web-history/user-service/login')) {
-          return MaterialPageRoute(builder: (context) => LoginPage(queryParams: uri.queryParameters), settings: settings);
+          return MaterialPageRoute(
+            builder: (context) => DetailsScreen(client: client, groupName: groupName),
+            settings: settings
+          );
+        } else if (uri.path.startsWith('${FE_ROUTE_PREFIX}/user-service/login')) {
+          return MaterialPageRoute(
+            builder: (context) => LoginScreen(queryParams: uri.queryParameters),
+            settings: settings
+          );
         } else {
-          return MaterialPageRoute(builder: (context) => MainPage(url: url, token: authToken),
-            settings: settings);
+          return MaterialPageRoute(
+            builder: (context) => MainScreen(client: client),
+            settings: settings
+          );
         }
       }
     );

@@ -1,0 +1,32 @@
+FROM golang:1.19.2-alpine3.16 as setup
+
+WORKDIR /go/src/github.com/htchan/WebHistory
+
+COPY ./go.mod ./go.sum .
+
+RUN --mount=type=cache,target=$GOPATH/pkg \
+    go mod download -x
+
+
+FROM setup as builder
+
+WORKDIR /go/src/github.com/htchan/WebHistory
+
+RUN apk add gcc musl-dev libc-dev
+
+COPY ./internal ./internal
+COPY ./cmd/backend ./cmd/backend
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    go build -v ./cmd/backend
+
+
+FROM alpine
+
+WORKDIR /usr/src/app
+
+RUN apk add tzdata
+
+COPY --from=builder /go/src/github.com/htchan/WebHistory/backend .
+
+CMD ['./main']
