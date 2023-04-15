@@ -40,7 +40,7 @@ func setupMigrate(connString string) error {
 		return err
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file:///home/htchan/Project/WebHistory/backend/migrations", "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance("file://../../../migrations", "postgres", driver)
 	if err != nil {
 		return err
 	}
@@ -107,6 +107,7 @@ func setupContainer() (string, func(), error) {
 func TestMain(m *testing.M) {
 	sqlcConnString, purge, err := setupContainer()
 	if err != nil {
+		purge()
 		log.Fatalf("fail to setup docker: %v", err)
 	}
 
