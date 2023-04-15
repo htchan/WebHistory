@@ -1,4 +1,4 @@
-name: run testfor BE
+name: BE Testing
 run-name: ${{github.actor}} is running testcase for BE
 on: 
   workflow_dispatch:
@@ -13,7 +13,7 @@ on:
 jobs:
   Execute-Backend-Testcase:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
