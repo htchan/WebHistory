@@ -53,7 +53,7 @@ services:
             - ./.env
             - ./backend/assets/.env.batch
             - ./backend/assets/.env
-        command: sh -c "crond && tail -f /dev/null"
+        command: sh -c "make run_batch && crond && tail -f /dev/null"
 
     backup:
         build:
