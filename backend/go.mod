@@ -24,6 +24,7 @@ require (
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
 	github.com/opencontainers/runc v1.1.4 // indirect
 	github.com/ory/dockertest/v3 v3.9.1
+	github.com/rs/zerolog v1.15.0
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/stretchr/testify v1.8.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

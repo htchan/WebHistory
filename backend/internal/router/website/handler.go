@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/htchan/WebHistory/internal/config"
@@ -19,14 +20,13 @@ import (
 
 func getAllWebsiteGroupsHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		userUUID := req.Context().Value("userUUID").(string)
+		userUUID := req.Context().Value(ContextKeyUserUUID).(string)
 		webs, err := r.FindUserWebsites(userUUID)
 		if err != nil {
-			log.Printf("path: %s; user_uuid: %s; error: %s", req.URL, userUUID, err)
+			zerolog.Ctx(req.Context()).Error().Err(err).Msg("find user websites failed")
 			writeError(res, http.StatusBadRequest, RecordNotFoundError)
 			return
 		}
-		log.Printf("path: %s; user_uuid: %s", req.URL, userUUID)
 
 		json.NewEncoder(res).Encode(map[string]interface{}{
 			"website_groups": webs.WebsiteGroups(),
@@ -36,15 +36,14 @@ func getAllWebsiteGroupsHandler(r repository.Repostory) http.HandlerFunc {
 
 func getWebsiteGroupHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		userUUID := req.Context().Value("userUUID").(string)
+		userUUID := req.Context().Value(ContextKeyUserUUID).(string)
 		groupName := chi.URLParam(req, "groupName")
 		webs, err := r.FindUserWebsitesByGroup(userUUID, groupName)
 		if err != nil || len(webs) == 0 {
-			log.Printf("path: %s; user_uuid: %s; group_name: %s; error: %s", req.URL, userUUID, groupName, err)
+			zerolog.Ctx(req.Context()).Error().Err(err).Msg("find user websites by group failed")
 			writeError(res, http.StatusBadRequest, RecordNotFoundError)
 			return
 		}
-		log.Printf("path: %s; user_uuid: %s; group_name: %s", req.URL, userUUID, groupName)
 
 		json.NewEncoder(res).Encode(
 			map[string]interface{}{"website_group": webs},
@@ -55,15 +54,15 @@ func getWebsiteGroupHandler(r repository.Repostory) http.HandlerFunc {
 func createWebsiteHandler(r repository.Repostory, conf *config.Config) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		// userUUID, err := UserUUID(req)
-		userUUID := req.Context().Value("userUUID").(string)
-		url := req.Context().Value("webURL").(string)
+		userUUID := req.Context().Value(ContextKeyUserUUID).(string)
+		url := req.Context().Value(ContextKeyWebURL).(string)
 
 		web := model.NewWebsite(url, conf)
 		service.Update(context.Background(), r, &web)
 
 		err := r.CreateWebsite(&web)
 		if err != nil {
-			log.Printf("path: %s; user_uuid: %s; web_url: %s; error: %s", req.URL, userUUID, url, err)
+			zerolog.Ctx(req.Context()).Error().Err(err).Msg("create website failed")
 			writeError(res, http.StatusBadRequest, err)
 			return
 		}
@@ -71,11 +70,10 @@ func createWebsiteHandler(r repository.Repostory, conf *config.Config) http.Hand
 		userWeb := model.NewUserWebsite(web, userUUID)
 		err = r.CreateUserWebsite(&userWeb)
 		if err != nil {
-			log.Printf("path: %s; user_uuid: %s; web_url: %s; error: %s", req.URL, userUUID, url, err)
+			zerolog.Ctx(req.Context()).Error().Err(err).Msg("create user website failed")
 			writeError(res, http.StatusBadRequest, err)
 			return
 		}
-		log.Printf("path: %s; user_uuid: %s; web_url: %s", req.URL, userUUID, url)
 
 		json.NewEncoder(res).Encode(map[string]interface{}{
 			"message": fmt.Sprintf("website <%v> inserted", web.Title),
@@ -85,8 +83,8 @@ func createWebsiteHandler(r repository.Repostory, conf *config.Config) http.Hand
 
 func getWebsiteHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		web := req.Context().Value("website").(model.UserWebsite)
-		log.Printf("path: %s; web_uuid: %s;", req.URL, web.WebsiteUUID)
+		web := req.Context().Value(ContextKeyWebsite).(model.UserWebsite)
+
 		json.NewEncoder(res).Encode(map[string]interface{}{
 			"website": web,
 		})
@@ -95,14 +93,16 @@ func getWebsiteHandler(r repository.Repostory) http.HandlerFunc {
 
 func refreshWebsiteHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		web := req.Context().Value("website").(model.UserWebsite)
-		log.Printf("path: %s; web_uuid: %s;", req.URL, web.WebsiteUUID)
+		web := req.Context().Value(ContextKeyWebsite).(model.UserWebsite)
 		web.AccessTime = time.Now()
+
 		err := r.UpdateUserWebsite(&web)
 		if err != nil {
+			zerolog.Ctx(req.Context()).Error().Err(err).Msg("update user website failed")
 			writeError(res, http.StatusInternalServerError, err)
 			return
 		}
+
 		json.NewEncoder(res).Encode(map[string]interface{}{
 			"website": web,
 		})
@@ -111,14 +111,15 @@ func refreshWebsiteHandler(r repository.Repostory) http.HandlerFunc {
 
 func deleteWebsiteHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		web := req.Context().Value("website").(model.UserWebsite)
+		web := req.Context().Value(ContextKeyWebsite).(model.UserWebsite)
+
 		err := r.DeleteUserWebsite(&web)
 		if err != nil {
-			log.Printf("path: %s; web_uuid: %s; error: %s", req.URL, web.WebsiteUUID, err)
+			zerolog.Ctx(req.Context()).Error().Err(err).Msg("delete user website failed")
 			writeError(res, http.StatusInternalServerError, err)
 			return
 		}
-		log.Printf("path: %s; web_uuid: %s;", req.URL, web.WebsiteUUID)
+
 		json.NewEncoder(res).Encode(map[string]interface{}{
 			"message": fmt.Sprintf("website <%v> deleted", web.Website.Title),
 		})
@@ -136,8 +137,8 @@ func validGroupName(web model.UserWebsite, groupName string) bool {
 
 func changeWebsiteGroupHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		web := req.Context().Value("website").(model.UserWebsite)
-		groupName := req.Context().Value("group").(string)
+		web := req.Context().Value(ContextKeyWebsite).(model.UserWebsite)
+		groupName := req.Context().Value(ContextKeyGroup).(string)
 		if !validGroupName(web, groupName) {
 			writeError(res, http.StatusBadRequest, errors.New("invalid group name"))
 			return

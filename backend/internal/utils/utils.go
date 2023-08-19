@@ -2,11 +2,11 @@ package utils
 
 import (
 	"context"
-	"log"
 	"strings"
 
 	"github.com/htchan/UserService/backend/pkg/grpc"
 	"github.com/htchan/WebHistory/internal/config"
+	"github.com/rs/zerolog/log"
 )
 
 func IsSubSet(s1 string, s2 string) bool {
@@ -31,9 +31,9 @@ func FindUserByToken(token string, conf *config.UserServiceConfig) string {
 	tokenPermission := grpc.NewAuthenticateParams(token, conf.Token, "")
 	result, err := client.Authenticate(ctx, tokenPermission)
 	if err != nil {
-		log.Printf("fail to authenticate: %s", err)
+		log.Error().Err(err).Msg("authenticate error")
 		return ""
 	}
-	log.Println("authenticate result: ", result)
+	log.Debug().Str("result", result.String()).Msg("authenticate result")
 	return *result.Result
 }

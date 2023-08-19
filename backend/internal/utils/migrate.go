@@ -3,12 +3,12 @@ package utils
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"database/sql"
 
 	"github.com/htchan/WebHistory/internal/config"
 	_ "github.com/lib/pq"
+	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -43,7 +43,7 @@ func Migrate(conf *config.DatabaseConfig) error {
 
 	err = m.Up()
 	if err != nil {
-		log.Printf("migration: %s", err)
+		log.Warn().Err(err).Msg("migrate fail")
 	}
 
 	defer m.Close()

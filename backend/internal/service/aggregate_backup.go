@@ -2,12 +2,13 @@ package service
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 func generateFileVersionMap(dir string) (map[string][]string, error) {
@@ -108,7 +109,7 @@ func saveBackup(dir, table string, versions, content []string) error {
 	version := aggregatedVersion(versions)
 	filename := fmt.Sprintf("%s_%s", table, version)
 	data := []byte(strings.Join(content, "\n"))
-	log.Printf("save new backup: %v", filename)
+	log.Debug().Str("filename", filename).Msg("save backup")
 	return os.WriteFile(filepath.Join(dir, filename), data, os.ModePerm)
 }
 
