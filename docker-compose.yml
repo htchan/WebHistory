@@ -41,7 +41,6 @@ services:
             - ./bin/database:/database
             - ./bin/logs:/logs
             - ./backend/migrations:/migrations
-            - ./bin/backup:/backup
             - /etc/timezone:/etc/timezone:ro
         networks:
             - database
@@ -53,14 +52,14 @@ services:
             - ./.env
             - ./backend/assets/.env.batch
             - ./backend/assets/.env
-        command: sh -c "crond && tail -f /dev/null"
+        command: sh -c "make run_batch && crond && tail -f /dev/null"
 
     backup:
         build:
             context: ./backup
             dockerfile: ./Dockerfile
         volumes:
-            - ./bin/database:/backup
+            - ./bin/backup:/backup
         networks:
             - database
         profiles:

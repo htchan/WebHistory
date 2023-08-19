@@ -18,6 +18,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
+const (
+	MaxRetryCount = 10
+	RetryInterval = 10 * time.Second
+)
+
 type HTTPClient interface {
 	Get(string) (*http.Response, error)
 }
@@ -73,17 +78,32 @@ func parseAPI(r repository.Repostory, web *model.Website, resp string) (string, 
 	return setting.Parse(resp)
 }
 
-func fetchWebsite(ctx context.Context, web *model.Website) (string, error) {
+func fetchWebsite(ctx context.Context, web *model.Website, maxRetry int, retryInterval time.Duration) (string, error) {
 	tr := otel.Tracer("update")
-	ctx, span := tr.Start(ctx, "Fetch Web")
+	_, span := tr.Start(ctx, "Fetch Web")
 	defer span.End()
 
-	resp, err := client.Get(web.URL)
+	var (
+		errorList = make([]string, 0, MaxRetryCount)
+		err       error
+		resp      *http.Response
+	)
+	for i := 0; i < maxRetry; i++ {
+		resp, err = client.Get(web.URL)
+		if err != nil {
+			err := err
+			errorList = append(errorList, err.Error())
+			time.Sleep(retryInterval)
+		} else {
+			break
+		}
+	}
 	if err != nil {
-		span.SetAttributes(attribute.String("error", err.Error()))
+		span.SetAttributes(attribute.StringSlice("error", errorList))
 		if web.Title == "" {
 			web.Title = "unknown"
 		}
+
 		return "", fmt.Errorf("fail to fetch website response: %s", web.URL)
 	}
 
@@ -96,7 +116,7 @@ func fetchWebsite(ctx context.Context, web *model.Website) (string, error) {
 
 func checkTimeUpdated(ctx context.Context, web *model.Website, timeStr string) bool {
 	tr := otel.Tracer("update")
-	ctx, span := tr.Start(ctx, "Check Time")
+	_, span := tr.Start(ctx, "Check Time")
 	defer span.End()
 
 	layout := "Mon, 2 Jan 2006 15:04:05 GMT"
@@ -117,7 +137,7 @@ func checkTimeUpdated(ctx context.Context, web *model.Website, timeStr string) b
 
 func checkContentUpdated(ctx context.Context, web *model.Website, content []string) bool {
 	tr := otel.Tracer("update")
-	ctx, span := tr.Start(ctx, "Check Content")
+	_, span := tr.Start(ctx, "Check Content")
 	defer span.End()
 	span.SetAttributes(
 		attribute.StringSlice("old content", web.Content()),
@@ -134,7 +154,7 @@ func checkContentUpdated(ctx context.Context, web *model.Website, content []stri
 
 func checkTitleUpdated(ctx context.Context, web *model.Website, title string) bool {
 	tr := otel.Tracer("update")
-	ctx, span := tr.Start(ctx, "Check Title")
+	_, span := tr.Start(ctx, "Check Title")
 	defer span.End()
 	span.SetAttributes(
 		attribute.String("old title", web.Title),
@@ -164,7 +184,7 @@ func checkWeb(ctx context.Context, r repository.Repostory, web *model.Website, t
 	)
 
 	if titleUpdated || contentUpadted {
-		ctx, span = tr.Start(ctx, "Updated")
+		_, span = tr.Start(ctx, "Updated")
 		defer span.End()
 
 		err := r.UpdateWebsite(web)
@@ -180,7 +200,7 @@ func Update(ctx context.Context, r repository.Repostory, web *model.Website) err
 	defer span.End()
 	span.SetAttributes(web.OtelAttributes()...)
 
-	content, err := fetchWebsite(ctx, web)
+	content, err := fetchWebsite(ctx, web, MaxRetryCount, RetryInterval)
 	if err != nil {
 		return err
 	}

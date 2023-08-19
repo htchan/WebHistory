@@ -1,1 +1,1 @@
-00 00,12 * * * cd /usr/src/app ; ./batch >> /logs/batch.log 2>&1
+00 04 * * 5 make -C /usr/src/app run_batch

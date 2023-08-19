@@ -3,7 +3,6 @@ package utils
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/htchan/WebHistory/internal/config"
@@ -20,7 +19,6 @@ func openSqliteDatabase(conf *config.DatabaseConfig) (*sql.DB, error) {
 	}
 	database.SetMaxIdleConns(5)
 	database.SetMaxOpenConns(50)
-	log.Printf("database.open; %v", database)
 	return database, err
 }
 
@@ -39,7 +37,6 @@ func openPostgresDatabase(conf *config.DatabaseConfig) (*sql.DB, error) {
 	database.SetMaxOpenConns(10)
 	database.SetConnMaxIdleTime(5 * time.Second)
 	database.SetConnMaxLifetime(5 * time.Second)
-	log.Printf("postgres_database.open; %v", database)
 	return database, err
 }
 

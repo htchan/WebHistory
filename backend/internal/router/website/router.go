@@ -28,6 +28,8 @@ func redirectLogin(res http.ResponseWriter, req *http.Request) {
 }
 
 func AddRoutes(router chi.Router, r repository.Repostory, conf *config.Config) {
+	router.Use(logRequest())
+
 	router.Route(conf.APIConfig.APIRoutePrefix, func(router chi.Router) {
 		router.Route("/websites", func(router chi.Router) {
 			router.Use(

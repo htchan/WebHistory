@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
@@ -55,7 +55,7 @@ func regularUpdateWebsites(r repository.Repostory, conf config.BatchConfig) {
 
 	webs, err := r.FindWebsites()
 	if err != nil {
-		log.Println("fail to fetch websites from DB:", err)
+		log.Error().Err(err).Msg("fail to fetch websites from DB")
 		return
 	}
 
@@ -102,7 +102,7 @@ func closeTracer(tp *tracesdk.TracerProvider) {
 	defer cancel()
 
 	if err := tp.Shutdown(ctx); err != nil {
-		log.Println("shutdown error", err)
+		log.Error().Err(err).Msg("shutdown error")
 	}
 }
 
@@ -110,10 +110,12 @@ func PrintMemUsage() {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-	fmt.Printf("Alloc = %v MiB", bToMb(m.Alloc))
-	fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
-	fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
-	fmt.Printf("\tNumGC = %v\n", m.NumGC)
+	log.Info().
+		Uint64("Alloc (MB)", m.Alloc).
+		Uint64("Total Alloc (MB)", m.TotalAlloc).
+		Uint64("Sys (MB)", m.Sys).
+		Uint32("GC Count", m.NumGC).
+		Msg("memory info")
 }
 
 func bToMb(b uint64) uint64 {
@@ -124,23 +126,22 @@ func main() {
 	PrintMemUsage()
 	conf, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalln("load config failed:", err)
-		return
+		log.Fatal().Err(err).Msg("load config failed")
 	}
 
 	tp, err := tracerProvider(conf.TraceConfig)
 	if err != nil {
-		log.Println("tracer error", err)
+		log.Error().Err(err).Msg("init tracer failed")
 	}
 	defer closeTracer(tp)
 
 	if err = utils.Migrate(&conf.DatabaseConfig); err != nil {
-		log.Fatalln("migration failed:", err)
+		log.Fatal().Err(err).Msg("migration failed")
 	}
 
 	db, err := utils.OpenDatabase(&conf.DatabaseConfig)
 	if err != nil {
-		log.Fatalln("open database failed:", err)
+		log.Fatal().Err(err).Msg("open database failed")
 	}
 	defer db.Close()
 

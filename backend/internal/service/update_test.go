@@ -187,25 +187,31 @@ func Test_fetchWebsite(t *testing.T) {
 	}
 	conf := &config.Config{Separator: "\n", MaxDateLength: 2}
 	tests := []struct {
-		name      string
-		client    HTTPClient
-		web       *model.Website
-		expect    string
-		expectErr bool
+		name          string
+		client        HTTPClient
+		web           *model.Website
+		maxRetry      int
+		retryInterval time.Duration
+		expect        string
+		expectErr     bool
 	}{
 		{
-			name:      "works",
-			client:    workingClient,
-			web:       &model.Website{URL: "http://hello.com", Conf: conf},
-			expect:    "response",
-			expectErr: false,
+			name:          "works",
+			client:        workingClient,
+			web:           &model.Website{URL: "http://hello.com", Conf: conf},
+			maxRetry:      10,
+			retryInterval: 100 * time.Millisecond,
+			expect:        "response",
+			expectErr:     false,
 		},
 		{
-			name:      "return error when fail",
-			client:    errorClient,
-			web:       &model.Website{URL: "http://hello.com", Conf: conf},
-			expect:    "",
-			expectErr: true,
+			name:          "return error when fail",
+			client:        errorClient,
+			web:           &model.Website{URL: "http://hello.com", Conf: conf},
+			maxRetry:      10,
+			retryInterval: 100 * time.Millisecond,
+			expect:        "",
+			expectErr:     true,
 		},
 	}
 
@@ -213,7 +219,7 @@ func Test_fetchWebsite(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			client = test.client
 
-			resp, err := fetchWebsite(context.Background(), test.web)
+			resp, err := fetchWebsite(context.Background(), test.web, test.maxRetry, test.retryInterval)
 
 			if (err != nil) != test.expectErr {
 				t.Errorf("got error: %v; expect error: %v", err, test.expectErr)
