@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"runtime"
 	"sync"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	"github.com/htchan/WebHistory/internal/config"
@@ -106,24 +106,12 @@ func closeTracer(tp *tracesdk.TracerProvider) {
 	}
 }
 
-func PrintMemUsage() {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-	log.Info().
-		Uint64("Alloc (MB)", m.Alloc).
-		Uint64("Total Alloc (MB)", m.TotalAlloc).
-		Uint64("Sys (MB)", m.Sys).
-		Uint32("GC Count", m.NumGC).
-		Msg("memory info")
-}
-
-func bToMb(b uint64) uint64 {
-	return b / 1024 / 1024
-}
-
 func main() {
-	PrintMemUsage()
+	zerolog.TimeFieldFormat = "2006-01-02T15:04:05.99999Z07:00"
+
+	memStart := findMemUsage()
+	printMemUsage(memStart)
+
 	conf, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("load config failed")
@@ -150,5 +138,5 @@ func main() {
 	r := sqlc.NewRepo(db, conf)
 
 	regularUpdateWebsites(r, conf.BatchConfig)
-	PrintMemUsage()
+	printMemDiff(memStart, findMemUsage())
 }

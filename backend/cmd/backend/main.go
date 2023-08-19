@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	"github.com/htchan/WebHistory/internal/config"
@@ -18,6 +19,8 @@ import (
 )
 
 func main() {
+	zerolog.TimeFieldFormat = "2006-01-02T15:04:05.99999Z07:00"
+
 	conf, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("load config failed")
