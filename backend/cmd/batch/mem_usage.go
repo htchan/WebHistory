@@ -25,10 +25,10 @@ func printMemUsage(mem runtime.MemStats) {
 
 func printMemDiff(oldMem, newMem runtime.MemStats) {
 	log.Info().
-		Str("Alloc", bytesize.New(float64(oldMem.Alloc-newMem.Alloc)).String()).
-		Str("Total Alloc", bytesize.New(float64(oldMem.TotalAlloc-newMem.TotalAlloc)).String()).
-		Str("Sys", bytesize.New(float64(oldMem.Sys-newMem.Sys)).String()).
-		Uint32("GC Count", oldMem.NumGC-newMem.NumGC).
+		Str("Alloc", bytesize.New(float64(newMem.Alloc-oldMem.Alloc)).String()).
+		Str("Total Alloc", bytesize.New(float64(newMem.TotalAlloc-oldMem.TotalAlloc)).String()).
+		Str("Sys", bytesize.New(float64(newMem.Sys-oldMem.Sys)).String()).
+		Uint32("GC Count", newMem.NumGC-oldMem.NumGC).
 		Msg("memory diff")
 
 }

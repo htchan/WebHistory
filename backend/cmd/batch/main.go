@@ -98,7 +98,7 @@ func tracerProvider(conf config.TraceConfig) (*tracesdk.TracerProvider, error) {
 }
 
 func closeTracer(tp *tracesdk.TracerProvider) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
 	if err := tp.Shutdown(ctx); err != nil {
