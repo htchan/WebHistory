@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -68,6 +69,10 @@ func regularUpdateWebsites(r repository.Repostory, conf config.BatchConfig) {
 			defer span.End()
 
 			for web := range websites {
+				ctx := log.With().
+					Str("job_uuid", uuid.Must(uuid.NewUUID()).String()).
+					Logger().
+					WithContext(ctx)
 				service.Update(ctx, r, &web)
 				time.Sleep(conf.SleepInterval)
 			}

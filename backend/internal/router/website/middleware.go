@@ -2,6 +2,7 @@ package website
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -38,9 +39,18 @@ func logRequest() func(next http.Handler) http.Handler {
 
 				start := time.Now()
 				next.ServeHTTP(res, req.WithContext(logger.WithContext(ctx)))
+				if req.Response.StatusCode >= 300 {
+					resp, err := io.ReadAll(req.Response.Body)
+					if err == nil {
+						logger = logger.With().Str("read_resp_err", err.Error()).Logger()
+					} else {
+						logger = logger.With().Str("error", string(resp)).Logger()
+					}
+				}
 				logger.Info().
 					Str("path", req.URL.String()).
 					Str("duration", time.Since(start).String()).
+					Int("status_code", req.Response.StatusCode).
 					Msg("request handled")
 			},
 		)

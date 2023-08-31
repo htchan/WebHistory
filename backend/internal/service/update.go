@@ -14,6 +14,7 @@ import (
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	"github.com/htchan/WebHistory/internal/repository"
+	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -52,21 +53,21 @@ func pruneResponse(resp *http.Response, conf *config.Config) string {
 	bodyStr = re.ReplaceAllString(bodyStr, conf.Separator)
 	re = regexp.MustCompile("\\[(/?title.*?)\\]")
 	bodyStr = re.ReplaceAllString(bodyStr, "<$1>")
-	if strings.HasPrefix(bodyStr, conf.Separator) {
-		bodyStr = bodyStr[len(conf.Separator):]
-	}
-	if strings.HasSuffix(bodyStr, conf.Separator) {
-		bodyStr = bodyStr[:len(bodyStr)-len(conf.Separator)]
-	}
+	bodyStr = strings.Trim(bodyStr, conf.Separator)
 	return bodyStr
 }
 
 func getWebsiteSetting(r repository.Repostory, web *model.Website) (*model.WebsiteSetting, error) {
 	u, err := url.Parse(web.URL)
+	if err != nil {
+		return nil, fmt.Errorf("fail to parse url: %s", web.URL)
+	}
+
 	setting, err := r.FindWebsiteSetting(u.Hostname())
 	if err == nil {
 		return setting, nil
 	}
+
 	return r.FindWebsiteSetting("default")
 }
 
@@ -84,22 +85,24 @@ func fetchWebsite(ctx context.Context, web *model.Website, maxRetry int, retryIn
 	defer span.End()
 
 	var (
-		errorList = make([]string, 0, MaxRetryCount)
-		err       error
-		resp      *http.Response
+		resp *http.Response
+		err  error
 	)
 	for i := 0; i < maxRetry; i++ {
 		resp, err = client.Get(web.URL)
 		if err != nil {
-			err := err
-			errorList = append(errorList, err.Error())
+			zerolog.Ctx(ctx).Error().
+				Err(err).
+				Int("trial", i).
+				Str("url", web.URL).
+				Msg("fail to fetch website")
 			time.Sleep(retryInterval)
 		} else {
 			break
 		}
 	}
 	if err != nil {
-		span.SetAttributes(attribute.StringSlice("error", errorList))
+		span.SetAttributes(attribute.String("error", err.Error()))
 		if web.Title == "" {
 			web.Title = "unknown"
 		}
