@@ -35,7 +35,7 @@ var client HTTPClient = &http.Client{
 	},
 }
 
-func pruneResponse(resp *http.Response, conf *config.Config) string {
+func pruneResponse(resp *http.Response, conf *config.WebsiteConfig) string {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return ""
@@ -51,7 +51,7 @@ func pruneResponse(resp *http.Response, conf *config.Config) string {
 	bodyStr = re.ReplaceAllString(bodyStr, "[$1]")
 	re = regexp.MustCompile("(<.*?>)+")
 	bodyStr = re.ReplaceAllString(bodyStr, conf.Separator)
-	re = regexp.MustCompile("\\[(/?title.*?)\\]")
+	re = regexp.MustCompile(`\[(/?title.*?)\]`)
 	bodyStr = re.ReplaceAllString(bodyStr, "<$1>")
 	bodyStr = strings.Trim(bodyStr, conf.Separator)
 	return bodyStr

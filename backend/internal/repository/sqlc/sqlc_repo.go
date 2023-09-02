@@ -16,12 +16,12 @@ type SqlcRepo struct {
 	ctx   context.Context
 	db    *sqlc.Queries
 	stats func() sql.DBStats
-	conf  *config.Config
+	conf  *config.WebsiteConfig
 }
 
 var _ repository.Repostory = &SqlcRepo{}
 
-func NewRepo(db *sql.DB, conf *config.Config) *SqlcRepo {
+func NewRepo(db *sql.DB, conf *config.WebsiteConfig) *SqlcRepo {
 	return &SqlcRepo{
 		ctx:   context.Background(),
 		db:    sqlc.New(db),

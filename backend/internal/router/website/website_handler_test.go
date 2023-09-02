@@ -87,7 +87,7 @@ func Test_getAllWebsiteGroupsHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			ctx := req.Context()
-			ctx = context.WithValue(ctx, "userUUID", test.userUUID)
+			ctx = context.WithValue(ctx, ContextKeyUserUUID, test.userUUID)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
 			getAllWebsiteGroupsHandler(test.r).ServeHTTP(rr, req)
@@ -178,7 +178,7 @@ func Test_getWebsiteGroupHandler(t *testing.T) {
 			rctx := chi.NewRouteContext()
 			rctx.URLParams.Add("groupName", test.group)
 			ctx = context.WithValue(ctx, chi.RouteCtxKey, rctx)
-			ctx = context.WithValue(ctx, "userUUID", test.userUUID)
+			ctx = context.WithValue(ctx, ContextKeyUserUUID, test.userUUID)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
 			getWebsiteGroupHandler(test.r).ServeHTTP(rr, req)
@@ -206,7 +206,7 @@ func Test_createWebsiteHandler(t *testing.T) {
 	tests := []struct {
 		name         string
 		r            repository.Repostory
-		conf         *config.Config
+		conf         *config.WebsiteConfig
 		userUUID     string
 		url          string
 		expectStatus int
@@ -216,7 +216,7 @@ func Test_createWebsiteHandler(t *testing.T) {
 		{
 			name:         "get user websites of existing user and group",
 			r:            repository.NewInMemRepo(nil, nil, nil, nil),
-			conf:         &config.Config{},
+			conf:         &config.WebsiteConfig{},
 			userUUID:     "abc",
 			url:          "https://example.com/",
 			expectStatus: 200,
@@ -243,7 +243,7 @@ func Test_createWebsiteHandler(t *testing.T) {
 		{
 			name:         "return error if repo return error",
 			r:            repository.NewInMemRepo(nil, nil, nil, errors.New("some error")),
-			conf:         &config.Config{},
+			conf:         &config.WebsiteConfig{},
 			userUUID:     "unknown",
 			url:          "https://example.com/",
 			expectStatus: 400,
@@ -260,8 +260,8 @@ func Test_createWebsiteHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			ctx := req.Context()
-			ctx = context.WithValue(ctx, "userUUID", test.userUUID)
-			ctx = context.WithValue(ctx, "webURL", test.url)
+			ctx = context.WithValue(ctx, ContextKeyUserUUID, test.userUUID)
+			ctx = context.WithValue(ctx, ContextKeyWebURL, test.url)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
 			createWebsiteHandler(test.r, test.conf).ServeHTTP(rr, req)
@@ -326,7 +326,7 @@ func Test_getWebsiteHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			ctx := req.Context()
-			ctx = context.WithValue(ctx, "website", test.web)
+			ctx = context.WithValue(ctx, ContextKeyWebsite, test.web)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
 			getWebsiteHandler(test.r).ServeHTTP(rr, req)
@@ -419,7 +419,7 @@ func Test_refreshWebsiteHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			ctx := req.Context()
-			ctx = context.WithValue(ctx, "website", test.web)
+			ctx = context.WithValue(ctx, ContextKeyWebsite, test.web)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
 			refreshWebsiteHandler(test.r).ServeHTTP(rr, req)
@@ -513,7 +513,7 @@ func Test_deleteWebsiteHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			ctx := req.Context()
-			ctx = context.WithValue(ctx, "website", test.web)
+			ctx = context.WithValue(ctx, ContextKeyWebsite, test.web)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
 			deleteWebsiteHandler(test.r).ServeHTTP(rr, req)
@@ -616,8 +616,8 @@ func Test_changeWebsiteGroupHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 			ctx := req.Context()
-			ctx = context.WithValue(ctx, "website", test.web)
-			ctx = context.WithValue(ctx, "group", test.group)
+			ctx = context.WithValue(ctx, ContextKeyWebsite, test.web)
+			ctx = context.WithValue(ctx, ContextKeyGroup, test.group)
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
 			changeWebsiteGroupHandler(test.r).ServeHTTP(rr, req)

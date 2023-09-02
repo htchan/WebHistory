@@ -18,7 +18,7 @@ func BenchmarkPsqlRepo_CreateWebsite(b *testing.B) {
 
 	title := "benchmark-create-website"
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	b.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", title)
 		db.Close()
@@ -55,7 +55,7 @@ func BenchmarkPsqlRepo_UpdateWebsite(b *testing.B) {
 	uuid := "benchmark-update-website-uuid"
 	populateData(db, uuid, title)
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	b.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", title)
 		db.Exec("delete from user_websites where website_uuid=$1", uuid)
@@ -92,7 +92,7 @@ func BenchmarkPsqlRepo_DeleteWebsite(b *testing.B) {
 	title := "benchmark-delete-website"
 	uuid := "benchmark-delete-website-uuid"
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	b.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", title)
 		db.Exec("delete from user_websites where website_uuid=$1", uuid)
@@ -122,7 +122,7 @@ func BenchmarkPsqlRepo_FindWebsites(b *testing.B) {
 	uuid := "benchmark-find-websites-uuid"
 	populateData(db, uuid, title)
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	b.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", title)
 		db.Exec("delete from user_websites where website_uuid=$1", uuid)
@@ -151,7 +151,7 @@ func BenchmarkPsqlRepo_FindWebsite(b *testing.B) {
 	uuid := "benchmark-find-website-uuid"
 	populateData(db, uuid, title)
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	b.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", title)
 		db.Exec("delete from user_websites where website_uuid=$1", uuid)
@@ -180,7 +180,7 @@ func BenchmarkPsqlRepo_CreateUserWebsite(b *testing.B) {
 	title := "benchmark create user website"
 	populateData(db, uuid, title)
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	b.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", title)
 		db.Exec("delete from user_websites where website_uuid=$1", uuid)
@@ -217,7 +217,7 @@ func BenchmarkPsqlRepo_UpdateUserWebsite(b *testing.B) {
 	uuid := "benchmark-update-user-website-uuid"
 	populateData(db, uuid, title)
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	b.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", title)
 		db.Exec("delete from user_websites where website_uuid=$1", uuid)
@@ -253,7 +253,7 @@ func BenchmarkPsqlRepo_DeleteUserWebsite(b *testing.B) {
 	title := "benchmark-delete-user-website"
 	uuid := "benchmark-delete-user-website-uuid"
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	b.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", title)
 		db.Exec("delete from user_websites where website_uuid=$1", uuid)
@@ -283,7 +283,7 @@ func BenchmarkPsqlRepo_FindUserWebsites(b *testing.B) {
 	uuid := "benchmark-find-user-websites-uuid"
 	populateData(db, uuid, title)
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	b.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", title)
 		db.Exec("delete from user_websites where website_uuid=$1", uuid)
@@ -312,7 +312,7 @@ func BenchmarkPsqlRepo_FindUserWebsitesByGroup(b *testing.B) {
 	uuid := "benchmark-find-user-websites-by-group-uuid"
 	populateData(db, uuid, title)
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	b.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", title)
 		db.Exec("delete from user_websites where website_uuid=$1", uuid)
@@ -341,7 +341,7 @@ func BenchmarkPsqlRepo_FindUserWebsite(b *testing.B) {
 	uuid := "benchmark-find-user-website-uuid"
 	populateData(db, uuid, title)
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	b.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", title)
 		db.Exec("delete from user_websites where website_uuid=$1", uuid)

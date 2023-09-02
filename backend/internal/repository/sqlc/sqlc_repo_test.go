@@ -156,7 +156,7 @@ func TestNewRepo(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			repo := NewRepo(test.db, &config.Config{})
+			repo := NewRepo(test.db, &config.WebsiteConfig{})
 			if test.db != nil {
 				assert.Equal(t, test.db.Stats(), repo.stats())
 			}
@@ -172,7 +172,7 @@ func TestSqlcRepo_CreateWebsite(t *testing.T) {
 		t.Fatalf("open database fail: %v", err)
 	}
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 	t.Cleanup(func() {
 		db.Exec("delete from websites where title=$1", "unknown")
 		db.Close()
@@ -251,7 +251,7 @@ func TestSqlcRepo_UpdateWebsite(t *testing.T) {
 		t.Fatalf("open database fail: %v", err)
 	}
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 
 	uuid := "update-website-uuid"
 	title := "update website"
@@ -328,7 +328,7 @@ func TestSqlcRepo_DeleteWebsite(t *testing.T) {
 		t.Fatalf("open database fail: %v", err)
 	}
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 
 	uuid := "delete-website-uuid"
 	title := "delete website"
@@ -382,7 +382,7 @@ func TestSqlcRepo_FindWebsites(t *testing.T) {
 		t.Fatalf("open database fail: %v", err)
 	}
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 
 	uuid := "find-websites-uuid"
 	title := "find websites"
@@ -440,7 +440,7 @@ func TestSqlcRepo_FindWebsite(t *testing.T) {
 		t.Fatalf("open database fail: %v", err)
 	}
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 
 	uuid := "find-website-uuid"
 	title := "find website"
@@ -503,7 +503,7 @@ func TestSqlcRepo_CreateUserWebsite(t *testing.T) {
 		t.Fatalf("open database fail: %v", err)
 	}
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 
 	uuid := "create-user-website-uuid"
 	title := "create user website"
@@ -606,7 +606,7 @@ func TestSqlcRepo_UpdteUserWebsite(t *testing.T) {
 		t.Fatalf("open database fail: %v", err)
 	}
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 
 	uuid := "update-user-website-uuid"
 	title := "update user website"
@@ -682,7 +682,7 @@ func TestSqlcRepo_DeleteUserWebsite(t *testing.T) {
 		t.Fatalf("open database fail: %v", err)
 	}
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 
 	uuid := "delete-user-website-uuid"
 	title := "delete user website"
@@ -740,7 +740,7 @@ func TestSqlcRepo_FindUserWebsites(t *testing.T) {
 		t.Fatalf("open database fail: %v", err)
 	}
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 
 	uuid := "find-user-websites-uuid"
 	title := "find user websites"
@@ -810,7 +810,7 @@ func TestSqlcRepo_FindUserWebsitesByGroup(t *testing.T) {
 		t.Fatalf("open database fail: %v", err)
 	}
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 
 	uuid := "find-user-websites-group-uuid"
 	title := "find user websites group"
@@ -890,7 +890,7 @@ func TestSqlcRepo_FindUserWebsite(t *testing.T) {
 		t.Fatalf("open database fail: %v", err)
 	}
 
-	r := NewRepo(db, &config.Config{})
+	r := NewRepo(db, &config.WebsiteConfig{})
 
 	uuid := "find-user-website-uuid"
 	title := "find user website"

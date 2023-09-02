@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 	"sync"
 	"time"
 
@@ -49,7 +50,7 @@ func websiteChannelGroupedByHost(websites []model.Website) map[string]chan model
 	return hostChannelMap
 }
 
-func regularUpdateWebsites(r repository.Repostory, conf config.BatchConfig) {
+func regularUpdateWebsites(r repository.Repostory, conf *config.BatchConfig) {
 	tr := otel.Tracer("process")
 	ctx, span := tr.Start(context.Background(), "batch")
 	defer span.End()
@@ -74,7 +75,7 @@ func regularUpdateWebsites(r repository.Repostory, conf config.BatchConfig) {
 					Logger().
 					WithContext(ctx)
 				service.Update(ctx, r, &web)
-				time.Sleep(conf.SleepInterval)
+				time.Sleep(conf.BinConfig.SleepInterval)
 			}
 			wg.Done()
 		}(host, channel)
@@ -112,12 +113,20 @@ func closeTracer(tp *tracesdk.TracerProvider) {
 }
 
 func main() {
+	outputPath := os.Getenv("OUTPUT_PATH")
+	if outputPath != "" {
+		writer, err := os.OpenFile(outputPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+		if err == nil {
+			log.Logger = log.Logger.Output(writer)
+		}
+	}
+
 	zerolog.TimeFieldFormat = "2006-01-02T15:04:05.99999Z07:00"
 
 	memStart := findMemUsage()
 	printMemUsage(memStart)
 
-	conf, err := config.LoadConfig()
+	conf, err := config.LoadBatchConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("load config failed")
 	}
@@ -140,8 +149,8 @@ func main() {
 
 	// service.AggregateBackup(conf.BackupDirectory)
 
-	r := sqlc.NewRepo(db, conf)
+	r := sqlc.NewRepo(db, &conf.WebsiteConfig)
 
-	regularUpdateWebsites(r, conf.BatchConfig)
+	regularUpdateWebsites(r, conf)
 	printMemDiff(memStart, findMemUsage())
 }

@@ -17,10 +17,10 @@ type Website struct {
 	Title      string
 	RawContent string
 	UpdateTime time.Time
-	Conf       *config.Config
+	Conf       *config.WebsiteConfig
 }
 
-func NewWebsite(url string, conf *config.Config) Website {
+func NewWebsite(url string, conf *config.WebsiteConfig) Website {
 	web := Website{
 		UUID:       uuid.New().String(),
 		URL:        url,
