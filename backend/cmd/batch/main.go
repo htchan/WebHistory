@@ -50,7 +50,7 @@ func websiteChannelGroupedByHost(websites []model.Website) map[string]chan model
 	return hostChannelMap
 }
 
-func regularUpdateWebsites(r repository.Repostory, conf *config.BatchConfig) {
+func regularUpdateWebsites(r repository.Repostory, conf *config.BatchBinConfig) {
 	tr := otel.Tracer("process")
 	ctx, span := tr.Start(context.Background(), "batch")
 	defer span.End()
@@ -75,7 +75,7 @@ func regularUpdateWebsites(r repository.Repostory, conf *config.BatchConfig) {
 					Logger().
 					WithContext(ctx)
 				service.Update(ctx, r, &web)
-				time.Sleep(conf.BinConfig.SleepInterval)
+				time.Sleep(conf.SleepInterval)
 			}
 			wg.Done()
 		}(host, channel)
@@ -151,6 +151,6 @@ func main() {
 
 	r := sqlc.NewRepo(db, &conf.WebsiteConfig)
 
-	regularUpdateWebsites(r, conf)
+	regularUpdateWebsites(r, &conf.BinConfig)
 	printMemDiff(memStart, findMemUsage())
 }
