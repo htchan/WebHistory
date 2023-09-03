@@ -39,7 +39,9 @@ func logRequest() func(next http.Handler) http.Handler {
 
 				start := time.Now()
 				next.ServeHTTP(res, req.WithContext(logger.WithContext(ctx)))
-				if req.Response.StatusCode >= 300 {
+				if req.Response == nil {
+					logger.Warn().Msg("response not found")
+				} else if req.Response.StatusCode >= 300 {
 					resp, err := io.ReadAll(req.Response.Body)
 					if err == nil {
 						logger = logger.With().Str("read_resp_err", err.Error()).Logger()
