@@ -17,6 +17,7 @@ import (
 	"github.com/htchan/WebHistory/internal/service"
 	"github.com/htchan/WebHistory/internal/utils"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
@@ -51,7 +52,7 @@ func websiteChannelGroupedByHost(websites []model.Website) map[string]chan model
 }
 
 func regularUpdateWebsites(r repository.Repostory, conf *config.BatchBinConfig) {
-	tr := otel.Tracer("process")
+	tr := otel.Tracer("htchan/WebHistory/update-jobs")
 	ctx, span := tr.Start(context.Background(), "batch")
 	defer span.End()
 
@@ -70,11 +71,22 @@ func regularUpdateWebsites(r repository.Repostory, conf *config.BatchBinConfig) 
 			defer span.End()
 
 			for web := range websites {
-				ctx := log.With().
-					Str("job_uuid", uuid.Must(uuid.NewUUID()).String()).
-					Logger().
-					WithContext(ctx)
-				service.Update(ctx, r, &web)
+				func() {
+					jobUUID := uuid.Must(uuid.NewUUID())
+
+					ctx := log.With().
+						Str("job_uuid", jobUUID.String()).
+						Logger().
+						WithContext(ctx)
+
+					tr := otel.Tracer("htchan/WebHistory/update-jobs")
+					ctx, span := tr.Start(ctx, "Update Website")
+					defer span.End()
+					span.SetAttributes(web.OtelAttributes()...)
+					span.SetAttributes(attribute.String("job_uuid", jobUUID.String()))
+
+					service.Update(ctx, r, &web)
+				}()
 				time.Sleep(conf.SleepInterval)
 			}
 			wg.Done()
