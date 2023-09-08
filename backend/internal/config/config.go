@@ -7,20 +7,15 @@ import (
 	"github.com/caarlos0/env/v6"
 )
 
-type Config struct {
-	APIConfig         APIConfig
-	BatchConfig       BatchConfig
+type APIConfig struct {
+	BinConfig         APIBinConfig
 	DatabaseConfig    DatabaseConfig
 	TraceConfig       TraceConfig
 	UserServiceConfig UserServiceConfig
-
-	BackupDirectory string `env:"BACKUP_DIRECTORY,required"`
-
-	Separator     string `env:"WEB_WATCHER_SEPARATOR" envDefault:"\n"`
-	MaxDateLength int    `env:"WEB_WATCHER_DATE_MAX_LENGTH" envDefault:"2"`
+	WebsiteConfig     WebsiteConfig
 }
 
-type APIConfig struct {
+type APIBinConfig struct {
 	Addr           string        `env:"ADDR"`
 	ReadTimeout    time.Duration `env:"API_READ_TIMEOUT" envDefault:"5s"`
 	WriteTimeout   time.Duration `env:"API_WRITE_TIMEOUT" envDefault:"5s"`
@@ -29,6 +24,13 @@ type APIConfig struct {
 }
 
 type BatchConfig struct {
+	BinConfig      BatchBinConfig
+	DatabaseConfig DatabaseConfig
+	TraceConfig    TraceConfig
+	WebsiteConfig  WebsiteConfig
+}
+
+type BatchBinConfig struct {
 	SleepInterval time.Duration `env:"BATCH_SLEEP_INTERVAL"`
 }
 
@@ -51,16 +53,41 @@ type UserServiceConfig struct {
 	Token string `env:"USER_SERVICE_TOKEN,required"`
 }
 
-func LoadConfig() (*Config, error) {
-	var conf Config
+type WebsiteConfig struct {
+	Separator     string `env:"WEB_WATCHER_SEPARATOR" envDefault:"\n"`
+	MaxDateLength int    `env:"WEB_WATCHER_DATE_MAX_LENGTH" envDefault:"2"`
+}
+
+func LoadAPIConfig() (*APIConfig, error) {
+	var conf APIConfig
 
 	loadConfigFuncs := []func() error{
 		func() error { return env.Parse(&conf) },
-		func() error { return env.Parse(&conf.APIConfig) },
-		func() error { return env.Parse(&conf.BatchConfig) },
+		func() error { return env.Parse(&conf.BinConfig) },
 		func() error { return env.Parse(&conf.DatabaseConfig) },
 		func() error { return env.Parse(&conf.TraceConfig) },
 		func() error { return env.Parse(&conf.UserServiceConfig) },
+		func() error { return env.Parse(&conf.WebsiteConfig) },
+	}
+
+	for _, f := range loadConfigFuncs {
+		if err := f(); err != nil {
+			return nil, fmt.Errorf("parse config: %w", err)
+		}
+	}
+
+	return &conf, nil
+}
+
+func LoadBatchConfig() (*BatchConfig, error) {
+	var conf BatchConfig
+
+	loadConfigFuncs := []func() error{
+		func() error { return env.Parse(&conf) },
+		func() error { return env.Parse(&conf.BinConfig) },
+		func() error { return env.Parse(&conf.DatabaseConfig) },
+		func() error { return env.Parse(&conf.TraceConfig) },
+		func() error { return env.Parse(&conf.WebsiteConfig) },
 	}
 
 	for _, f := range loadConfigFuncs {

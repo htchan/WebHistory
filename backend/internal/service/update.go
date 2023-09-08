@@ -35,7 +35,7 @@ var client HTTPClient = &http.Client{
 	},
 }
 
-func pruneResponse(resp *http.Response, conf *config.Config) string {
+func pruneResponse(resp *http.Response, conf *config.WebsiteConfig) string {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return ""
@@ -51,7 +51,7 @@ func pruneResponse(resp *http.Response, conf *config.Config) string {
 	bodyStr = re.ReplaceAllString(bodyStr, "[$1]")
 	re = regexp.MustCompile("(<.*?>)+")
 	bodyStr = re.ReplaceAllString(bodyStr, conf.Separator)
-	re = regexp.MustCompile("\\[(/?title.*?)\\]")
+	re = regexp.MustCompile(`\[(/?title.*?)\]`)
 	bodyStr = re.ReplaceAllString(bodyStr, "<$1>")
 	bodyStr = strings.Trim(bodyStr, conf.Separator)
 	return bodyStr
@@ -80,7 +80,7 @@ func parseAPI(r repository.Repostory, web *model.Website, resp string) (string, 
 }
 
 func fetchWebsite(ctx context.Context, web *model.Website, maxRetry int, retryInterval time.Duration) (string, error) {
-	tr := otel.Tracer("update")
+	tr := otel.Tracer("htchan/WebHistory/update-jobs")
 	_, span := tr.Start(ctx, "Fetch Web")
 	defer span.End()
 
@@ -118,7 +118,7 @@ func fetchWebsite(ctx context.Context, web *model.Website, maxRetry int, retryIn
 }
 
 func checkTimeUpdated(ctx context.Context, web *model.Website, timeStr string) bool {
-	tr := otel.Tracer("update")
+	tr := otel.Tracer("htchan/WebHistory/update-jobs")
 	_, span := tr.Start(ctx, "Check Time")
 	defer span.End()
 
@@ -139,7 +139,7 @@ func checkTimeUpdated(ctx context.Context, web *model.Website, timeStr string) b
 }
 
 func checkContentUpdated(ctx context.Context, web *model.Website, content []string) bool {
-	tr := otel.Tracer("update")
+	tr := otel.Tracer("htchan/WebHistory/update-jobs")
 	_, span := tr.Start(ctx, "Check Content")
 	defer span.End()
 	span.SetAttributes(
@@ -156,7 +156,7 @@ func checkContentUpdated(ctx context.Context, web *model.Website, content []stri
 }
 
 func checkTitleUpdated(ctx context.Context, web *model.Website, title string) bool {
-	tr := otel.Tracer("update")
+	tr := otel.Tracer("htchan/WebHistory/update-jobs")
 	_, span := tr.Start(ctx, "Check Title")
 	defer span.End()
 	span.SetAttributes(
@@ -175,7 +175,7 @@ func checkTitleUpdated(ctx context.Context, web *model.Website, title string) bo
 }
 
 func checkWeb(ctx context.Context, r repository.Repostory, web *model.Website, title string, content []string) {
-	tr := otel.Tracer("update")
+	tr := otel.Tracer("htchan/WebHistory/update-jobs")
 	ctx, span := tr.Start(ctx, "Checking")
 	defer span.End()
 
@@ -198,11 +198,6 @@ func checkWeb(ctx context.Context, r repository.Repostory, web *model.Website, t
 }
 
 func Update(ctx context.Context, r repository.Repostory, web *model.Website) error {
-	tr := otel.Tracer("update")
-	ctx, span := tr.Start(ctx, "Update")
-	defer span.End()
-	span.SetAttributes(web.OtelAttributes()...)
-
 	content, err := fetchWebsite(ctx, web, MaxRetryCount, RetryInterval)
 	if err != nil {
 		return err

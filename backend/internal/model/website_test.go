@@ -15,7 +15,7 @@ func Test_NewWebsite(t *testing.T) {
 	tests := []struct {
 		name               string
 		url                string
-		conf               *config.Config
+		conf               *config.WebsiteConfig
 		expectedTitle      string
 		expectedRawContent string
 		expectedUpdateTime time.Time
@@ -165,7 +165,7 @@ func TestWebsite_Content(t *testing.T) {
 			name: "happy flow",
 			web: Website{
 				RawContent: strings.Join([]string{"1", "2", "3"}, "\n"),
-				Conf:       &config.Config{Separator: "\n"},
+				Conf:       &config.WebsiteConfig{Separator: "\n"},
 			},
 			expect: []string{"1", "2", "3"},
 		},

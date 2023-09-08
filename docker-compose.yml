@@ -12,6 +12,7 @@ services:
         hostname: webhistory_backend
         volumes:
             - ./bin/database:/database
+            - ./bin/logs:/logs
             - ./backend/migrations:/migrations
             - /etc/timezone:/etc/timezone/ro
         networks:
@@ -25,8 +26,6 @@ services:
             - 9105:9105
         env_file:
             - ./backend/assets/.env.backend
-            - ./backend/assets/.env
-            - ./.env
         command: sh -c "./backend"
 
     batch:
@@ -49,9 +48,7 @@ services:
             - all
             - batch
         env_file:
-            - ./.env
             - ./backend/assets/.env.batch
-            - ./backend/assets/.env
         command: sh -c "make run_batch && crond && tail -f /dev/null"
 
     backup:

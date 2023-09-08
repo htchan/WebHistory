@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 	"sync"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/htchan/WebHistory/internal/service"
 	"github.com/htchan/WebHistory/internal/utils"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
@@ -49,8 +51,8 @@ func websiteChannelGroupedByHost(websites []model.Website) map[string]chan model
 	return hostChannelMap
 }
 
-func regularUpdateWebsites(r repository.Repostory, conf config.BatchConfig) {
-	tr := otel.Tracer("process")
+func regularUpdateWebsites(r repository.Repostory, conf *config.BatchBinConfig) {
+	tr := otel.Tracer("htchan/WebHistory/update-jobs")
 	ctx, span := tr.Start(context.Background(), "batch")
 	defer span.End()
 
@@ -69,11 +71,22 @@ func regularUpdateWebsites(r repository.Repostory, conf config.BatchConfig) {
 			defer span.End()
 
 			for web := range websites {
-				ctx := log.With().
-					Str("job_uuid", uuid.Must(uuid.NewUUID()).String()).
-					Logger().
-					WithContext(ctx)
-				service.Update(ctx, r, &web)
+				func() {
+					jobUUID := uuid.Must(uuid.NewUUID())
+
+					ctx := log.With().
+						Str("job_uuid", jobUUID.String()).
+						Logger().
+						WithContext(ctx)
+
+					tr := otel.Tracer("htchan/WebHistory/update-jobs")
+					ctx, span := tr.Start(ctx, "Update Website")
+					defer span.End()
+					span.SetAttributes(web.OtelAttributes()...)
+					span.SetAttributes(attribute.String("job_uuid", jobUUID.String()))
+
+					service.Update(ctx, r, &web)
+				}()
 				time.Sleep(conf.SleepInterval)
 			}
 			wg.Done()
@@ -112,12 +125,20 @@ func closeTracer(tp *tracesdk.TracerProvider) {
 }
 
 func main() {
+	outputPath := os.Getenv("OUTPUT_PATH")
+	if outputPath != "" {
+		writer, err := os.OpenFile(outputPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+		if err == nil {
+			log.Logger = log.Logger.Output(writer)
+		}
+	}
+
 	zerolog.TimeFieldFormat = "2006-01-02T15:04:05.99999Z07:00"
 
 	memStart := findMemUsage()
 	printMemUsage(memStart)
 
-	conf, err := config.LoadConfig()
+	conf, err := config.LoadBatchConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("load config failed")
 	}
@@ -140,8 +161,8 @@ func main() {
 
 	// service.AggregateBackup(conf.BackupDirectory)
 
-	r := sqlc.NewRepo(db, conf)
+	r := sqlc.NewRepo(db, &conf.WebsiteConfig)
 
-	regularUpdateWebsites(r, conf.BatchConfig)
+	regularUpdateWebsites(r, &conf.BinConfig)
 	printMemDiff(memStart, findMemUsage())
 }

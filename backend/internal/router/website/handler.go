@@ -51,7 +51,7 @@ func getWebsiteGroupHandler(r repository.Repostory) http.HandlerFunc {
 	}
 }
 
-func createWebsiteHandler(r repository.Repostory, conf *config.Config) http.HandlerFunc {
+func createWebsiteHandler(r repository.Repostory, conf *config.WebsiteConfig) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		// userUUID, err := UserUUID(req)
 		userUUID := req.Context().Value(ContextKeyUserUUID).(string)

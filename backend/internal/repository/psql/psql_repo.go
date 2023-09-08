@@ -11,12 +11,12 @@ import (
 
 type PsqlRepo struct {
 	db   *sql.DB
-	conf *config.Config
+	conf *config.WebsiteConfig
 }
 
 var _ repository.Repostory = &PsqlRepo{}
 
-func NewRepo(db *sql.DB, conf *config.Config) *PsqlRepo {
+func NewRepo(db *sql.DB, conf *config.WebsiteConfig) *PsqlRepo {
 	return &PsqlRepo{db: db, conf: conf}
 }
 

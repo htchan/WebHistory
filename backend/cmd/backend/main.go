@@ -19,9 +19,23 @@ import (
 )
 
 func main() {
+	outputPath := os.Getenv("OUTPUT_PATH")
+	if outputPath != "" {
+		writer, err := os.OpenFile(outputPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+		if err == nil {
+			log.Logger = log.Logger.Output(writer)
+			defer writer.Close()
+		} else {
+			log.Fatal().
+				Err(err).
+				Str("output_path", outputPath).
+				Msg("set logger output failed")
+		}
+	}
+
 	zerolog.TimeFieldFormat = "2006-01-02T15:04:05.99999Z07:00"
 
-	conf, err := config.LoadConfig()
+	conf, err := config.LoadAPIConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("load config failed")
 	}
@@ -37,15 +51,15 @@ func main() {
 
 	defer db.Close()
 
-	rpo := sqlc.NewRepo(db, conf)
+	rpo := sqlc.NewRepo(db, &conf.WebsiteConfig)
 	r := chi.NewRouter()
 	website.AddRoutes(r, rpo, conf)
 
 	server := http.Server{
-		Addr:         conf.APIConfig.Addr,
-		ReadTimeout:  conf.APIConfig.ReadTimeout,
-		WriteTimeout: conf.APIConfig.WriteTimeout,
-		IdleTimeout:  conf.APIConfig.IdleTimeout,
+		Addr:         conf.BinConfig.Addr,
+		ReadTimeout:  conf.BinConfig.ReadTimeout,
+		WriteTimeout: conf.BinConfig.WriteTimeout,
+		IdleTimeout:  conf.BinConfig.IdleTimeout,
 		Handler:      r,
 	}
 

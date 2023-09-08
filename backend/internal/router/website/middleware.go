@@ -57,7 +57,7 @@ func logRequest() func(next http.Handler) http.Handler {
 	}
 }
 
-func AuthenticateMiddleware(conf *config.Config) func(next http.Handler) http.Handler {
+func AuthenticateMiddleware(conf *config.UserServiceConfig) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(
 			func(res http.ResponseWriter, req *http.Request) {
@@ -69,7 +69,7 @@ func AuthenticateMiddleware(conf *config.Config) func(next http.Handler) http.Ha
 				userUUID := ""
 
 				if token != "" {
-					userUUID = utils.FindUserByToken(token, &conf.UserServiceConfig)
+					userUUID = utils.FindUserByToken(token, conf)
 				}
 
 				if userUUID == "" {

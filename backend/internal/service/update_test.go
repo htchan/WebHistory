@@ -19,7 +19,7 @@ import (
 )
 
 func Test_pruneResponse(t *testing.T) {
-	conf := &config.Config{Separator: ","}
+	conf := &config.WebsiteConfig{Separator: ","}
 
 	tests := []struct {
 		name   string
@@ -185,7 +185,7 @@ func Test_fetchWebsite(t *testing.T) {
 			return nil, errors.New("error")
 		},
 	}
-	conf := &config.Config{Separator: "\n", MaxDateLength: 2}
+	conf := &config.WebsiteConfig{Separator: "\n", MaxDateLength: 2}
 	tests := []struct {
 		name          string
 		client        HTTPClient
@@ -276,7 +276,7 @@ func Test_checkTimeUpdated(t *testing.T) {
 }
 
 func Test_checkContentUpdated(t *testing.T) {
-	conf := &config.Config{Separator: ","}
+	conf := &config.WebsiteConfig{Separator: ","}
 
 	tests := []struct {
 		name   string
@@ -382,7 +382,7 @@ func (m MockClient) Get(url string) (*http.Response, error) {
 }
 
 func Test_Update(t *testing.T) {
-	conf := &config.Config{Separator: ",", MaxDateLength: 2}
+	conf := &config.WebsiteConfig{Separator: ",", MaxDateLength: 2}
 
 	refArray := make([]string, 0, 100)
 	for i := 0; i < 100; i++ {

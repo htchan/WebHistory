@@ -27,10 +27,10 @@ func redirectLogin(res http.ResponseWriter, req *http.Request) {
 	http.Redirect(res, req, fmt.Sprintf("%v?service=%v", loginURL, serviceUUID), 302)
 }
 
-func AddRoutes(router chi.Router, r repository.Repostory, conf *config.Config) {
+func AddRoutes(router chi.Router, r repository.Repostory, conf *config.APIConfig) {
 	router.Use(logRequest())
 
-	router.Route(conf.APIConfig.APIRoutePrefix, func(router chi.Router) {
+	router.Route(conf.BinConfig.APIRoutePrefix, func(router chi.Router) {
 		router.Route("/websites", func(router chi.Router) {
 			router.Use(
 				cors.Handler(
@@ -42,7 +42,7 @@ func AddRoutes(router chi.Router, r repository.Repostory, conf *config.Config) {
 					},
 				),
 			)
-			router.Use(AuthenticateMiddleware(conf))
+			router.Use(AuthenticateMiddleware(&conf.UserServiceConfig))
 			router.Use(SetContentType)
 
 			router.Route("/groups", func(router chi.Router) {
@@ -50,7 +50,7 @@ func AddRoutes(router chi.Router, r repository.Repostory, conf *config.Config) {
 				router.Get("/{groupName}", getWebsiteGroupHandler(r))
 			})
 
-			router.With(WebsiteParams).Post("/", createWebsiteHandler(r, conf))
+			router.With(WebsiteParams).Post("/", createWebsiteHandler(r, &conf.WebsiteConfig))
 
 			router.With(QueryWebsite(r)).Route("/{webUUID}", func(router chi.Router) {
 				router.Get("/", getWebsiteHandler(r))
