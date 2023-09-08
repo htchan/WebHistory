@@ -49,7 +49,7 @@ services:
             - batch
         env_file:
             - ./backend/assets/.env.batch
-        command: sh -c "make run_batch && crond && tail -f /dev/null"
+        command: sh -c "./batch"
 
     backup:
         build:

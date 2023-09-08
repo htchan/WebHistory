@@ -32,6 +32,7 @@ type BatchConfig struct {
 
 type BatchBinConfig struct {
 	SleepInterval time.Duration `env:"BATCH_SLEEP_INTERVAL"`
+	JobSchedule   string        `env:"BATCH_JOB_SCHEDULE"`
 }
 
 type TraceConfig struct {

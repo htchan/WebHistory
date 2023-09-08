@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"github.com/go-co-op/gocron"
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/model"
 	"github.com/htchan/WebHistory/internal/repository"
@@ -163,6 +164,16 @@ func main() {
 
 	r := sqlc.NewRepo(db, &conf.WebsiteConfig)
 
+	s := gocron.NewScheduler(time.UTC)
+	_, jobErr := s.
+		Cron(conf.BinConfig.JobSchedule).
+		SingletonMode().
+		Do(func() { regularUpdateWebsites(r, &conf.BinConfig) })
+	if jobErr != nil {
+		log.Fatal().Err(jobErr).Msg("create cron job failed")
+	}
+
 	regularUpdateWebsites(r, &conf.BinConfig)
-	printMemDiff(memStart, findMemUsage())
+
+	s.StartBlocking()
 }

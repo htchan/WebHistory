@@ -25,16 +25,8 @@ FROM alpine
 
 WORKDIR /usr/src/app
 
-RUN apk add tzdata alpine-sdk
+RUN apk add tzdata
 
 COPY --from=builder /go/src/github.com/htchan/WebHistory/batch .
-COPY ./assets/cron_job /etc/cron.d/cron_job
 
-ENV log_location="/logs/batch.log"
-
-COPY ./assets/Makefile Makefile
-
-RUN chmod 0644 /etc/cron.d/cron_job
-RUN crontab /etc/cron.d/cron_job
-
-CMD "crond"
+CMD ['./main']
