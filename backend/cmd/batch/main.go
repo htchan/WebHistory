@@ -167,13 +167,11 @@ func main() {
 	s := gocron.NewScheduler(time.UTC)
 	_, jobErr := s.
 		Cron(conf.BinConfig.JobSchedule).
-		SingletonMode().
+		StartImmediately().
 		Do(func() { regularUpdateWebsites(r, &conf.BinConfig) })
 	if jobErr != nil {
 		log.Fatal().Err(jobErr).Msg("create cron job failed")
 	}
-
-	regularUpdateWebsites(r, &conf.BinConfig)
 
 	s.StartBlocking()
 }
