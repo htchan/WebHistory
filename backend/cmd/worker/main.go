@@ -51,7 +51,6 @@ func main() {
 
 	rpo := sqlc.NewRepo(db, &conf.WebsiteConfig)
 
-	// TODO: use config to define worker number
 	exec := executor.NewExecutor(conf.BinConfig.WorkerExecutorCount)
 
 	// start website update job

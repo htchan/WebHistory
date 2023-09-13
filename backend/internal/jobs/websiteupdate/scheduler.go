@@ -8,6 +8,7 @@ import (
 	"github.com/htchan/WebHistory/internal/model"
 )
 
+// TODO: add missing testcases
 type Scheduler struct {
 	job         *Job
 	stop        chan struct{}
@@ -30,7 +31,6 @@ func (scheduler *Scheduler) Start() {
 }
 
 func (scheduler *Scheduler) Stop() error {
-	//TODO: implement this
 	close(scheduler.stop)
 	scheduler.publisherWg.Wait()
 	close(scheduler.jobChan)

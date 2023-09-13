@@ -10,6 +10,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// TODO: move this to separate package
+// TODO: add missing testcases
 type ShutdownFunc struct {
 	name string
 	f    func() error
@@ -32,7 +34,6 @@ func (handler *ShutdownHandler) Register(name string, f func() error) {
 }
 
 func (handler *ShutdownHandler) Listen(timeout time.Duration) error {
-	// TODO: catch kill signal
 	kill := make(chan os.Signal, 1)
 	signal.Notify(kill, syscall.SIGINT, syscall.SIGTERM)
 	<-kill

@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// TODO: add missing testcases
 type ExecutorImpl struct {
 	executorCount int
 	exit          chan interface{}

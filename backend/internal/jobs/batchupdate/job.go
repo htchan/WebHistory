@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
+// TODO: add missing testcases
 type Job struct {
 	rpo repository.Repostory
 

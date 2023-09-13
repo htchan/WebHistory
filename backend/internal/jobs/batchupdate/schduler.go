@@ -7,6 +7,8 @@ import (
 	"github.com/htchan/WebHistory/internal/jobs"
 )
 
+// TODO: add missing testcases
+// TODO: put this into websiteupdate
 type Scheduler struct {
 	job     *Job
 	stop    chan struct{}
