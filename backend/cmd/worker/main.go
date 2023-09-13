@@ -32,14 +32,14 @@ func main() {
 
 	zerolog.TimeFieldFormat = "2006-01-02T15:04:05.99999Z07:00"
 
-	conf, err := config.LoadBatchConfig()
+	conf, err := config.LoadWorkerConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("load config failed")
 	}
 
-	// if err = utils.Migrate(&conf.DatabaseConfig); err != nil {
-	// 	log.Fatal().Err(err).Msg("failed to migrate")
-	// }
+	if err = utils.Migrate(&conf.DatabaseConfig); err != nil {
+		log.Fatal().Err(err).Msg("failed to migrate")
+	}
 
 	shutdownHandler := shutdown.New()
 
@@ -52,10 +52,10 @@ func main() {
 	rpo := sqlc.NewRepo(db, &conf.WebsiteConfig)
 
 	// TODO: use config to define worker number
-	exec := executor.NewExecutor(10)
+	exec := executor.NewExecutor(conf.BinConfig.WorkerExecutorCount)
 
 	// start website update job
-	websiteUpdateScheduler := websiteupdate.Setup(rpo, conf.BinConfig.SleepInterval)
+	websiteUpdateScheduler := websiteupdate.Setup(rpo, conf.BinConfig.WebsiteUpdateSleepInterval)
 	exec.Register(websiteUpdateScheduler.Publisher())
 	go websiteUpdateScheduler.Start()
 

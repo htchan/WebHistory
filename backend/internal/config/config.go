@@ -34,6 +34,18 @@ type BatchBinConfig struct {
 	SleepInterval time.Duration `env:"BATCH_SLEEP_INTERVAL"`
 }
 
+type WorkerConfig struct {
+	BinConfig      WorkerBinConfig
+	DatabaseConfig DatabaseConfig
+	TraceConfig    TraceConfig
+	WebsiteConfig  WebsiteConfig
+}
+
+type WorkerBinConfig struct {
+	WebsiteUpdateSleepInterval time.Duration `env:"WEBSITE_UPDATE_SLEEP_INTERVAL"`
+	WorkerExecutorCount        int           `env:"WORKER_EXECUTOR_COUNT"`
+}
+
 type TraceConfig struct {
 	TraceURL         string `env:"TRACE_URL"`
 	TraceServiceName string `env:"TRACE_SERVICE_NAME"`
@@ -81,6 +93,26 @@ func LoadAPIConfig() (*APIConfig, error) {
 
 func LoadBatchConfig() (*BatchConfig, error) {
 	var conf BatchConfig
+
+	loadConfigFuncs := []func() error{
+		func() error { return env.Parse(&conf) },
+		func() error { return env.Parse(&conf.BinConfig) },
+		func() error { return env.Parse(&conf.DatabaseConfig) },
+		func() error { return env.Parse(&conf.TraceConfig) },
+		func() error { return env.Parse(&conf.WebsiteConfig) },
+	}
+
+	for _, f := range loadConfigFuncs {
+		if err := f(); err != nil {
+			return nil, fmt.Errorf("parse config: %w", err)
+		}
+	}
+
+	return &conf, nil
+}
+
+func LoadWorkerConfig() (*WorkerConfig, error) {
+	var conf WorkerConfig
 
 	loadConfigFuncs := []func() error{
 		func() error { return env.Parse(&conf) },
