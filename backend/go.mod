@@ -13,7 +13,6 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.2.1
-	github.com/go-logr/zerologr v1.2.3
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
