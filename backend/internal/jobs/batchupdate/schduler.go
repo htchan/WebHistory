@@ -33,7 +33,7 @@ func (scheduler *Scheduler) Start() {
 		case <-scheduler.stop:
 			return
 		case <-time.NewTimer(time.Until(calculateNexRunTime(lastRunTime))).C:
-			lastRunTime = time.Now()
+			lastRunTime = time.Now().UTC()
 
 			// send job to executor
 			scheduler.jobChan <- &executor.JobExec{
@@ -59,7 +59,7 @@ func (scheduler *Scheduler) Publisher() executor.JobTrigger {
 // run at specific time at every friday
 func calculateNexRunTime(t time.Time) time.Time {
 	if t.IsZero() {
-		return time.Now()
+		return time.Now().UTC()
 	}
 
 	now := time.Now().UTC().Truncate(24 * time.Hour)

@@ -94,7 +94,7 @@ func getWebsiteHandler(r repository.Repostory) http.HandlerFunc {
 func refreshWebsiteHandler(r repository.Repostory) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		web := req.Context().Value(ContextKeyWebsite).(model.UserWebsite)
-		web.AccessTime = time.Now()
+		web.AccessTime = time.Now().UTC()
 
 		err := r.UpdateUserWebsite(&web)
 		if err != nil {

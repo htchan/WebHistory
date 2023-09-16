@@ -43,7 +43,7 @@ func shouldAggragate(baseVersion, version string) bool {
 	if errBase != nil || err != nil {
 		return false
 	}
-	now := time.Now()
+	now := time.Now().UTC()
 	if (tBase.Year() == t.Year() && t.Year() != now.Year()) ||
 		(tBase.Year() == t.Year() && tBase.Month() == t.Month() && t.Month() != now.Month()) {
 		return true
