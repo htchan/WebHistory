@@ -7,6 +7,6 @@ import (
 )
 
 type Params struct {
-	web           *model.Website
-	executionLock *sync.Mutex
+	Web           *model.Website `json:"web"`
+	ExecutionLock *sync.Mutex
 }

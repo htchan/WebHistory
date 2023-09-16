@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -13,7 +14,41 @@ import (
 	"github.com/htchan/WebHistory/internal/utils"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
+
+// TODO: move tracer to helper
+func tracerProvider(conf config.TraceConfig) (*tracesdk.TracerProvider, error) {
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(conf.TraceURL)))
+	if err != nil {
+		return nil, err
+	}
+
+	tp := tracesdk.NewTracerProvider(
+		tracesdk.WithBatcher(exp),
+		tracesdk.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(conf.TraceServiceName),
+		)),
+	)
+
+	otel.SetTracerProvider(tp)
+
+	return tp, nil
+}
+
+func closeTracer(tp *tracesdk.TracerProvider) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	if err := tp.Shutdown(ctx); err != nil {
+		log.Error().Err(err).Msg("shutdown error")
+	}
+}
 
 func main() {
 	outputPath := os.Getenv("OUTPUT_PATH")
@@ -35,6 +70,11 @@ func main() {
 	conf, err := config.LoadWorkerConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("load config failed")
+	}
+
+	tp, err := tracerProvider(conf.TraceConfig)
+	if err != nil {
+		log.Error().Err(err).Msg("init tracer failed")
 	}
 
 	if err = utils.Migrate(&conf.DatabaseConfig); err != nil {
@@ -67,6 +107,11 @@ func main() {
 	shutdownHandler.Register("websiteupdate.Scheduler", websiteUpdateScheduler.Stop)
 	shutdownHandler.Register("executor", exec.Stop)
 	shutdownHandler.Register("database", db.Close)
+	shutdownHandler.Register("tracer", func() error {
+		closeTracer(tp)
+
+		return nil
+	})
 
 	go exec.Start()
 

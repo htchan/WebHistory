@@ -14,7 +14,7 @@ type Scheduler struct {
 	stop        chan struct{}
 	jobChan     executor.JobTrigger
 	hostLocks   map[string]*sync.Mutex
-	publisherWg *sync.WaitGroup
+	publisherWg sync.WaitGroup
 }
 
 func NewScheduler(job *Job) *Scheduler {
@@ -54,8 +54,8 @@ func (scheduler *Scheduler) DeployJob(web *model.Website) error {
 	// init executionLock
 	lock, ok := scheduler.hostLocks[host]
 	if !ok {
-		hostLock := &sync.Mutex{}
-		scheduler.hostLocks[host] = hostLock
+		lock = &sync.Mutex{}
+		scheduler.hostLocks[host] = lock
 	}
 
 	scheduler.publisherWg.Add(1)
@@ -66,8 +66,8 @@ func (scheduler *Scheduler) DeployJob(web *model.Website) error {
 		scheduler.jobChan <- &executor.JobExec{
 			Job: scheduler.job,
 			Params: Params{
-				web:           web,
-				executionLock: lock,
+				Web:           web,
+				ExecutionLock: lock,
 			},
 		}
 	}()

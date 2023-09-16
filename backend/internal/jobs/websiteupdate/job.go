@@ -33,15 +33,15 @@ func (job *Job) Execute(ctx context.Context, p interface{}) error {
 		return jobs.ErrInvalidParams
 	}
 
-	defer params.executionLock.Unlock()
+	defer params.ExecutionLock.Unlock()
 
 	tr := otel.Tracer("htchan/WebHistory/update-jobs")
 	ctx, span := tr.Start(ctx, "Update Website")
 	defer span.End()
-	span.SetAttributes(params.web.OtelAttributes()...)
+	span.SetAttributes(params.Web.OtelAttributes()...)
 	span.SetAttributes(attribute.String("job_uuid", ctx.Value("job_uuid").(string)))
 
-	service.Update(ctx, job.rpo, params.web)
+	service.Update(ctx, job.rpo, params.Web)
 	time.Sleep(job.sleepInterval)
 
 	return nil
