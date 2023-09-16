@@ -2,6 +2,7 @@ package websiteupdate
 
 import (
 	"context"
+	"runtime"
 	"time"
 
 	"github.com/htchan/WebHistory/internal/executor"
@@ -36,13 +37,18 @@ func (job *Job) Execute(ctx context.Context, p interface{}) error {
 	defer params.ExecutionLock.Unlock()
 
 	tr := otel.Tracer("htchan/WebHistory/update-jobs")
-	ctx, span := tr.Start(ctx, "Update Website")
-	defer span.End()
-	span.SetAttributes(params.Web.OtelAttributes()...)
-	span.SetAttributes(attribute.String("job_uuid", ctx.Value("job_uuid").(string)))
+	updateCtx, updateSpan := tr.Start(ctx, "Update Website")
+	updateSpan.SetAttributes(params.Web.OtelAttributes()...)
+	updateSpan.SetAttributes(attribute.String("job_uuid", updateCtx.Value("job_uuid").(string)))
 
-	service.Update(ctx, job.rpo, params.Web)
+	service.Update(updateCtx, job.rpo, params.Web)
+	updateSpan.End()
+
+	_, sleepSpan := tr.Start(ctx, "Sleep After Update")
 	time.Sleep(job.sleepInterval)
+	sleepSpan.End()
+
+	runtime.GC()
 
 	return nil
 }
