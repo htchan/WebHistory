@@ -50,6 +50,8 @@ func (job *Job) Execute(ctx context.Context, p interface{}) error {
 
 	for _, web := range webs {
 		// deploy job to update website
+		web := web
+
 		err := job.websiteUpdateScheduler.DeployJob(&web)
 		if err != nil {
 			zerolog.Ctx(ctx).
