@@ -11,6 +11,7 @@ import (
 	"github.com/htchan/WebHistory/internal/service"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // TODO: add missing testcases
@@ -34,9 +35,10 @@ func (job *Job) Execute(ctx context.Context, p interface{}) error {
 		return jobs.ErrInvalidParams
 	}
 
-	defer params.ExecutionLock.Unlock()
+	defer params.Cleanup()
 
 	tr := otel.Tracer("htchan/WebHistory/update-jobs")
+	ctx = trace.ContextWithSpanContext(ctx, *params.SpanContext)
 
 	updateCtx, updateSpan := tr.Start(ctx, "Update Website")
 	defer updateSpan.End()
