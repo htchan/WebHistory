@@ -37,16 +37,18 @@ func (job *Job) Execute(ctx context.Context, p interface{}) error {
 	defer params.ExecutionLock.Unlock()
 
 	tr := otel.Tracer("htchan/WebHistory/update-jobs")
+
 	updateCtx, updateSpan := tr.Start(ctx, "Update Website")
+	defer updateSpan.End()
+
 	updateSpan.SetAttributes(params.Web.OtelAttributes()...)
 	updateSpan.SetAttributes(attribute.String("job_uuid", updateCtx.Value("job_uuid").(string)))
 
 	service.Update(updateCtx, job.rpo, params.Web)
-	updateSpan.End()
 
-	_, sleepSpan := tr.Start(ctx, "Sleep After Update")
+	_, sleepSpan := tr.Start(updateCtx, "Sleep After Update")
+	defer sleepSpan.End()
 	time.Sleep(job.sleepInterval)
-	sleepSpan.End()
 
 	runtime.GC()
 

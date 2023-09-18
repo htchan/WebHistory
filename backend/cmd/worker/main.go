@@ -7,7 +7,6 @@ import (
 
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/executor"
-	"github.com/htchan/WebHistory/internal/jobs/batchupdate"
 	"github.com/htchan/WebHistory/internal/jobs/websiteupdate"
 	"github.com/htchan/WebHistory/internal/repository/sqlc"
 	"github.com/htchan/WebHistory/internal/shutdown"
@@ -98,12 +97,6 @@ func main() {
 	exec.Register(websiteUpdateScheduler.Publisher())
 	go websiteUpdateScheduler.Start()
 
-	// start batch update job
-	batchUpdateScheduer := batchupdate.Setup(rpo, websiteUpdateScheduler)
-	exec.Register(batchUpdateScheduer.Publisher())
-	go batchUpdateScheduer.Start()
-
-	shutdownHandler.Register("batchupdate.Scheduler", batchUpdateScheduer.Stop)
 	shutdownHandler.Register("websiteupdate.Scheduler", websiteUpdateScheduler.Stop)
 	shutdownHandler.Register("executor", exec.Stop)
 	shutdownHandler.Register("database", db.Close)

@@ -60,7 +60,11 @@ func (executor *ExecutorImpl) Start() {
 				select {
 				case <-executor.exit:
 					return
-				case jobExec := <-jobQueue:
+				case jobExec, ok := <-jobQueue:
+					if !ok {
+						continue
+					}
+
 					job, params := jobExec.Job, jobExec.Params
 
 					jobUUID := uuid.Must(uuid.NewUUID()).String()
@@ -89,10 +93,11 @@ func (executor *ExecutorImpl) Start() {
 }
 
 func (executor *ExecutorImpl) Stop() error {
+	executor.publisherWg.Wait()
+
 	executor.exit <- nil
 	close(executor.exit)
 
-	executor.publisherWg.Wait()
 	executor.workerWg.Wait()
 
 	return nil
