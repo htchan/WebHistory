@@ -108,5 +108,5 @@ func main() {
 
 	go exec.Start()
 
-	shutdownHandler.Listen(5 * time.Second)
+	shutdownHandler.Listen(60 * time.Second)
 }
