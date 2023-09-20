@@ -25,7 +25,7 @@ func Test_NewWebsite(t *testing.T) {
 			url:                "https://google.com",
 			expectedTitle:      "",
 			expectedRawContent: "",
-			expectedUpdateTime: time.Now(),
+			expectedUpdateTime: time.Now().UTC().Truncate(time.Second),
 		},
 	}
 

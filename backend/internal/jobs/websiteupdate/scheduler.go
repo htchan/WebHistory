@@ -38,7 +38,7 @@ func (scheduler *Scheduler) Start() {
 		case <-scheduler.stop:
 			return
 		case <-time.NewTimer(time.Until(calculateNexRunTime(lastRunTime))).C:
-			lastRunTime = time.Now().UTC()
+			lastRunTime = time.Now().UTC().Truncate(time.Second)
 			scheduler.batchDeployUpdateJob()
 		}
 	}
@@ -47,7 +47,7 @@ func (scheduler *Scheduler) Start() {
 // run at specific time at every friday
 func calculateNexRunTime(t time.Time) time.Time {
 	if t.IsZero() {
-		return time.Now().UTC()
+		return time.Now().UTC().Truncate(time.Second)
 	}
 
 	now := time.Now().UTC().Truncate(24 * time.Hour)

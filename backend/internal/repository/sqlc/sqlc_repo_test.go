@@ -213,7 +213,7 @@ func TestSqlcRepo_CreateWebsite(t *testing.T) {
 				URL:        "http://example.com/" + title,
 				Title:      title,
 				RawContent: "",
-				UpdateTime: time.Now().UTC(),
+				UpdateTime: time.Now().UTC().Truncate(time.Second),
 			},
 			expect: model.Website{
 				UUID:       uuid,

@@ -149,7 +149,7 @@ func checkContentUpdated(ctx context.Context, web *model.Website, content []stri
 
 	if len(content) > 0 && !cmp.Equal(web.Content(), content) {
 		web.RawContent = strings.Join(content, web.Conf.Separator)
-		web.UpdateTime = time.Now().UTC()
+		web.UpdateTime = time.Now().UTC().Truncate(time.Second)
 		return true
 	}
 	return false
@@ -167,7 +167,7 @@ func checkTitleUpdated(ctx context.Context, web *model.Website, title string) bo
 	if web.Title != title {
 		if web.Title == "" || web.Title == "unknown" {
 			web.Title = title
-			web.UpdateTime = time.Now().UTC()
+			web.UpdateTime = time.Now().UTC().Truncate(time.Second)
 			return true
 		}
 	}

@@ -24,7 +24,7 @@ func NewWebsite(url string, conf *config.WebsiteConfig) Website {
 	web := Website{
 		UUID:       uuid.New().String(),
 		URL:        url,
-		UpdateTime: time.Now().UTC(),
+		UpdateTime: time.Now().UTC().Truncate(time.Second),
 		Conf:       conf,
 	}
 	return web
