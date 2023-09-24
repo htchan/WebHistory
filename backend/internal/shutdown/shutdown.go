@@ -11,18 +11,21 @@ import (
 )
 
 // TODO: move this to separate package
-// TODO: add missing testcases
-type ShutdownFunc struct {
+type shutdownFunc struct {
 	name string
 	f    func() error
 }
 
-func (f ShutdownFunc) run() error {
+func (f *shutdownFunc) run() error {
+	if f.f == nil {
+		return ErrNilFunc
+	}
+
 	return f.f()
 }
 
 type ShutdownHandler struct {
-	funcs []ShutdownFunc
+	funcs []shutdownFunc
 }
 
 func New() *ShutdownHandler {
@@ -30,7 +33,7 @@ func New() *ShutdownHandler {
 }
 
 func (handler *ShutdownHandler) Register(name string, f func() error) {
-	handler.funcs = append(handler.funcs, ShutdownFunc{name: name, f: f})
+	handler.funcs = append(handler.funcs, shutdownFunc{name: name, f: f})
 }
 
 func (handler *ShutdownHandler) Listen(timeout time.Duration) error {
@@ -43,26 +46,29 @@ func (handler *ShutdownHandler) Listen(timeout time.Duration) error {
 
 	// run ShutdownFunc one by one
 	for _, fn := range handler.funcs {
-		fn := fn
-		fnComplete := make(chan interface{})
+		f := func() <-chan struct{} {
+			fnComplete := make(chan struct{}, 1)
 
-		go func() {
-			if err := fn.run(); err != nil {
-				log.Error().Err(err).Str("name", fn.name).Msg("shutdown error")
-			} else {
-				log.Info().Str("name", fn.name).Msg("shutdown complete")
-			}
+			go func() {
+				defer close(fnComplete)
 
-			fnComplete <- nil
-		}()
+				if err := fn.run(); err != nil {
+					log.Error().Err(err).Str("name", fn.name).Msg("shutdown error")
+				} else {
+					log.Info().Str("name", fn.name).Msg("shutdown complete")
+				}
 
-		select {
-		case <-ctx.Done():
-			log.Info().Str("name", fn.name).Msg("shutdown timeout")
-		case <-fnComplete:
+				fnComplete <- struct{}{}
+			}()
+
+			return fnComplete
 		}
 
-		close(fnComplete)
+		select {
+		case <-f():
+		case <-ctx.Done():
+			log.Info().Str("name", fn.name).Msg("shutdown timeout")
+		}
 	}
 
 	return ctx.Err()

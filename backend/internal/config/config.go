@@ -111,7 +111,6 @@ func LoadBatchConfig() (*BatchConfig, error) {
 	return &conf, nil
 }
 
-// TODO: add missing testcases
 func LoadWorkerConfig() (*WorkerConfig, error) {
 	var conf WorkerConfig
 

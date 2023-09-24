@@ -38,7 +38,9 @@ func (job *Job) Execute(ctx context.Context, p interface{}) error {
 	defer params.Cleanup()
 
 	tr := otel.Tracer("htchan/WebHistory/update-jobs")
-	ctx = trace.ContextWithSpanContext(ctx, *params.SpanContext)
+	if params.SpanContext != nil {
+		ctx = trace.ContextWithSpanContext(ctx, *params.SpanContext)
+	}
 
 	updateCtx, updateSpan := tr.Start(ctx, "Update Website")
 	defer updateSpan.End()
