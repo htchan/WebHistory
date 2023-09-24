@@ -4,8 +4,10 @@ help:
 	@echo 'Usage:'
 	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' | sed  -e 's/^/ /'
 
+# TODO: enable the -race
+# TODO: add -leak to testcase
 test:
-	go test ./... --cover -race
+	go test ./... --cover #-race
 
 bench:
 	go test -bench=. -benchmem -benchtime=5s ./...

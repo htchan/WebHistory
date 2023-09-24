@@ -14,11 +14,12 @@ import (
 
 // TODO: add missing testcases
 type Scheduler struct {
-	job         *Job
-	stop        chan struct{}
-	jobChan     executor.JobTrigger
-	hostLocks   map[string]*sync.Mutex
-	publisherWg sync.WaitGroup
+	job            *Job
+	stop           chan struct{}
+	jobChan        executor.JobTrigger
+	hostLocks      map[string]*sync.Mutex
+	hostLocksMutex sync.Mutex
+	publisherWg    sync.WaitGroup
 }
 
 func NewScheduler(job *Job) *Scheduler {
@@ -50,14 +51,14 @@ func calculateNexRunTime(t time.Time) time.Time {
 		return time.Now().UTC().Truncate(time.Second)
 	}
 
-	now := time.Now().UTC().Truncate(24 * time.Hour)
+	t = t.UTC().Truncate(24 * time.Hour)
 
-	nDaysLater := int(time.Friday - now.Weekday())
+	nDaysLater := int(time.Friday - t.Weekday())
 	if nDaysLater <= 1 {
 		nDaysLater += 7
 	}
 
-	result := now.AddDate(0, 0, nDaysLater).Add(4 * time.Hour)
+	result := t.AddDate(0, 0, nDaysLater).Add(4 * time.Hour)
 
 	return result
 }
@@ -138,11 +139,13 @@ func (scheduler *Scheduler) DeployJob(params Params) error {
 	host := params.Web.Host()
 
 	// init executionLock
+	scheduler.hostLocksMutex.Lock()
 	lock, ok := scheduler.hostLocks[host]
 	if !ok {
 		lock = &sync.Mutex{}
 		scheduler.hostLocks[host] = lock
 	}
+	scheduler.hostLocksMutex.Unlock()
 
 	if params.Cleanup == nil {
 		params.Cleanup = func() { lock.Unlock() }
