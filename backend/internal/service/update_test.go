@@ -433,7 +433,10 @@ func Test_Update(t *testing.T) {
 			mockClient: MockClient{get: func(s string) (*http.Response, error) {
 				return &http.Response{Body: io.NopCloser(strings.NewReader(mockRespWithoutDates))}, nil
 			}},
-			expectWeb: model.Website{UUID: "uuid", URL: "http://domain", Title: "new title", UpdateTime: time.Now()},
+			expectWeb: model.Website{
+				UUID: "uuid", URL: "http://domain", Title: "new title",
+				UpdateTime: time.Now().UTC().Truncate(time.Second),
+			},
 		},
 		{
 			name: "updated content",
@@ -447,7 +450,11 @@ func Test_Update(t *testing.T) {
 			mockClient: MockClient{get: func(s string) (*http.Response, error) {
 				return &http.Response{Body: io.NopCloser(strings.NewReader(mockRespWithDates))}, nil
 			}},
-			expectWeb: model.Website{UUID: "uuid", URL: "http://domain", Title: "new title", RawContent: "date-1,date-2,date-3,date-4", UpdateTime: time.Now()},
+			expectWeb: model.Website{
+				UUID: "uuid", URL: "http://domain", Title: "new title",
+				RawContent: "date-1,date-2,date-3,date-4",
+				UpdateTime: time.Now().UTC().Truncate(time.Second),
+			},
 		},
 		{
 			name: "not updated content",
@@ -461,7 +468,11 @@ func Test_Update(t *testing.T) {
 			mockClient: MockClient{get: func(s string) (*http.Response, error) {
 				return &http.Response{Body: io.NopCloser(strings.NewReader(mockRespWithDates))}, nil
 			}},
-			expectWeb: model.Website{UUID: "uuid", URL: "http://domain", Title: "new title", RawContent: "date-1,date-2,date-3,date-4", UpdateTime: time.Now()},
+			expectWeb: model.Website{
+				UUID: "uuid", URL: "http://domain", Title: "new title",
+				RawContent: "date-1,date-2,date-3,date-4",
+				UpdateTime: time.Now().UTC().Truncate(time.Second),
+			},
 		},
 	}
 

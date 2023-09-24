@@ -14,7 +14,6 @@ services:
             - ./bin/database:/database
             - ./bin/logs:/logs
             - ./backend/migrations:/migrations
-            - /etc/timezone:/etc/timezone/ro
         networks:
             - router
             - database
@@ -28,28 +27,28 @@ services:
             - ./backend/assets/.env.backend
         command: sh -c "./backend"
 
-    batch:
+    worker:
         build:
             context: ./backend
-            dockerfile: ./build/Dockerfile.batch
+            dockerfile: ./build/Dockerfile.worker
         deploy:
             resources:
                 limits:
                     memory: '25M'
+        hostname: webhistory_worker
         volumes:
             - ./bin/database:/database
             - ./bin/logs:/logs
             - ./backend/migrations:/migrations
-            - /etc/timezone:/etc/timezone:ro
         networks:
             - database
             - trace
         profiles:
             - all
-            - batch
+            - worker
         env_file:
-            - ./backend/assets/.env.batch
-        command: sh -c "make run_batch && crond && tail -f /dev/null"
+            - ./backend/assets/.env.worker
+        command: sh -c "./worker"
 
     backup:
         build:

@@ -223,17 +223,20 @@ func Test_createWebsiteHandler(t *testing.T) {
 			expectRes:    `{"message":"website \u003c\u003e inserted"}`,
 			expectRepo: repository.NewInMemRepo(
 				[]model.Website{
-					{UUID: "30303030-3030-4030-b030-303030303030", URL: "https://example.com/", UpdateTime: time.Now()},
+					{
+						UUID: "30303030-3030-4030-b030-303030303030", URL: "https://example.com/",
+						UpdateTime: time.Now().UTC().Truncate(time.Second),
+					},
 				},
 				[]model.UserWebsite{
 					{
 						WebsiteUUID: "30303030-3030-4030-b030-303030303030",
 						UserUUID:    "abc",
-						AccessTime:  time.Now(),
+						AccessTime:  time.Now().UTC().Truncate(time.Second),
 						Website: model.Website{
 							UUID:       "30303030-3030-4030-b030-303030303030",
 							URL:        "https://example.com/",
-							UpdateTime: time.Now(),
+							UpdateTime: time.Now().UTC().Truncate(time.Second),
 						},
 					},
 				},
@@ -379,7 +382,7 @@ func Test_refreshWebsiteHandler(t *testing.T) {
 				WebsiteUUID: "web_uuid",
 				UserUUID:    "user_uuid",
 				GroupName:   "name",
-				AccessTime:  time.Now(),
+				AccessTime:  time.Now().UTC().Truncate(time.Second),
 				Website: model.Website{
 					UUID:       "web_uuid",
 					Title:      "title",
@@ -394,7 +397,7 @@ func Test_refreshWebsiteHandler(t *testing.T) {
 						WebsiteUUID: "web_uuid",
 						UserUUID:    "user_uuid",
 						GroupName:   "name",
-						AccessTime:  time.Now(),
+						AccessTime:  time.Now().UTC().Truncate(time.Second),
 						Website: model.Website{
 							UUID:       "web_uuid",
 							Title:      "title",
@@ -430,7 +433,7 @@ func Test_refreshWebsiteHandler(t *testing.T) {
 				t.Error(test.expectStatus)
 			}
 
-			// test.web.AccessTime = time.Now()
+			// test.web.AccessTime = time.Now().UTC().Truncate(time.Second)
 
 			expectResp, err := json.Marshal(map[string]model.UserWebsite{
 				"website": test.web,

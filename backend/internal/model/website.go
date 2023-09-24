@@ -12,11 +12,11 @@ import (
 )
 
 type Website struct {
-	UUID       string
-	URL        string
-	Title      string
-	RawContent string
-	UpdateTime time.Time
+	UUID       string    `json:"uuid"`
+	URL        string    `json:"url"`
+	Title      string    `json:"title"`
+	RawContent string    `json:"raw_content"`
+	UpdateTime time.Time `json:"update_time"`
 	Conf       *config.WebsiteConfig
 }
 
@@ -24,7 +24,7 @@ func NewWebsite(url string, conf *config.WebsiteConfig) Website {
 	web := Website{
 		UUID:       uuid.New().String(),
 		URL:        url,
-		UpdateTime: time.Now(),
+		UpdateTime: time.Now().UTC().Truncate(time.Second),
 		Conf:       conf,
 	}
 	return web

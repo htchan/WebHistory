@@ -44,7 +44,7 @@ func fromSqlcWebsite(webModel sqlc.Website) model.Website {
 		URL:        webModel.Url.String,
 		Title:      webModel.Title.String,
 		RawContent: webModel.Content.String,
-		UpdateTime: webModel.UpdateTime.Time,
+		UpdateTime: webModel.UpdateTime.Time.UTC().Truncate(time.Second),
 	}
 }
 
@@ -63,12 +63,12 @@ func fromSqlcListUserWebsitesRow(userWebModel sqlc.ListUserWebsitesRow) model.Us
 		WebsiteUUID: userWebModel.WebsiteUuid.String,
 		UserUUID:    userWebModel.UserUuid.String,
 		GroupName:   userWebModel.GroupName.String,
-		AccessTime:  userWebModel.AccessTime.Time,
+		AccessTime:  userWebModel.AccessTime.Time.UTC().Truncate(time.Second),
 		Website: model.Website{
 			UUID:       userWebModel.WebsiteUuid.String,
 			URL:        userWebModel.Url.String,
 			Title:      userWebModel.Title.String,
-			UpdateTime: userWebModel.UpdateTime.Time,
+			UpdateTime: userWebModel.UpdateTime.Time.UTC().Truncate(time.Second),
 		},
 	}
 }
@@ -78,12 +78,12 @@ func fromSqlcListUserWebsitesByGroupRow(userWebModel sqlc.ListUserWebsitesByGrou
 		WebsiteUUID: userWebModel.WebsiteUuid.String,
 		UserUUID:    userWebModel.UserUuid.String,
 		GroupName:   userWebModel.GroupName.String,
-		AccessTime:  userWebModel.AccessTime.Time,
+		AccessTime:  userWebModel.AccessTime.Time.UTC().Truncate(time.Second),
 		Website: model.Website{
 			UUID:       userWebModel.WebsiteUuid.String,
 			URL:        userWebModel.Url.String,
 			Title:      userWebModel.Title.String,
-			UpdateTime: userWebModel.UpdateTime.Time,
+			UpdateTime: userWebModel.UpdateTime.Time.UTC().Truncate(time.Second),
 		},
 	}
 }
@@ -93,12 +93,12 @@ func fromSqlcGetUserWebsiteRow(userWebModel sqlc.GetUserWebsiteRow) model.UserWe
 		WebsiteUUID: userWebModel.WebsiteUuid.String,
 		UserUUID:    userWebModel.UserUuid.String,
 		GroupName:   userWebModel.GroupName.String,
-		AccessTime:  userWebModel.AccessTime.Time,
+		AccessTime:  userWebModel.AccessTime.Time.UTC().Truncate(time.Second),
 		Website: model.Website{
 			UUID:       userWebModel.WebsiteUuid.String,
 			URL:        userWebModel.Url.String,
 			Title:      userWebModel.Title.String,
-			UpdateTime: userWebModel.UpdateTime.Time,
+			UpdateTime: userWebModel.UpdateTime.Time.UTC().Truncate(time.Second),
 		},
 	}
 }

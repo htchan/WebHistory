@@ -22,7 +22,7 @@ func Test_NewUserWebsite(t *testing.T) {
 			web:                Website{UUID: "uuid"},
 			userUUID:           "user uuid",
 			expectedGroupName:  "",
-			expectedAccessTime: time.Now(),
+			expectedAccessTime: time.Now().UTC().Truncate(time.Second),
 		},
 	}
 
