@@ -28,10 +28,15 @@ coverage:
 	rm profile.txt
 	# google-chrome ./coverage.html &
 
-include ../.env
-export $(shell sed 's/=.*//' ../.env)
+define setup_env
+	$(eval ENV_FILE := ../.env)
+	@echo " - setup env $(ENV_FILE)"
+	$(eval include ../.env)
+	$(eval export sed 's/=.*//' ../.env)
+endef
+
 sqlc:
-	# source ../.env
+	${call setup_env}
 	PGPASSWORD=${PSQL_PASSWORD} pg_dump \
 		-h ${PSQL_HOST} -p ${PSQL_PORT} -U ${PSQL_USER} -d ${PSQL_NAME} \
 		-t websites -t user_websites -t website_settings --schema-only \

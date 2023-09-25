@@ -198,6 +198,7 @@ func TestShutdownHandler_Listen(t *testing.T) {
 						f: func() error {
 							wg.Add(1)
 							defer wg.Done()
+							time.Sleep(0)
 
 							assert.Equal(t, true, m["completed"])
 							return nil
