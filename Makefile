@@ -26,9 +26,9 @@ backend:
 migrate:
 	migrate -database 'postgres://${USER}:${PASSWORD}@${HOST}:${PORT}/${DB}?sslmode=disable' -path ./backend/migrations up
 
-## batch: deploy batch container
-batch:
-	docker-compose --profile batch up -d --force-recreate
+## worker: deploy worker container
+worker:
+	docker-compose --profile worker up -d --force-recreate
 
 backend_local:
 	docker run --name web_history_local \
