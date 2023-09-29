@@ -23,8 +23,8 @@ class Strategy extends HashUrlStrategy {
   @override
   String getPath() {
     String path = _platformLocation.pathname + _platformLocation.search;
-    if (!_platformLocation.hash.startsWith('#/')) {
-      path += _platformLocation.hash;
+    if (!_platformLocation.hash!.startsWith('#/')) {
+      path += _platformLocation.hash!;
     }
     return path;
   }
