@@ -65,7 +65,8 @@ services:
             - ./.env
 
     frontend:
-        image: "flutter:latest"
+        build:
+            context: ./frontend
         volumes:
             - frontend_volume:/build/web
             - ./frontend/src:/usr/src/app
