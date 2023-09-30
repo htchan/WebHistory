@@ -2,9 +2,7 @@ version: "3.7"
 
 services:
     backend:
-        build: 
-            context: ./backend
-            dockerfile: ./build/Dockerfile.backend
+        image: ghcr.io/htchan/web-history:backend-latest
         deploy:
             resources:
                 limits:
@@ -25,12 +23,9 @@ services:
             - 9105:9105
         env_file:
             - ./backend/assets/.env.backend
-        command: sh -c "./backend"
 
     worker:
-        build:
-            context: ./backend
-            dockerfile: ./build/Dockerfile.worker
+        image: ghcr.io/htchan/web-history:worker-latest
         deploy:
             resources:
                 limits:
@@ -48,7 +43,6 @@ services:
             - worker
         env_file:
             - ./backend/assets/.env.worker
-        command: sh -c "./worker"
 
     backup:
         build:

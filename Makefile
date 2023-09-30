@@ -9,7 +9,12 @@ help:
 
 ## build service=<service>: build docker image of specified service (default all)
 build:
-	DOCKER_BUILDKIT=1 docker-compose --profile ${service} build
+	docker buildx bake backend
+
+clean-build:
+	docker images --format "{{.Repository}}:{{.Tag}}" | \
+		grep web-history | \
+		xargs -L1 docker image rm
 
 ## backup the database content to ./bin/database
 backup:
