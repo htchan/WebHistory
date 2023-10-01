@@ -1,4 +1,4 @@
-name: BE Testing
+name: Push Docker Image
 run-name: ${{github.actor}} trigger docker image build and push for BE
 
 on:
@@ -7,7 +7,7 @@ permissions:
   packages: write
 
 jobs:
-  Execute-Backend-Testcase:
+  Build-Push-Backend-Image:
     if: contains('["htchan"]', github.actor)
     runs-on: ubuntu-latest
     timeout-minutes: 30
