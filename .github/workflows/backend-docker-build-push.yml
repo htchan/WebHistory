@@ -1,0 +1,35 @@
+name: Push Docker Image
+run-name: ${{github.actor}} trigger docker image build and push for BE
+
+on:
+  workflow_dispatch:
+permissions:
+  packages: write
+
+jobs:
+  Build-Push-Backend-Image:
+    if: contains('["htchan"]', github.actor)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Log in Container Registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        env:
+          REGISTRY: ghcr.io
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and Push
+        uses: docker/bake-action@v4
+        env:
+          BAKE_CI: true
+          HSAH: ${{ GITHUB_SHA:0:7 }}
+        with:
+          target: backend
+        # run: echo CI=true HSAH=${GITHUB_SHA:0:7} docker buildx bake backend
+

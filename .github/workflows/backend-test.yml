@@ -1,5 +1,5 @@
 name: BE Testing
-run-name: ${{github.actor}} is running testcase for BE
+run-name: ${{github.actor}} trigger tests for BE
 on:
   pull_request:
     branches:

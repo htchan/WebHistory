@@ -15,18 +15,16 @@ WORKDIR /go/src/github.com/htchan/WebHistory
 RUN apk add gcc musl-dev libc-dev
 
 COPY ./internal ./internal
-COPY ./cmd/backend ./cmd/backend
+COPY ./cmd/api ./cmd/api
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    go build -v ./cmd/backend
+    go build -v ./cmd/api
 
 
 FROM alpine
 
 WORKDIR /usr/src/app
 
-RUN apk add tzdata
+COPY --from=builder /go/src/github.com/htchan/WebHistory/api .
 
-COPY --from=builder /go/src/github.com/htchan/WebHistory/backend .
-
-CMD ['./main']
+CMD ['./api']

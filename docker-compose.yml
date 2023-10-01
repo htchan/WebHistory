@@ -1,10 +1,8 @@
 version: "3.7"
 
 services:
-    backend:
-        build: 
-            context: ./backend
-            dockerfile: ./build/Dockerfile.backend
+    api:
+        image: ghcr.io/htchan/web-history:api-latest
         deploy:
             resources:
                 limits:
@@ -19,18 +17,15 @@ services:
             - database
         profiles:
             - all
-            - backend
+            - api
             - web
         ports:
             - 9105:9105
         env_file:
             - ./backend/assets/.env.backend
-        command: sh -c "./backend"
 
     worker:
-        build:
-            context: ./backend
-            dockerfile: ./build/Dockerfile.worker
+        image: ghcr.io/htchan/web-history:worker-latest
         deploy:
             resources:
                 limits:
@@ -48,7 +43,6 @@ services:
             - worker
         env_file:
             - ./backend/assets/.env.worker
-        command: sh -c "./worker"
 
     backup:
         build:
