@@ -28,7 +28,7 @@ jobs:
         uses: docker/bake-action@v4
         env:
           BAKE_CI: true
-          HSAH: ${{ GITHUB_SHA:0:7 }}
+          HSAH: ${{ GITHUB_SHA }}
         with:
           target: backend
         # run: echo CI=true HSAH=${GITHUB_SHA:0:7} docker buildx bake backend
