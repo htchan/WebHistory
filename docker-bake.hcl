@@ -18,9 +18,12 @@ target "backend" {
   labels = {
     "org.opencontainers.image.source" = "https://github.com/htchan/WebHistory"
   }
+  attest = [
+    "type=provenance,disabled=true"
+  ]
 
   tags = [
-    "ghcr.io/htchan/web-history:${tgt}-v${DATE}-${HASH}",
+    "ghcr.io/htchan/web-history:${tgt}-v${DATE}-${substr(HASH,0,7)}",
     "ghcr.io/htchan/web-history:${tgt}-latest"
   ]
   platforms = equal(BAKE_CI, "true") ? ["linux/amd64","linux/arm64","linux/arm/v7"] : []
