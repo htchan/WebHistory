@@ -4,16 +4,21 @@ variable "DATE" {
 
 variable "HASH" { default = "TESTING" }
 
-variable "BAKE_CI" { default="false" }
+variable "BAKE_CI" { default = "false" }
+
+variable "BRANCH" { default = "" }
+variable "IMAGE_TAG" { default = "${equal(BRANCH,"master") ? "latest" : "beta"}" }
 
 group "default" {
   targets = ["backend-api","backend-worker"]
 }
 
 target "backend" {
-  name = "backend-${tgt}"
+  name = "backend-${service}"
   context = "./backend"
-  dockerfile = "./build/Dockerfile.${tgt}"
+  dockerfile = "./build/Dockerfile.${service}"
+  cache-from = [ "type=gha" ]
+  cache-to = [ "type=gha,mode=max" ]
 
   labels = {
     "org.opencontainers.image.source" = "https://github.com/htchan/WebHistory"
@@ -23,11 +28,11 @@ target "backend" {
   ]
 
   tags = [
-    "ghcr.io/htchan/web-history:${tgt}-v${DATE}-${substr(HASH,0,7)}",
-    "ghcr.io/htchan/web-history:${tgt}-latest"
+    "ghcr.io/htchan/web-history:${service}-v${DATE}-${substr(HASH,0,7)}",
+    "ghcr.io/htchan/web-history:${service}-${IMAGE_TAG}"
   ]
-  platforms = equal(BAKE_CI, "true") ? ["linux/amd64","linux/arm64","linux/arm/v7"] : []
+  platforms = equal(BAKE_CI, "true") ? ["linux/amd64","linux/arm64"] : []
   output     = [equal(BAKE_CI, "true") ? "type=registry": "type=docker"]
 
-  matrix = { tgt = ["api","worker"] }
+  matrix = { service = ["api","worker"] }
 }
