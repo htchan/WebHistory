@@ -1,8 +1,8 @@
 version: "3.7"
 
 services:
-    backend:
-        image: ghcr.io/htchan/web-history:backend-latest
+    api:
+        image: ghcr.io/htchan/web-history:api-latest
         deploy:
             resources:
                 limits:
@@ -17,7 +17,7 @@ services:
             - database
         profiles:
             - all
-            - backend
+            - api
             - web
         ports:
             - 9105:9105
