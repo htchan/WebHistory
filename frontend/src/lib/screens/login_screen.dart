@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:html';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-const String FE_ROUTE_PREFIX = String.fromEnvironment("WEB_WATCHER_FE_ROUTE_PREFIX", defaultValue: "/web-watcher");
-
 class LoginScreen extends StatelessWidget {
   final Map queryParams;
+  final String FE_ROUTE_PREFIX = dotenv.get("WEB_WATCHER_FE_ROUTE_PREFIX", fallback: "/web-watcher");
 
   LoginScreen({Key? key, required this.queryParams}) : super(key: key) {
     String token = queryParams["token"] ?? "";
@@ -14,7 +13,7 @@ class LoginScreen extends StatelessWidget {
       _localStorage["web_history_token"] = token;
       redirect("${FE_ROUTE_PREFIX}/");
     } else {
-      redirect(dotenv.env['USER_SERVICE_URL']!);
+      redirect(dotenv.get('USER_SERVICE_URL'));
     }
   }
 

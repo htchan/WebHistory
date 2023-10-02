@@ -36,14 +36,13 @@ void main() async {
   runApp(MyApp());
 }
 
-const String host = String.fromEnvironment("WEB_WATCHER_API_HOST");
 // String host = "localhost";
 final Storage _localStorage = window.localStorage;
-const String FE_ROUTE_PREFIX = String.fromEnvironment("WEB_WATCHER_FE_ROUTE_PREFIX", defaultValue: "/web-watcher");
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
-  final WebHistoryRepostory client = WebHistoryRepostory(host, "");
+  final WebHistoryRepostory client = WebHistoryRepostory(dotenv.get("WEB_WATCHER_API_HOST"), "");
+  final String FE_ROUTE_PREFIX = dotenv.get("WEB_WATCHER_FE_ROUTE_PREFIX", fallback: "/web-watcher");
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
