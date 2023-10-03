@@ -3,14 +3,15 @@ package main
 import (
 	"context"
 	"os"
+	"syscall"
 	"time"
 
 	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/executor"
 	"github.com/htchan/WebHistory/internal/jobs/websiteupdate"
 	"github.com/htchan/WebHistory/internal/repository/sqlc"
-	"github.com/htchan/WebHistory/internal/shutdown"
 	"github.com/htchan/WebHistory/internal/utils"
+	shutdown "github.com/htchan/goshutdown"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
@@ -38,15 +39,6 @@ func tracerProvider(conf config.TraceConfig) (*tracesdk.TracerProvider, error) {
 	otel.SetTracerProvider(tp)
 
 	return tp, nil
-}
-
-func closeTracer(tp *tracesdk.TracerProvider) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-	defer cancel()
-
-	if err := tp.Shutdown(ctx); err != nil {
-		log.Error().Err(err).Msg("shutdown error")
-	}
 }
 
 func main() {
@@ -80,7 +72,8 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to migrate")
 	}
 
-	shutdownHandler := shutdown.New()
+	shutdown.LogEnabled = true
+	shutdownHandler := shutdown.New(syscall.SIGINT, syscall.SIGTERM)
 
 	db, err := utils.OpenDatabase(&conf.DatabaseConfig)
 
@@ -101,9 +94,7 @@ func main() {
 	shutdownHandler.Register("executor", exec.Stop)
 	shutdownHandler.Register("database", db.Close)
 	shutdownHandler.Register("tracer", func() error {
-		closeTracer(tp)
-
-		return nil
+		return tp.Shutdown(context.Background())
 	})
 
 	go exec.Start()
