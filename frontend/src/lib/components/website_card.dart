@@ -12,6 +12,7 @@ class WebsiteCard extends StatelessWidget {
   final WebGroup group;
   final Web web;
   final Function updateList;
+  static final Duration timeZoneOffset = DateTime.now().timeZoneOffset;
   // final String token;
   WebsiteCard({
     required this.client,
@@ -32,8 +33,8 @@ class WebsiteCard extends StatelessWidget {
   Text renderSubTitleText() {
     return Text(
       (web.url) + '\n' +
-      'Update Time: ' + web.updateTime.toLocal().toString() + '\n' +
-      'Access Time: ' + web.accessTime.toLocal().toString()
+      'Update Time: ' + web.updateTime.add(timeZoneOffset).toString() + '\n' +
+      'Access Time: ' + web.accessTime.add(timeZoneOffset).toString()
     );
   }
 

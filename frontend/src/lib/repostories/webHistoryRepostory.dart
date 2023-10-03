@@ -1,13 +1,13 @@
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:webhistory/models/all_models.dart';
 import 'package:http/http.dart' as http;
-
-const String api_prefix = String.fromEnvironment("WEB_WATCHER_API_ROUTE_PREFIX", defaultValue: "/api/web-watcher");
 
 class WebHistoryRepostory {
   String host, authToken;
   final String protocol = "http";
+  final String api_prefix = dotenv.get("WEB_WATCHER_API_ROUTE_PREFIX", fallback: "/api/web-watcher");
 
   WebHistoryRepostory(this.host, this.authToken);
 
