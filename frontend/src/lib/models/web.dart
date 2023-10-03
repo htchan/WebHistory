@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:webhistory/repostories/webHistoryRepostory.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
@@ -5,7 +6,7 @@ import 'package:intl/intl.dart';
 class Web {
   final String uuid, url, title, groupName;
   final DateTime updateTime, accessTime;
-  static final datetimeFormat = DateFormat('yyyy-MM-ddThh:mm:ss zzz');
+  static final datetimeFormat = DateFormat(dotenv.get('WEB_DATETIME_FORMAT', fallback: 'yyyy-MM-ddThh:mm:ss zzz'));
 
   Web.from(Map<String, String> map):
     this.uuid = map['uuid']??"",
