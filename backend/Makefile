@@ -7,7 +7,7 @@ help:
 # TODO: enable the -race
 # TODO: add -leak to testcase
 test:
-	go test ./... --cover #-race
+	go test ./... --cover --race --leak
 
 bench:
 	go test -bench=. -benchmem -benchtime=5s ./...
@@ -18,7 +18,7 @@ apply_db_schema: ./assets/schema.sql
 	cat ./assets/schema.sql | sqlite3 ./assets/template.db
 
 create_migrate:
-	migrate create -ext sql -dir migrations $(NAME)
+	migrate create -ext sql -dir database/migrations $(NAME)
 
 PKG ?= "./..."
 
@@ -40,5 +40,5 @@ sqlc:
 	PGPASSWORD=${PSQL_PASSWORD} pg_dump \
 		-h ${PSQL_HOST} -p ${PSQL_PORT} -U ${PSQL_USER} -d ${PSQL_NAME} \
 		-t websites -t user_websites -t website_settings --schema-only \
-		> schema.sql
+		> database/schema.sql
 	sqlc generate

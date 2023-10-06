@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"os"
 	"testing"
 	"time"
@@ -10,7 +11,14 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	goleak.VerifyTestMain(m)
+	leak := flag.Bool("leak", false, "check for memory leaks")
+	flag.Parse()
+
+	if *leak {
+		goleak.VerifyTestMain(m)
+	} else {
+		os.Exit(m.Run())
+	}
 }
 
 func Test_LoadAPIConfig(t *testing.T) {
