@@ -7,7 +7,7 @@ help:
 # TODO: enable the -race
 # TODO: add -leak to testcase
 test:
-	go test ./... --cover #-race
+	go test ./... --cover --race --leak
 
 bench:
 	go test -bench=. -benchmem -benchtime=5s ./...
