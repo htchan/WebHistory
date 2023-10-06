@@ -11,7 +11,7 @@ services:
         volumes:
             - ./bin/database:/database
             - ./bin/logs:/logs
-            - ./backend/migrations:/migrations
+            - ./backend/database/migrations:/migrations
         networks:
             - router
             - database
@@ -34,7 +34,7 @@ services:
         volumes:
             - ./bin/database:/database
             - ./bin/logs:/logs
-            - ./backend/migrations:/migrations
+            - ./backend/database/migrations:/migrations
         networks:
             - database
             - trace

@@ -29,7 +29,7 @@ api:
 	docker-compose --profile api up -d --force-recreate
 
 migrate:
-	migrate -database 'postgres://${USER}:${PASSWORD}@${HOST}:${PORT}/${DB}?sslmode=disable' -path ./backend/migrations up
+	migrate -database 'postgres://${USER}:${PASSWORD}@${HOST}:${PORT}/${DB}?sslmode=disable' -path ./backend/database/migrations up
 
 ## worker: deploy worker container
 worker:
