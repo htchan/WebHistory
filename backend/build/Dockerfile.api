@@ -27,4 +27,4 @@ WORKDIR /usr/src/app
 
 COPY --from=builder /go/src/github.com/htchan/WebHistory/api .
 
-CMD ['./api']
+ENTRYPOINT ["/usr/src/app/api"]

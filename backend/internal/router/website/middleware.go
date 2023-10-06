@@ -42,7 +42,6 @@ func logRequest() func(next http.Handler) http.Handler {
 				logger.Info().
 					Str("path", req.URL.String()).
 					Str("duration", time.Since(start).String()).
-					Int("status_code", req.Response.StatusCode).
 					Msg("request handled")
 			},
 		)
