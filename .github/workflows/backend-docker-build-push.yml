@@ -26,7 +26,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: go-build-cache
-          key: ${{ runner.os }}-go-build-cache-${{ hashFiles(**/go.sum) }}
+          key: ${{ runner.os }}-go-build-cache-${{ hashFiles('**/go.sum') }}
       - name: Inject go-build-cache-to-docker
         uses: reproducible-containers/buildkit-cache-dance@2.1.2
         with:
