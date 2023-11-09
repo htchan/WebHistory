@@ -16,9 +16,13 @@ group "default" {
 target "backend" {
   name = "backend-${service}"
   context = "./backend"
-  dockerfile = "./build/Dockerfile.${service}"
+  dockerfile = "./build/Dockerfile"
   cache-from = [ "type=gha" ]
   cache-to = [ "type=gha,mode=max" ]
+
+  args = {
+    SERVICE = "${service}"
+  }
 
   labels = {
     "org.opencontainers.image.source" = "https://github.com/htchan/WebHistory"
