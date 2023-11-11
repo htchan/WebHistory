@@ -7,6 +7,12 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/backend-test.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-test.yml'
 
 jobs:
   Execute-Backend-Testcase:
