@@ -91,7 +91,7 @@ func fetchWebsite(ctx context.Context, web *model.Website, maxRetry int, retryIn
 	for i := 0; i < maxRetry; i++ {
 		resp, err = client.Get(web.URL)
 		if err != nil {
-			zerolog.Ctx(ctx).Error().
+			zerolog.Ctx(ctx).Warn().
 				Err(err).
 				Int("trial", i).
 				Str("url", web.URL).

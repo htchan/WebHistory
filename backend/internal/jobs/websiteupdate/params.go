@@ -6,7 +6,7 @@ import (
 )
 
 type Params struct {
-	SpanContext *trace.SpanContext
-	Web         *model.Website `json:"web"`
-	Cleanup     func()
+	SpanContext *trace.SpanContext `json:"-"`
+	Web         *model.Website     `json:"web"`
+	Cleanup     func()             `json:"-"`
 }

@@ -48,7 +48,7 @@ func (job *Job) Execute(ctx context.Context, p interface{}) error {
 	updateSpan.SetAttributes(params.Web.OtelAttributes()...)
 	updateSpan.SetAttributes(attribute.String("job_uuid", updateCtx.Value("job_uuid").(string)))
 
-	service.Update(updateCtx, job.rpo, params.Web)
+	err := service.Update(updateCtx, job.rpo, params.Web)
 
 	_, sleepSpan := tr.Start(updateCtx, "Sleep After Update")
 	defer sleepSpan.End()
@@ -56,5 +56,5 @@ func (job *Job) Execute(ctx context.Context, p interface{}) error {
 
 	runtime.GC()
 
-	return nil
+	return err
 }
