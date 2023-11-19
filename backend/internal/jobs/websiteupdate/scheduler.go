@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/executor"
 	"github.com/htchan/WebHistory/internal/jobs"
 	"github.com/rs/zerolog/log"
@@ -14,26 +15,34 @@ import (
 
 // TODO: add missing testcases
 type Scheduler struct {
-	job            *Job
-	stop           chan struct{}
-	jobChan        executor.JobTrigger
-	hostLocks      map[string]*sync.Mutex
-	hostLocksMutex sync.Mutex
-	publisherWg    sync.WaitGroup
+	job             *Job
+	stop            chan struct{}
+	jobChan         executor.JobTrigger
+	hostLocks       map[string]*sync.Mutex
+	hostLocksMutex  sync.Mutex
+	publisherWg     sync.WaitGroup
+	execAtBeginning bool
 }
 
-func NewScheduler(job *Job) *Scheduler {
+func NewScheduler(job *Job, conf *config.WorkerBinConfig) *Scheduler {
 	return &Scheduler{
-		job:       job,
-		stop:      make(chan struct{}),
-		jobChan:   make(executor.JobTrigger),
-		hostLocks: make(map[string]*sync.Mutex),
+		job:             job,
+		stop:            make(chan struct{}),
+		jobChan:         make(executor.JobTrigger),
+		hostLocks:       make(map[string]*sync.Mutex),
+		execAtBeginning: conf.ExecAtBeginning,
 	}
 }
 
 func (scheduler *Scheduler) Start() {
 	// calculate next run time
-	lastRunTime := time.Time{}
+	var lastRunTime time.Time
+	if scheduler.execAtBeginning {
+		lastRunTime = time.Time{}
+	} else {
+		lastRunTime = time.Now()
+	}
+
 	for {
 		select {
 		case <-scheduler.stop:
@@ -54,7 +63,7 @@ func calculateNexRunTime(t time.Time) time.Time {
 	t = t.UTC().Truncate(24 * time.Hour)
 
 	nDaysLater := int(time.Friday - t.Weekday())
-	if nDaysLater <= 1 {
+	if nDaysLater < 0 || (nDaysLater == 0 && time.Now().UTC().Hour() >= 4) {
 		nDaysLater += 7
 	}
 

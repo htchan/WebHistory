@@ -86,7 +86,7 @@ func main() {
 	exec := executor.NewExecutor(conf.BinConfig.WorkerExecutorCount)
 
 	// start website update job
-	websiteUpdateScheduler := websiteupdate.Setup(rpo, conf.BinConfig.WebsiteUpdateSleepInterval)
+	websiteUpdateScheduler := websiteupdate.Setup(rpo, &conf.BinConfig)
 	exec.Register(websiteUpdateScheduler.Publisher())
 	go websiteUpdateScheduler.Start()
 

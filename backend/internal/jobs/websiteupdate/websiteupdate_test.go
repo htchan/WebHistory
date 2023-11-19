@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/repository"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/goleak"
@@ -26,16 +27,22 @@ func TestSetup(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name          string
-		rpo           repository.Repostory
-		sleepInterval time.Duration
-		wantJob       *Job
+		name                string
+		rpo                 repository.Repostory
+		conf                *config.WorkerBinConfig
+		sleepInterval       time.Duration
+		wantJob             *Job
+		wantExecAtBeginning bool
 	}{
 		{
-			name:          "happy flow",
-			rpo:           nil,
-			sleepInterval: 5 * time.Second,
-			wantJob:       &Job{rpo: nil, sleepInterval: 5 * time.Second},
+			name: "happy flow",
+			rpo:  nil,
+			conf: &config.WorkerBinConfig{
+				WebsiteUpdateSleepInterval: 5 * time.Second,
+				ExecAtBeginning:            true,
+			},
+			wantJob:             &Job{rpo: nil, sleepInterval: 5 * time.Second},
+			wantExecAtBeginning: true,
 		},
 	}
 
@@ -45,8 +52,9 @@ func TestSetup(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			scheduler := Setup(test.rpo, test.sleepInterval)
+			scheduler := Setup(test.rpo, test.conf)
 			assert.Equal(t, test.wantJob, scheduler.job)
+			assert.Equal(t, test.wantExecAtBeginning, scheduler.execAtBeginning)
 		})
 	}
 }
