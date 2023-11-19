@@ -40,7 +40,7 @@ func (scheduler *Scheduler) Start() {
 	if scheduler.execAtBeginning {
 		lastRunTime = time.Time{}
 	} else {
-		lastRunTime = time.Now()
+		lastRunTime = time.Now().UTC().Truncate(time.Second)
 	}
 
 	for {
@@ -60,14 +60,12 @@ func calculateNexRunTime(t time.Time) time.Time {
 		return time.Now().UTC().Truncate(time.Second)
 	}
 
-	t = t.UTC().Truncate(24 * time.Hour)
-
 	nDaysLater := int(time.Friday - t.Weekday())
-	if nDaysLater < 0 || (nDaysLater == 0 && time.Now().UTC().Hour() >= 4) {
+	if nDaysLater < 0 || (nDaysLater == 0 && t.Hour() >= 4) {
 		nDaysLater += 7
 	}
 
-	result := t.AddDate(0, 0, nDaysLater).Add(4 * time.Hour)
+	result := t.Truncate(24*time.Hour).AddDate(0, 0, nDaysLater).Add(4 * time.Hour)
 
 	return result
 }

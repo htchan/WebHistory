@@ -75,7 +75,17 @@ func Test_calculateNextRunTime(t *testing.T) {
 		{
 			name: "output next Fri if it it Thur",
 			args: time.Date(2023, 1, 5, 0, 0, 0, 0, time.UTC),
+			want: time.Date(2023, 1, 6, 4, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "output next Fri if it is pass",
+			args: time.Date(2023, 1, 6, 4, 0, 0, 0, time.UTC),
 			want: time.Date(2023, 1, 13, 4, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "output current Fri if it is not pass",
+			args: time.Date(2023, 1, 6, 3, 59, 0, 0, time.UTC),
+			want: time.Date(2023, 1, 6, 4, 0, 0, 0, time.UTC),
 		},
 		{
 			name: "output now if it is empty",
