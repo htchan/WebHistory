@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/htchan/WebHistory/internal/config"
 	"github.com/htchan/WebHistory/internal/executor"
 	"github.com/htchan/WebHistory/internal/jobs"
 	"github.com/htchan/WebHistory/internal/model"
@@ -20,11 +21,15 @@ func TestNewScheduler(t *testing.T) {
 	tests := []struct {
 		name string
 		job  *Job
+		conf *config.WorkerBinConfig
 		want *Scheduler
 	}{
 		{
 			name: "happy flow",
 			job:  nil,
+			conf: &config.WorkerBinConfig{
+				ExecAtBeginning: false,
+			},
 			want: &Scheduler{
 				job: nil,
 			},
@@ -37,8 +42,9 @@ func TestNewScheduler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := NewScheduler(test.job)
+			got := NewScheduler(test.job, test.conf)
 			assert.Equal(t, test.want.job, got.job)
+			assert.Equal(t, test.want.execAtBeginning, test.conf.ExecAtBeginning)
 			assert.NotNil(t, got.stop)
 			assert.NotNil(t, got.jobChan)
 			assert.NotNil(t, got.hostLocks)
@@ -69,7 +75,17 @@ func Test_calculateNextRunTime(t *testing.T) {
 		{
 			name: "output next Fri if it it Thur",
 			args: time.Date(2023, 1, 5, 0, 0, 0, 0, time.UTC),
+			want: time.Date(2023, 1, 6, 4, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "output next Fri if it is pass",
+			args: time.Date(2023, 1, 6, 4, 0, 0, 0, time.UTC),
 			want: time.Date(2023, 1, 13, 4, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "output current Fri if it is not pass",
+			args: time.Date(2023, 1, 6, 3, 59, 0, 0, time.UTC),
+			want: time.Date(2023, 1, 6, 4, 0, 0, 0, time.UTC),
 		},
 		{
 			name: "output now if it is empty",
@@ -171,7 +187,7 @@ func TestScheduler_batchDeployUpdateJob(t *testing.T) {
 func TestScheduler_Stop(t *testing.T) {
 	t.Parallel()
 
-	scheduler := NewScheduler(nil)
+	scheduler := NewScheduler(nil, &config.WorkerBinConfig{})
 	err := scheduler.Stop()
 	assert.ErrorIs(t, err, nil)
 	_, stopOk := <-scheduler.stop
@@ -183,7 +199,7 @@ func TestScheduler_Stop(t *testing.T) {
 func TestScheduler_Publisher(t *testing.T) {
 	t.Parallel()
 
-	scheduler := NewScheduler(nil)
+	scheduler := NewScheduler(nil, &config.WorkerBinConfig{})
 	assert.Equal(t, scheduler.jobChan, scheduler.Publisher())
 }
 

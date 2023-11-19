@@ -23,17 +23,6 @@ type APIBinConfig struct {
 	APIRoutePrefix string        `env:"WEB_WATCHER_API_ROUTE_PREFIX" envDefault:"/api/web-watcher"`
 }
 
-type BatchConfig struct {
-	BinConfig      BatchBinConfig
-	DatabaseConfig DatabaseConfig
-	TraceConfig    TraceConfig
-	WebsiteConfig  WebsiteConfig
-}
-
-type BatchBinConfig struct {
-	SleepInterval time.Duration `env:"BATCH_SLEEP_INTERVAL"`
-}
-
 type WorkerConfig struct {
 	BinConfig      WorkerBinConfig
 	DatabaseConfig DatabaseConfig
@@ -44,6 +33,7 @@ type WorkerConfig struct {
 type WorkerBinConfig struct {
 	WebsiteUpdateSleepInterval time.Duration `env:"WEBSITE_UPDATE_SLEEP_INTERVAL"`
 	WorkerExecutorCount        int           `env:"WORKER_EXECUTOR_COUNT"`
+	ExecAtBeginning            bool          `env:"EXEC_AT_BEGINNING"`
 }
 
 type TraceConfig struct {
@@ -79,26 +69,6 @@ func LoadAPIConfig() (*APIConfig, error) {
 		func() error { return env.Parse(&conf.DatabaseConfig) },
 		func() error { return env.Parse(&conf.TraceConfig) },
 		func() error { return env.Parse(&conf.UserServiceConfig) },
-		func() error { return env.Parse(&conf.WebsiteConfig) },
-	}
-
-	for _, f := range loadConfigFuncs {
-		if err := f(); err != nil {
-			return nil, fmt.Errorf("parse config: %w", err)
-		}
-	}
-
-	return &conf, nil
-}
-
-func LoadBatchConfig() (*BatchConfig, error) {
-	var conf BatchConfig
-
-	loadConfigFuncs := []func() error{
-		func() error { return env.Parse(&conf) },
-		func() error { return env.Parse(&conf.BinConfig) },
-		func() error { return env.Parse(&conf.DatabaseConfig) },
-		func() error { return env.Parse(&conf.TraceConfig) },
 		func() error { return env.Parse(&conf.WebsiteConfig) },
 	}
 
