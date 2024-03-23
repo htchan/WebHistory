@@ -28,6 +28,7 @@ type WorkerConfig struct {
 	DatabaseConfig DatabaseConfig
 	TraceConfig    TraceConfig
 	WebsiteConfig  WebsiteConfig
+	RedisURL       string `env:"REDIS_URL,required"`
 }
 
 type WorkerBinConfig struct {

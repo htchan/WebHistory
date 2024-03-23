@@ -157,6 +157,7 @@ func Test_LoadWorkerConfig(t *testing.T) {
 				"PSQL_USER":                     "user",
 				"PSQL_PASSWORD":                 "password",
 				"PSQL_NAME":                     "name",
+				"REDIS_URL":                     "localhost:6543",
 			},
 			expectedConf: &WorkerConfig{
 				BinConfig: WorkerBinConfig{
@@ -175,6 +176,7 @@ func Test_LoadWorkerConfig(t *testing.T) {
 					Separator:     "\n",
 					MaxDateLength: 2,
 				},
+				RedisURL: "localhost:6543",
 			},
 			expectError: false,
 		},
@@ -193,6 +195,7 @@ func Test_LoadWorkerConfig(t *testing.T) {
 				"PSQL_USER":                     "user",
 				"PSQL_PASSWORD":                 "password",
 				"PSQL_NAME":                     "name",
+				"REDIS_URL":                     "localhost:6543",
 			},
 			expectedConf: &WorkerConfig{
 				BinConfig: WorkerBinConfig{
@@ -215,6 +218,7 @@ func Test_LoadWorkerConfig(t *testing.T) {
 					Separator:     ",",
 					MaxDateLength: 10,
 				},
+				RedisURL: "localhost:6543",
 			},
 			expectError: false,
 		},
