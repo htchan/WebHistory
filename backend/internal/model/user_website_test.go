@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_NewUserWebsite(t *testing.T) {
@@ -16,13 +16,19 @@ func Test_NewUserWebsite(t *testing.T) {
 		userUUID           string
 		expectedGroupName  string
 		expectedAccessTime time.Time
+		want               UserWebsite
 	}{
 		{
-			name:               "happy flow",
-			web:                Website{UUID: "uuid"},
-			userUUID:           "user uuid",
-			expectedGroupName:  "",
-			expectedAccessTime: time.Now().UTC().Truncate(time.Second),
+			name:     "happy flow",
+			web:      Website{UUID: "uuid"},
+			userUUID: "user uuid",
+			want: UserWebsite{
+				WebsiteUUID: "uuid",
+				UserUUID:    "user uuid",
+				GroupName:   "",
+				AccessTime:  time.Now().UTC().Truncate(time.Second),
+				Website:     Website{UUID: "uuid"},
+			},
 		},
 	}
 
@@ -30,28 +36,19 @@ func Test_NewUserWebsite(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
+
 			userWeb := NewUserWebsite(test.web, test.userUUID)
-			if userWeb.WebsiteUUID != test.web.UUID {
-				t.Errorf("empty uuid")
-			}
-			if userWeb.UserUUID != test.userUUID {
-				t.Errorf("wrong url: %s; want: %s", userWeb.UserUUID, test.userUUID)
-			}
-			if userWeb.GroupName != test.expectedGroupName {
-				t.Errorf("wrong title: %s; want: %s", userWeb.GroupName, test.expectedGroupName)
-			}
-			if userWeb.AccessTime.Second() != test.expectedAccessTime.Second() {
-				t.Errorf("wrong UpdateTime: %s; want: %s", userWeb.AccessTime, test.expectedAccessTime)
-			}
+			assert.Equal(t, test.want, userWeb)
 		})
 	}
 }
 
 func TestUserWebsite_MarshalJSON(t *testing.T) {
 	tests := []struct {
-		name   string
-		web    UserWebsite
-		expect string
+		name      string
+		web       UserWebsite
+		want      string
+		wantError error
 	}{
 		{
 			name: "happy flow",
@@ -66,32 +63,28 @@ func TestUserWebsite_MarshalJSON(t *testing.T) {
 				GroupName:  "group",
 				AccessTime: time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC),
 			},
-			expect: `{"uuid":"","user_uuid":"user uuid","url":"http://example.com","title":"title","group_name":"group","update_time":"2020-01-02T00:00:00 UTC","access_time":"2020-01-02T00:00:00 UTC"}`,
+			want:      `{"uuid":"","user_uuid":"user uuid","url":"http://example.com","title":"title","group_name":"group","update_time":"2020-01-02T00:00:00 UTC","access_time":"2020-01-02T00:00:00 UTC"}`,
+			wantError: nil,
 		},
 	}
 
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			result, err := json.Marshal(test.web)
-			if err != nil {
-				t.Errorf("got error: %v", err)
-				return
-			}
-			if !cmp.Equal(string(result), test.expect) {
-				t.Errorf("got unexpected json")
-				t.Error(string(result))
-				t.Error(test.expect)
-			}
+			assert.ErrorIs(t, err, test.wantError)
+			assert.Equal(t, test.want, string(result))
 		})
 	}
 }
 
 func TestUserWebsites_WebsiteGroups(t *testing.T) {
 	tests := []struct {
-		name         string
-		webs         UserWebsites
-		expectGroups WebsiteGroups
+		name string
+		webs UserWebsites
+		want WebsiteGroups
 	}{
 		{
 			name: "happy flow",
@@ -100,7 +93,7 @@ func TestUserWebsites_WebsiteGroups(t *testing.T) {
 				UserWebsite{WebsiteUUID: "2", GroupName: "1"},
 				UserWebsite{WebsiteUUID: "3", GroupName: "2"},
 			},
-			expectGroups: WebsiteGroups{
+			want: WebsiteGroups{
 				WebsiteGroup{
 					UserWebsite{WebsiteUUID: "1", GroupName: "1"},
 					UserWebsite{WebsiteUUID: "2", GroupName: "1"},
@@ -115,12 +108,10 @@ func TestUserWebsites_WebsiteGroups(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			groups := test.webs.WebsiteGroups()
-			if !cmp.Equal(groups, test.expectGroups) {
-				t.Errorf("got wrong group")
-				t.Error(groups)
-				t.Error(test.expectGroups)
-			}
+			assert.Equal(t, test.want, groups)
 		})
 	}
 }

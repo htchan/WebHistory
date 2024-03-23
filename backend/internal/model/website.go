@@ -20,6 +20,20 @@ type Website struct {
 	Conf       *config.WebsiteConfig
 }
 
+func NewWebsiteFromMap(m map[string]interface{}) Website {
+	return Website{
+		UUID:       m["uuid"].(string),
+		URL:        m["url"].(string),
+		Title:      m["title"].(string),
+		RawContent: m["raw_content"].(string),
+		UpdateTime: m["update_time"].(time.Time),
+		Conf: &config.WebsiteConfig{
+			Separator:     m["separator"].(string),
+			MaxDateLength: m["max_date_length"].(int),
+		},
+	}
+}
+
 func NewWebsite(url string, conf *config.WebsiteConfig) Website {
 	web := Website{
 		UUID:       uuid.New().String(),
@@ -32,10 +46,13 @@ func NewWebsite(url string, conf *config.WebsiteConfig) Website {
 
 func (web Website) Map() map[string]interface{} {
 	return map[string]interface{}{
-		"uuid":       web.UUID,
-		"url":        web.URL,
-		"title":      web.Title,
-		"updateTime": web.UpdateTime,
+		"uuid":            web.UUID,
+		"url":             web.URL,
+		"title":           web.Title,
+		"raw_content":     web.RawContent,
+		"update_time":     web.UpdateTime,
+		"separator":       web.Conf.Separator,
+		"max_date_length": web.Conf.MaxDateLength,
 	}
 }
 
