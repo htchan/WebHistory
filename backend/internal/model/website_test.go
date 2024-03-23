@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -131,38 +130,6 @@ func TestWebsite_Map(t *testing.T) {
 
 			got := test.web.Map()
 			assert.Equal(t, test.want, got)
-		})
-	}
-}
-
-func TestWebsite_MarshalJSON(t *testing.T) {
-	tests := []struct {
-		name      string
-		web       Website
-		want      string
-		wantError error
-	}{
-		{
-			name: "happy flow",
-			web: Website{
-				UUID:       "uuid",
-				URL:        "http://example.com",
-				Title:      "title",
-				UpdateTime: time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC),
-			},
-			want:      `{"uuid":"uuid","url":"http://example.com","title":"title","update_time":"2020-01-02T00:00:00 UTC"}`,
-			wantError: nil,
-		},
-	}
-
-	for _, test := range tests {
-		test := test
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-
-			got, err := json.Marshal(test.web)
-			assert.Equal(t, test.want, string(got))
-			assert.ErrorIs(t, err, test.wantError)
 		})
 	}
 }

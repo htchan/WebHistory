@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"net/url"
 	"strings"
 	"time"
@@ -54,20 +53,6 @@ func (web Website) Map() map[string]interface{} {
 		"separator":       web.Conf.Separator,
 		"max_date_length": web.Conf.MaxDateLength,
 	}
-}
-
-func (web Website) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&struct {
-		UUID       string `json:"uuid"`
-		URL        string `json:"url"`
-		Title      string `json:"title"`
-		UpdateTime string `json:"update_time"`
-	}{
-		UUID:       web.UUID,
-		URL:        web.URL,
-		Title:      web.Title,
-		UpdateTime: web.UpdateTime.Format("2006-01-02T15:04:05 MST"),
-	})
 }
 
 func (web Website) Host() string {

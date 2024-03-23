@@ -35,6 +35,7 @@ type WorkerBinConfig struct {
 	WebsiteUpdateSleepInterval time.Duration `env:"WEBSITE_UPDATE_SLEEP_INTERVAL"`
 	WorkerExecutorCount        int           `env:"WORKER_EXECUTOR_COUNT"`
 	ExecAtBeginning            bool          `env:"EXEC_AT_BEGINNING"`
+	SupportHosts               []string      `env:"SUPPORT_HOSTS"`
 }
 
 type TraceConfig struct {

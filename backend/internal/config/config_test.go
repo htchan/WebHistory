@@ -163,6 +163,7 @@ func Test_LoadWorkerConfig(t *testing.T) {
 				BinConfig: WorkerBinConfig{
 					WebsiteUpdateSleepInterval: 10 * time.Second,
 					WorkerExecutorCount:        10,
+					SupportHosts:               nil,
 				},
 				DatabaseConfig: DatabaseConfig{
 					Driver:   "postgres",
@@ -196,11 +197,13 @@ func Test_LoadWorkerConfig(t *testing.T) {
 				"PSQL_PASSWORD":                 "password",
 				"PSQL_NAME":                     "name",
 				"REDIS_URL":                     "localhost:6543",
+				"SUPPORT_HOSTS":                 "host1,host2",
 			},
 			expectedConf: &WorkerConfig{
 				BinConfig: WorkerBinConfig{
 					WebsiteUpdateSleepInterval: 10 * time.Second,
 					WorkerExecutorCount:        10,
+					SupportHosts:               []string{"host1", "host2"},
 				},
 				TraceConfig: TraceConfig{
 					TraceURL:         "trace_url",

@@ -35,6 +35,10 @@ var client HTTPClient = &http.Client{
 	},
 }
 
+func SetCli(cli HTTPClient) {
+	client = cli
+}
+
 func pruneResponse(resp *http.Response, conf *config.WebsiteConfig) string {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -204,6 +208,7 @@ func Update(ctx context.Context, r repository.Repostory, web *model.Website) err
 	}
 
 	title, dates := parseAPI(r, web, content)
+	fmt.Println("test", title, dates)
 	checkWeb(ctx, r, web, title, dates)
 
 	return nil
