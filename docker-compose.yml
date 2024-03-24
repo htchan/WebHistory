@@ -1,6 +1,17 @@
 version: "3.7"
 
 services:
+    scheduler:
+        image: ghcr.io/htchan/web-history:scheduler-beta
+        hostname: webhostory_scheduler
+        volumes:
+            - ./bin/logs:/logs
+            - ./backend/database/migrations:/migrations
+        networks:
+            - database
+        env_file:
+            - ./backend/assets/.env.scheduler
+
     api:
         image: ghcr.io/htchan/web-history:api-latest
         deploy:

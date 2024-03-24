@@ -10,7 +10,7 @@ variable "BRANCH" { default = "" }
 variable "IMAGE_TAG" { default = "${equal(BRANCH,"master") ? "latest" : "beta"}" }
 
 group "default" {
-  targets = ["backend-api","backend-worker"]
+  targets = ["backend-api","backend-worker","backend-scheduler"]
 }
 
 target "backend" {
@@ -38,5 +38,5 @@ target "backend" {
   platforms = equal(BAKE_CI, "true") ? ["linux/amd64","linux/arm64"] : []
   output     = [equal(BAKE_CI, "true") ? "type=registry": "type=docker"]
 
-  matrix = { service = ["api","worker"] }
+  matrix = { service = ["api","worker","scheduler"] }
 }

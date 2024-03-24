@@ -36,8 +36,6 @@ func TestMain(m *testing.M) {
 
 	connString = sqlcConnString
 
-	goleak.VerifyTestMain(m)
-
 	if *leak {
 		goleak.VerifyTestMain(m)
 	} else {

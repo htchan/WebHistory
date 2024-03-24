@@ -157,11 +157,13 @@ func Test_LoadWorkerConfig(t *testing.T) {
 				"PSQL_USER":                     "user",
 				"PSQL_PASSWORD":                 "password",
 				"PSQL_NAME":                     "name",
+				"REDIS_URL":                     "localhost:6543",
 			},
 			expectedConf: &WorkerConfig{
 				BinConfig: WorkerBinConfig{
 					WebsiteUpdateSleepInterval: 10 * time.Second,
 					WorkerExecutorCount:        10,
+					SupportHosts:               nil,
 				},
 				DatabaseConfig: DatabaseConfig{
 					Driver:   "postgres",
@@ -175,6 +177,7 @@ func Test_LoadWorkerConfig(t *testing.T) {
 					Separator:     "\n",
 					MaxDateLength: 2,
 				},
+				RedisURL: "localhost:6543",
 			},
 			expectError: false,
 		},
@@ -193,11 +196,14 @@ func Test_LoadWorkerConfig(t *testing.T) {
 				"PSQL_USER":                     "user",
 				"PSQL_PASSWORD":                 "password",
 				"PSQL_NAME":                     "name",
+				"REDIS_URL":                     "localhost:6543",
+				"SUPPORT_HOSTS":                 "host1,host2",
 			},
 			expectedConf: &WorkerConfig{
 				BinConfig: WorkerBinConfig{
 					WebsiteUpdateSleepInterval: 10 * time.Second,
 					WorkerExecutorCount:        10,
+					SupportHosts:               []string{"host1", "host2"},
 				},
 				TraceConfig: TraceConfig{
 					TraceURL:         "trace_url",
@@ -215,6 +221,7 @@ func Test_LoadWorkerConfig(t *testing.T) {
 					Separator:     ",",
 					MaxDateLength: 10,
 				},
+				RedisURL: "localhost:6543",
 			},
 			expectError: false,
 		},
